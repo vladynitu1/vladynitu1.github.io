@@ -717,16 +717,16 @@ async function renderTeam(){
   const container = document.getElementById('app');
   container.innerHTML =
     '<h2 style="margin:0 0 4px;">Programul unei persoane</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">Pui numele (mecanic, șef tren sau vânzător bilete) și ziua — vezi toate codurile de tren din ziua aceea și cu cine le face.</div>' +
+    '<div class="doc-meta" style="margin-bottom:16px;">Pui numele (mecanic, șef tren sau vânzător bilete) — cu zi vezi doar acea zi, fără zi vezi tot programul pe lună.</div>' +
     '<div class="card">' +
       '<div class="search-bar">' +
         '<div><label>Nume</label><input type="text" id="team-name" placeholder="ex. Nitu Ionut" value="' + escapeHtml(state.teamName) + '"></div>' +
-        '<div><label>Zi (1-31)</label><input type="text" id="team-day" placeholder="ex. 15" value="' + escapeHtml(state.teamDay) + '" style="min-width:80px;"></div>' +
-        '<button class="btn" style="background:var(--org);" id="team-btn">Arată ziua</button>' +
+        '<div><label>Zi (1-31, opțional)</label><input type="text" id="team-day" placeholder="ex. 15 (gol = toată luna)" value="' + escapeHtml(state.teamDay) + '" style="min-width:80px;"></div>' +
+        '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
       '</div>' +
-      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu) și caută în toate fișierele din ambele categorii.</div>' +
+      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna.</div>' +
     '</div>' +
-    '<div id="team-results"><div class="empty">Introdu numele și ziua, apoi apasă Arată ziua.</div></div>';
+    '<div id="team-results"><div class="empty">Introdu numele, apoi apasă Arată programul.</div></div>';
 
   document.getElementById('team-btn').onclick = async ()=>{
     state.teamName = document.getElementById('team-name').value.trim();
@@ -743,9 +743,11 @@ async function renderTeam(){
 async function runTeamSearch(){
   const holder = document.getElementById('team-results');
   const nameQ = normalize(state.teamName);
-  const day = parseInt(state.teamDay, 10);
-  if(!nameQ || isNaN(day) || day < 1 || day > 31){
-    holder.innerHTML = '<div class="empty">Completează numele și ziua (1-31).</div>';
+  const dayStr = state.teamDay.trim();
+  const hasDay = dayStr !== '';
+  const day = parseInt(dayStr, 10);
+  if(!nameQ || (hasDay && (isNaN(day) || day < 1 || day > 31))){
+    holder.innerHTML = '<div class="empty">Completează numele (ziua e opțională, 1-31).</div>';
     return;
   }
   holder.innerHTML = '<div class="empty">Se caută...</div>';
@@ -758,33 +760,59 @@ async function runTeamSearch(){
     return;
   }
 
-  holder.innerHTML = matches.map(m=>{
-    const codes = trainCodesForDay(m.block, day);
-    const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
-      '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
+  function crewFor(m, d, code){
+    const seen = new Set();
+    const crew = all.filter(o => o !== m && o.block.role !== m.block.role && (o.block.dayCodes[d]||[]).includes(code))
+      .map(o => ({ name:o.block.name, role:o.block.role }))
+      .filter(c=>{
+        const key = c.name + '|' + c.role;
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+    return crew.length
+      ? crew.map(c=>'<div class="crew-row"><span class="crew-name">' + escapeHtml(c.name) + '</span><span class="crew-role">' + escapeHtml(c.role) + '</span></div>').join('')
+      : '<div class="crew-row"><span class="crew-name">— niciun coleg găsit —</span></div>';
+  }
 
-    if(codes.length === 0){
-      return '<div class="person-card">' + header +
-        '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
-    }
+  if(hasDay){
+    holder.innerHTML = matches.map(m=>{
+      const codes = trainCodesForDay(m.block, day);
+      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
+        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
 
-    const groupsHtml = codes.map(code=>{
-      const seen = new Set();
-      const crew = all.filter(o => o !== m && o.block.role !== m.block.role && (o.block.dayCodes[day]||[]).includes(code))
-        .map(o => ({ name:o.block.name, role:o.block.role }))
-        .filter(c=>{
-          const key = c.name + '|' + c.role;
-          if(seen.has(key)) return false;
-          seen.add(key); return true;
-        });
-      const crewHtml = crew.length
-        ? crew.map(c=>'<div class="crew-row"><span class="crew-name">' + escapeHtml(c.name) + '</span><span class="crew-role">' + escapeHtml(c.role) + '</span></div>').join('')
-        : '<div class="crew-row"><span class="crew-name">— niciun coleg găsit cu acest cod în ziua ' + day + ' —</span></div>';
-      return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewHtml + '</div>';
+      if(codes.length === 0){
+        return '<div class="person-card">' + header +
+          '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
+      }
+
+      const groupsHtml = codes.map(code=>
+        '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, day, code) + '</div>'
+      ).join('');
+
+      return '<div class="person-card">' + header + groupsHtml + '</div>';
     }).join('');
+  } else {
+    holder.innerHTML = matches.map(m=>{
+      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
+        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
 
-    return '<div class="person-card">' + header + groupsHtml + '</div>';
-  }).join('');
+      let dayGroups = '';
+      for(let d=1; d<=31; d++){
+        const codes = trainCodesForDay(m.block, d);
+        if(codes.length === 0) continue;
+        const codesHtml = codes.map(code=>
+          '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, d, code) + '</div>'
+        ).join('');
+        dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
+      }
+
+      if(!dayGroups){
+        dayGroups = '<div class="hint" style="margin-top:10px;">Niciun cod de tren găsit în această lună.</div>';
+      }
+
+      return '<div class="person-card">' + header + dayGroups + '</div>';
+    }).join('');
+  }
 }
 
 async function render(){
