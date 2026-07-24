@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --bg:#07090f;--surf:#0d1117;--surf2:#141b27;--surf3:#1a2236;
+    --bord:#1e3356;--bord2:#2a4070;
+    --acc:#00c8e8;--acc2:rgba(0,200,232,0.14);
+    --grn:#00e5a0;--grn2:rgba(0,229,160,0.10);
+    --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
+    --red:#ff4d6d;--red2:rgba(255,77,109,0.09);
+    --org:#ff8c42;--org2:rgba(255,140,66,0.12);
+    --txt:#d8e8f5;--txtd:#5a7a9a;--txtm:#8aafcc;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:'Exo 2', sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+    position:relative;
+  }
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,232,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,232,0.018) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  h1,h2,h3,.display{font-family:'Rajdhani',sans-serif; letter-spacing:0.03em; text-transform:uppercase;}
+
+  .board{
+    border-bottom:1px solid var(--bord);
+    background:linear-gradient(135deg,#0a0a1a,#0d1530,#0a1a0a);
+    padding:22px 24px 18px;
+    position:sticky; top:0; z-index:20;
+    backdrop-filter:blur(6px);
+    overflow:hidden;
+  }
+  .board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .board-top{display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:1;}
+  .emx-logo{display:flex; align-items:center; gap:0; line-height:1;}
+  .emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(0,200,255,0.5)}
+  .emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
+  .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(0,255,100,0.5)}
+  .emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+  .board-sub{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin-top:4px;}
+
+  .tabs{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; justify-content:center; position:relative; z-index:1;}
+  .tab{
+    padding:10px 16px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:600;
+    font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--txtd);
+    background:var(--surf); border:1px solid var(--bord); border-radius:6px; user-select:none;
+    transition:background .15s, color .15s;
+  }
+  .tab:hover{color:var(--txt); background:var(--surf2);}
+  .tab.active{color:#07090f; background:var(--acc); border-color:var(--acc);}
+  .tab.cross{border:1px solid rgba(0,229,160,.4);}
+  .tab.cross.active{background:var(--grn); color:#07090f; border-color:var(--grn);}
+  .tab.team{border:1px solid rgba(255,140,66,.4);}
+  .tab.team.active{background:var(--org); color:#07090f; border-color:var(--org);}
+
+  main{max-width:1100px; margin:0 auto; padding:24px; position:relative; z-index:1;}
+
+  .card{
+    background:var(--surf); border:1px solid var(--bord); border-radius:10px; padding:18px 20px; margin-bottom:18px;
+  }
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;}
+  label{display:block; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:10px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;}
+  input[type=text], input[type=month]{
+    background:var(--surf2); border:1px solid var(--bord2); color:var(--txt); padding:9px 10px; border-radius:6px;
+    font-family:'Share Tech Mono',monospace; font-size:13px; min-width:160px;
+  }
+  input[type=text]:focus, input[type=month]:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc2);}
+  .btn{
+    background:var(--acc); color:#07090f; border:none; padding:10px 18px; border-radius:6px;
+    font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; font-size:12px;
+    cursor:pointer; transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(1.1);}
+  .btn.ghost{background:transparent; border:1px solid var(--bord2); color:var(--txtd);}
+  .btn.ghost:hover{color:var(--red); border-color:var(--red);}
+  .btn.solid-green{background:var(--grn); color:#07090f;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  input[type=file]{
+    font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--txtd);
+    max-width:260px;
+  }
+
+  .hint{color:var(--txtd); font-size:11px; margin-top:8px; line-height:1.5;}
+  .status{font-family:'Share Tech Mono',monospace; font-size:12px; margin-top:10px; color:var(--acc); min-height:16px;}
+
+  .doc-list{display:flex; flex-direction:column; gap:8px;}
+  .doc-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--surf); border:1px solid var(--bord); border-radius:8px; padding:12px 16px;
+    cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .doc-item:hover{border-color:var(--acc); background:var(--surf2);}
+  .doc-name{font-weight:600; font-size:13.5px; font-family:'Exo 2',sans-serif;}
+  .doc-meta{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; margin-top:3px;}
+  .doc-actions{display:flex; gap:8px; align-items:center;}
+  .empty{color:var(--txtd); font-size:13px; padding:20px 4px; text-align:center;}
+
+  .search-bar{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+  .search-note{font-size:11px; color:var(--txtd); margin-top:10px; line-height:1.5; border-left:3px solid var(--acc); padding-left:10px;}
+
+  .block{
+    background:var(--surf); border:1px solid var(--bord); border-radius:10px; margin-bottom:14px; overflow:hidden;
+  }
+  .block.match{border-color:var(--acc);}
+  .block-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 16px; background:var(--surf2); border-bottom:1px solid var(--bord);
+  }
+  .block-name{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.03em; font-size:14px; color:var(--acc);}
+  .block-role{font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--grn); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+  .block-idx{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
+  .block-body{padding:12px 16px;}
+  .day-hit{
+    display:inline-block; background:var(--surf2); border:1px solid var(--acc); color:var(--acc);
+    font-family:'Share Tech Mono',monospace; font-size:11px; padding:3px 8px; border-radius:5px; margin-bottom:8px;
+  }
+  .raw-text{
+    font-family:'Share Tech Mono',monospace; font-size:11.5px; line-height:1.7; white-space:pre-wrap; word-break:break-all; color:var(--txtm); max-height:220px; overflow:auto;
+  }
+  .raw-text mark{background:var(--acc); color:#07090f; padding:0 2px; border-radius:2px;}
+
+  .back-link{color:var(--txtd); font-family:'Rajdhani',sans-serif; font-weight:600; letter-spacing:.05em; text-transform:uppercase; font-size:12px; cursor:pointer; margin-bottom:14px; display:inline-block;}
+  .back-link:hover{color:var(--acc);}
+
+  .section-title{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin:26px 0 10px;}
+
+  .result-card{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--surf); border:1px solid var(--bord); border-left:3px solid var(--grn);
+    border-radius:8px; padding:12px 16px; margin-bottom:8px;
+  }
+  .result-name{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; color:var(--txt);}
+  .result-meta{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:3px;}
+  .result-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-size:13px; font-weight:700;}
+
+  .person-card{
+    background:var(--surf); border:1px solid rgba(255,140,66,.35); border-radius:10px; padding:16px 18px; margin-bottom:16px;
+  }
+  .person-card .p-name{font-family:'Rajdhani',sans-serif; font-weight:800; font-size:18px; color:var(--org);}
+  .person-card .p-role{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:2px; text-transform:uppercase; letter-spacing:.06em;}
+  .train-group{background:var(--surf2); border:1px solid var(--bord); border-radius:8px; padding:10px 14px; margin-top:12px;}
+  .train-group .t-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-weight:700; font-size:13px; margin-bottom:8px; display:block;}
+  .crew-row{display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; border-top:1px dashed var(--bord);}
+  .crew-row:first-of-type{border-top:none;}
+  .crew-name{color:var(--txt);}
+  .crew-role{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
+
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--bord2); border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="board">
+  <div class="board-top">
+    <div class="emx-logo">
+      <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
+      <span class="emx-dot">●</span>
+    </div>
+    <div class="board-sub">PROGRAM DE LUCRU</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>
+    <div class="tab" data-cat="mecanici">Mecanici</div>
+    <div class="tab cross" data-cat="cross">Cine e la trenul X?</div>
+    <div class="tab team" data-cat="team">Programul unei persoane</div>
+  </div>
+</div>
+
+<main id="app"></main>
+
+<script>
+const CATS = {
+  conductori: "Șefi Tren / Vânzători Bilete",
+  mecanici: "Mecanici"
+};
+let state = {
+  category: 'conductori',
+  view: 'list',
+  openDocId: null,
+  docsMeta: { conductori: [], mecanici: [] },
+  query: '',
+  dayQuery: '',
+  crossDay: '',
+  crossCode: '',
+  teamName: '',
+  teamDay: ''
+};
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ---- Local persistence via IndexedDB (works on any static site, incl. GitHub Pages) ----
+const DB_NAME = 'emx-arhiva-db';
+const STORE_NAME = 'kv';
+let _dbPromise = null;
+function openDb(){
+  if(_dbPromise) return _dbPromise;
+  _dbPromise = new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      req.result.createObjectStore(STORE_NAME);
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  return _dbPromise;
+}
+const storage = {
+  async get(key){
+    const db = await openDb();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = ()=> resolve(req.result !== undefined ? { key, value: req.result } : null);
+      req.onerror = ()=> reject(req.error);
+    });
+  },
+  async set(key, value){
+    const db = await openDb();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(value, key);
+      tx.oncomplete = ()=> resolve({ key, value });
+      tx.onerror = ()=> reject(tx.error);
+    });
+  },
+  async delete(key){
+    const db = await openDb();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(key);
+      tx.oncomplete = ()=> resolve({ key, deleted: true });
+      tx.onerror = ()=> reject(tx.error);
+    });
+  },
+  async list(prefix){
+    const db = await openDb();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).getAllKeys();
+      req.onsuccess = ()=>{
+        let keys = req.result;
+        if(prefix) keys = keys.filter(k => String(k).startsWith(prefix));
+        resolve({ keys });
+      };
+      req.onerror = ()=> reject(req.error);
+    });
+  }
+};
+
+
+function uid(){ return 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+async function loadMeta(cat){
+  try{
+    const r = await storage.get('docs-meta:' + cat);
+    state.docsMeta[cat] = r ? JSON.parse(r.value) : [];
+  }catch(e){
+    state.docsMeta[cat] = [];
+  }
+}
+async function saveMeta(cat){
+  await storage.set('docs-meta:' + cat, JSON.stringify(state.docsMeta[cat]));
+}
+async function loadAllMeta(){
+  await loadMeta('conductori');
+  await loadMeta('mecanici');
+}
+
+function setTabHandlers(){
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick = ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      if(t.dataset.cat === 'cross'){
+        state.view = 'cross';
+        render();
+        return;
+      }
+      if(t.dataset.cat === 'team'){
+        state.view = 'team';
+        render();
+        return;
+      }
+      state.category = t.dataset.cat;
+      state.view='list'; state.openDocId=null; state.query=''; state.dayQuery='';
+      render();
+    };
+  });
+}
+
+// ---- Positioned PDF extraction: keeps x per token so day-columns can be reconstructed ----
+async function extractPdfRows(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const allRows = [];
+  const ROW_TOLERANCE = 2;
+  for(let p=1;p<=pdf.numPages;p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items
+      .map(item => ({ x: item.transform[4], y: item.transform[5], str: item.str.trim() }))
+      .filter(i => i.str.length > 0);
+    items.sort((a,b) => b.y - a.y || a.x - b.x);
+    let clusters = [];
+    let current = null;
+    items.forEach(it=>{
+      if(current && Math.abs(it.y - current.refY) <= ROW_TOLERANCE){
+        current.items.push(it);
+      } else {
+        if(current) clusters.push(current);
+        current = { refY: it.y, items: [it] };
+      }
+    });
+    if(current) clusters.push(current);
+    clusters.forEach(c=>{
+      const sorted = c.items.slice().sort((a,b)=>a.x-b.x);
+      allRows.push({ y: c.refY, items: sorted.map(i=>({x:i.x, str:i.str})) });
+    });
+  }
+  return allRows;
+}
+
+function rowsToText(rows){
+  return rows.map(r => r.items.map(i=>i.str).join(' ')).join('\n');
+}
+
+// ---- Split positioned rows into per-employee blocks, with a day->codes map ----
+function splitBlocksStructured(rows){
+  const blocks = [];
+  let current = null;
+
+  function isHeaderRow(items){
+    const strs = items.map(i=>i.str);
+    return strs.includes('Data') && strs.filter(s=>/^\d{1,2}$/.test(s)).length >= 15;
+  }
+  function isTimeRow(items){
+    const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
+    return items.length > 0 && (timeLike / items.length) > 0.5;
+  }
+  function isCoStartRow(items){
+    return items.some(i=>i.str === 'inceput') && items.some(i=>i.str === 'luna');
+  }
+
+  rows.forEach(row=>{
+    if(isHeaderRow(row.items)){
+      if(current) blocks.push(current);
+      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str));
+      current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
+    } else if(current){
+      current.allRows.push(row);
+      if(!isTimeRow(row.items) && !isCoStartRow(row.items)){
+        current.codeRows.push(row);
+      }
+    }
+  });
+  if(current) blocks.push(current);
+
+  return blocks.map((b, idx)=>{
+    const colX = b.dayTokens.map(t=>t.x);
+    const n = colX.length;
+    let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
+
+    const dayCodes = {};
+    for(let d=1; d<=31; d++) dayCodes[d] = [];
+
+    const allText = rowsToText(b.allRows);
+    // Find the row whose last token is literally "Festive" (surname row),
+    // then take the first non-numeric token of the row right after it (firstname row).
+    // Using the raw tokens directly (not a regex with \b) avoids mangling
+    // Romanian diacritics like ă/â/î/ș/ț and works regardless of ALL-CAPS vs Title Case.
+    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU']);
+    function firstNameToken(tokens){
+      for(const t of tokens){
+        if(/^\d+([:./]\d+)?$/.test(t)) continue;
+        if(NON_NAME.has(t)) continue;
+        return t;
+      }
+      return '';
+    }
+    let surname = '', firstname = '';
+    for(let i=0;i<b.allRows.length;i++){
+      const tokens = b.allRows[i].items.map(it=>it.str);
+      if(tokens.includes('Festive')){
+        let sIdx = -1;
+        for(let k=0;k<tokens.length;k++){
+          const t = tokens[k];
+          if(/^\d+([:./]\d+)?$/.test(t) || NON_NAME.has(t)) continue;
+          sIdx = k; break;
+        }
+        surname = sIdx >= 0 ? tokens[sIdx] : '';
+
+        const candidateRows = [];
+        candidateRows.push(sIdx >= 0 ? tokens.slice(sIdx+1) : tokens);
+        if(b.allRows[i+1]) candidateRows.push(b.allRows[i+1].items.map(it=>it.str));
+        if(b.allRows[i+2]) candidateRows.push(b.allRows[i+2].items.map(it=>it.str));
+
+        for(const rowTokens of candidateRows){
+          const isRoleRow = rowTokens.includes('Sef') || rowTokens.includes('Mecanic') ||
+            (rowTokens.includes('V') && rowTokens.some(t => t.indexOf('bilete') === 0));
+          if(isRoleRow) break;
+          const f = firstNameToken(rowTokens);
+          if(f){ firstname = f; break; }
+        }
+        break;
+      }
+    }
+    const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
+
+    let role = 'Necunoscut';
+    if(/Sef\s*tren/i.test(allText)) role = 'Șef tren';
+    else if(/V\s*bilete\s*II/i.test(allText)) role = 'Vânzător bilete II';
+    else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
+    else if(/Mecanic/i.test(allText)) role = 'Mecanic';
+
+    const excludeTokens = new Set([surname, firstname, 'Festive'].filter(Boolean));
+
+    if(n > 1){
+      const maxGapAllowed = gap * 0.75;
+      b.codeRows.forEach(row=>{
+        row.items.forEach(item=>{
+          if(excludeTokens.has(item.str)) return;
+          const x = item.x;
+          let bestDay = -1, bestDist = Infinity;
+          for(let k=0;k<n;k++){
+            const dist = Math.abs(x - colX[k]);
+            if(dist < bestDist){ bestDist = dist; bestDay = k+1; }
+          }
+          if(bestDay === -1 || bestDist > maxGapAllowed) return;
+          dayCodes[bestDay].push(item.str);
+        });
+      });
+    }
+
+    return { id: idx, name, role, dayCodes, text: allText };
+  }).filter(b => b.text.trim().length > 0);
+}
+
+async function handleUpload(cat, file, month){
+  const statusEl = document.getElementById('upload-status');
+  if(!file){ statusEl.textContent = 'Alege un fișier PDF.'; return; }
+  statusEl.textContent = 'Se extrage textul din PDF...';
+  try{
+    const rows = await extractPdfRows(file);
+    const text = rowsToText(rows);
+    const id = uid();
+    await storage.set('doc-content:' + id, text);
+    await storage.set('doc-rows:' + id, JSON.stringify(rows));
+    const meta = { id, filename: file.name, month: month || '', uploadedAt: new Date().toISOString() };
+    state.docsMeta[cat].unshift(meta);
+    await saveMeta(cat);
+    statusEl.textContent = 'Salvat: ' + file.name;
+    render();
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = 'Eroare la citirea PDF-ului: ' + e.message;
+  }
+}
+
+async function deleteDoc(cat, id){
+  if(!confirm('Ștergi definitiv acest program?')) return;
+  state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
+  await saveMeta(cat);
+  await storage.delete('doc-content:' + id).catch(()=>{});
+  await storage.delete('doc-rows:' + id).catch(()=>{});
+  if(state.openDocId===id){ state.view='list'; state.openDocId=null; }
+  render();
+}
+
+function normalize(s){
+  return (s||'').toLowerCase()
+    .replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/ș/g,'s').replace(/ț/g,'t');
+}
+
+// A "train-like" code is any day-cell token that contains at least one digit
+// (this naturally excludes labels like CO, L, ITS, SSM, SU which never carry digits,
+// since hour/time rows are already filtered out upstream).
+function trainCodesForDay(block, day){
+  return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+function highlight(text, query){
+  if(!query) return escapeHtml(text);
+  const esc = escapeHtml(text);
+  const safeQ = query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return esc.replace(new RegExp('('+safeQ+')','gi'), '<mark>$1</mark>');
+}
+
+async function getBlocksForDoc(id){
+  let rows = [];
+  try{
+    const r = await storage.get('doc-rows:' + id);
+    rows = r ? JSON.parse(r.value) : [];
+  }catch(e){ rows = []; }
+  if(!rows.length) return [];
+  return splitBlocksStructured(rows);
+}
+
+async function renderDetail(cat, doc){
+  const container = document.getElementById('app');
+  container.innerHTML = '<span class="back-link" id="back-btn">&larr; înapoi la listă</span>' +
+    '<h2 style="margin:4px 0 2px;">' + escapeHtml(doc.filename) + '</h2>' +
+    '<div class="doc-meta" style="margin-bottom:16px;">' + CATS[cat] + (doc.month ? ' · ' + escapeHtml(doc.month) : '') + ' · încărcat ' + new Date(doc.uploadedAt).toLocaleDateString('ro-RO') + '</div>' +
+    '<div class="card">' +
+      '<div class="search-bar">' +
+        '<div><label>Cod (ex. 16565)</label><input type="text" id="q-code" placeholder="cod / nume" value="' + escapeHtml(state.query) + '"></div>' +
+        '<div><label>Zi (1-31, opțional)</label><input type="text" id="q-day" placeholder="ex. 15" value="' + escapeHtml(state.dayQuery) + '" style="min-width:80px;"></div>' +
+        '<button class="btn" id="search-btn">Caută</button>' +
+        '<button class="btn ghost" id="clear-btn">Șterge filtrul</button>' +
+      '</div>' +
+      '<div class="search-note">Dacă pui și ziua, verificăm exact codul din ziua respectivă (poziția e reconstruită din PDF); fără zi, căutăm codul oriunde în program.</div>' +
+    '</div>' +
+    '<div id="blocks-container"><div class="empty">Se procesează...</div></div>';
+
+  document.getElementById('back-btn').onclick = ()=>{ state.view='list'; state.openDocId=null; render(); };
+
+  const blocks = await getBlocksForDoc(doc.id);
+
+  document.getElementById('search-btn').onclick = ()=>{
+    state.query = document.getElementById('q-code').value.trim();
+    state.dayQuery = document.getElementById('q-day').value.trim();
+    renderBlocks(blocks);
+  };
+  document.getElementById('clear-btn').onclick = ()=>{
+    state.query=''; state.dayQuery='';
+    document.getElementById('q-code').value='';
+    document.getElementById('q-day').value='';
+    renderBlocks(blocks);
+  };
+  ['q-code','q-day'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown', e=>{
+      if(e.key==='Enter') document.getElementById('search-btn').click();
+    });
+  });
+
+  renderBlocks(blocks);
+}
+
+function renderBlocks(blocks){
+  const holder = document.getElementById('blocks-container');
+  const q = state.query.trim();
+  const day = parseInt(state.dayQuery.trim(), 10);
+  const hasDay = !isNaN(day) && day >= 1 && day <= 31;
+
+  let list = blocks;
+  let dayHitMap = {};
+
+  if(hasDay && q){
+    list = blocks.filter(b => (b.dayCodes[day]||[]).some(c => c.toLowerCase() === q.toLowerCase() || c.toLowerCase().includes(q.toLowerCase())));
+    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
+  } else if(q){
+    list = blocks.filter(b => b.text.toLowerCase().includes(q.toLowerCase()) || b.name.toLowerCase().includes(q.toLowerCase()));
+  } else if(hasDay){
+    list = blocks.filter(b => (b.dayCodes[day]||[]).length > 0);
+    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
+  }
+
+  if(list.length === 0){
+    holder.innerHTML = '<div class="empty">Niciun rezultat.</div>';
+    return;
+  }
+
+  holder.innerHTML = '<div class="section-title">' + list.length + ' rezultat(e)</div>' +
+    list.map((b, i) => {
+      const dayHit = dayHitMap[b.id] ? '<div class="day-hit">Ziua ' + day + ': ' + escapeHtml(dayHitMap[b.id]) + '</div>' : '';
+      return '<div class="block ' + (q||hasDay ? 'match':'') + '">' +
+        '<div class="block-head"><div><div class="block-name">' + escapeHtml(b.name) + '</div><div class="block-role">' + escapeHtml(b.role) + '</div></div><div class="block-idx">#' + (i+1) + '</div></div>' +
+        '<div class="block-body">' + dayHit + '<div class="raw-text">' + highlight(b.text, q) + '</div></div>' +
+      '</div>';
+    }).join('');
+}
+
+function renderList(){
+  const container = document.getElementById('app');
+  const cat = state.category;
+  const docs = state.docsMeta[cat] || [];
+
+  container.innerHTML =
+    '<h2 style="margin:0 0 4px;">' + CATS[cat] + '</h2>' +
+    '<div class="card">' +
+      '<div class="row">' +
+        '<div><label>Fișier PDF</label><input type="file" id="file-input" accept="application/pdf"></div>' +
+        '<div><label>Lună / an (etichetă)</label><input type="text" id="month-input" placeholder="ex. Iulie 2026"></div>' +
+        '<button class="btn" id="upload-btn">Încarcă</button>' +
+      '</div>' +
+      '<div class="hint">Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile.</div>' +
+      '<div class="status" id="upload-status"></div>' +
+    '</div>' +
+    '<div class="section-title">Programe salvate</div>' +
+    '<div class="doc-list" id="doc-list">' +
+      (docs.length === 0 ? '<div class="empty">Niciun program încărcat încă pentru această categorie.</div>' :
+        docs.map(d =>
+          '<div class="doc-item" data-id="' + d.id + '">' +
+            '<div><div class="doc-name">' + escapeHtml(d.filename) + '</div>' +
+            '<div class="doc-meta">' + (d.month ? escapeHtml(d.month) + ' · ' : '') + 'încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</div></div>' +
+            '<div class="doc-actions"><button class="btn ghost" data-del="' + d.id + '">Șterge</button></div>' +
+          '</div>'
+        ).join('')
+      ) +
+    '</div>';
+
+  document.getElementById('upload-btn').onclick = ()=>{
+    const file = document.getElementById('file-input').files[0];
+    const month = document.getElementById('month-input').value.trim();
+    handleUpload(cat, file, month);
+  };
+  document.querySelectorAll('.doc-item').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('[data-del]')) return;
+      state.view='detail';
+      state.openDocId = el.dataset.id;
+      state.query=''; state.dayQuery='';
+      render();
+    });
+  });
+  document.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      deleteDoc(cat, btn.dataset.del);
+    });
+  });
+}
+
+async function renderCross(){
+  const container = document.getElementById('app');
+  container.innerHTML =
+    '<h2 style="margin:0 0 4px;">Cine e la trenul X?</h2>' +
+    '<div class="doc-meta" style="margin-bottom:16px;">Caută o zi și un cod de tren — primești toți oamenii (mecanic, șef tren, vânzător bilete) găsiți în ziua respectivă cu codul respectiv, din toate fișierele salvate.</div>' +
+    '<div class="card">' +
+      '<div class="search-bar">' +
+        '<div><label>Zi (1-31)</label><input type="text" id="cross-day" placeholder="ex. 15" value="' + escapeHtml(state.crossDay) + '" style="min-width:80px;"></div>' +
+        '<div><label>Cod tren</label><input type="text" id="cross-code" placeholder="ex. 16565" value="' + escapeHtml(state.crossCode) + '"></div>' +
+        '<button class="btn solid-green" id="cross-btn">Caută trenul</button>' +
+      '</div>' +
+      '<div class="search-note">Se caută în toate fișierele din ambele categorii, folosind poziția reconstruită a coloanelor de zile din fiecare PDF.</div>' +
+    '</div>' +
+    '<div id="cross-results"><div class="empty">Introdu ziua și codul, apoi apasă Caută trenul.</div></div>';
+
+  document.getElementById('cross-btn').onclick = async ()=>{
+    state.crossDay = document.getElementById('cross-day').value.trim();
+    state.crossCode = document.getElementById('cross-code').value.trim();
+    await runCrossSearch();
+  };
+  ['cross-day','cross-code'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown', e=>{
+      if(e.key==='Enter') document.getElementById('cross-btn').click();
+    });
+  });
+}
+
+async function runCrossSearch(){
+  const holder = document.getElementById('cross-results');
+  const day = parseInt(state.crossDay, 10);
+  const code = state.crossCode.toLowerCase();
+  if(isNaN(day) || day < 1 || day > 31 || !code){
+    holder.innerHTML = '<div class="empty">Completează ziua (1-31) și codul.</div>';
+    return;
+  }
+  holder.innerHTML = '<div class="empty">Se caută în toate fișierele...</div>';
+
+  const results = [];
+  for(const cat of Object.keys(CATS)){
+    const docs = state.docsMeta[cat] || [];
+    for(const d of docs){
+      const blocks = await getBlocksForDoc(d.id);
+      blocks.forEach(b=>{
+        const codes = b.dayCodes[day] || [];
+        const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
+        if(hit){
+          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit });
+        }
+      });
+    }
+  }
+
+  if(results.length === 0){
+    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu codul „' + escapeHtml(state.crossCode) + '” în ziua ' + day + '.</div>';
+    return;
+  }
+
+  holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + '</div>' +
+    results.map(r =>
+      '<div class="result-card">' +
+        '<div><div class="result-name">' + escapeHtml(r.name) + '</div>' +
+        '<div class="result-meta">' + escapeHtml(r.role) + ' · ' + escapeHtml(r.category) + ' · ' + escapeHtml(r.file) + '</div></div>' +
+        '<div class="result-code">' + escapeHtml(r.code) + '</div>' +
+      '</div>'
+    ).join('');
+}
+
+async function getAllTaggedBlocks(){
+  const out = [];
+  for(const cat of Object.keys(CATS)){
+    const docs = state.docsMeta[cat] || [];
+    for(const d of docs){
+      const blocks = await getBlocksForDoc(d.id);
+      blocks.forEach(b => out.push({ block: b, cat, doc: d }));
+    }
+  }
+  return out;
+}
+
+async function renderTeam(){
+  const container = document.getElementById('app');
+  container.innerHTML =
+    '<h2 style="margin:0 0 4px;">Programul unei persoane</h2>' +
+    '<div class="doc-meta" style="margin-bottom:16px;">Pui numele (mecanic, șef tren sau vânzător bilete) — cu zi vezi doar acea zi, fără zi vezi tot programul pe lună.</div>' +
+    '<div class="card">' +
+      '<div class="search-bar">' +
+        '<div><label>Nume</label><input type="text" id="team-name" placeholder="ex. Nitu Ionut" value="' + escapeHtml(state.teamName) + '"></div>' +
+        '<div><label>Zi (1-31, opțional)</label><input type="text" id="team-day" placeholder="ex. 15 (gol = toată luna)" value="' + escapeHtml(state.teamDay) + '" style="min-width:80px;"></div>' +
+        '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
+      '</div>' +
+      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna.</div>' +
+    '</div>' +
+    '<div id="team-results"><div class="empty">Introdu numele, apoi apasă Arată programul.</div></div>';
+
+  document.getElementById('team-btn').onclick = async ()=>{
+    state.teamName = document.getElementById('team-name').value.trim();
+    state.teamDay = document.getElementById('team-day').value.trim();
+    await runTeamSearch();
+  };
+  ['team-name','team-day'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown', e=>{
+      if(e.key==='Enter') document.getElementById('team-btn').click();
+    });
+  });
+}
+
+async function runTeamSearch(){
+  const holder = document.getElementById('team-results');
+  const nameQ = normalize(state.teamName);
+  const dayStr = state.teamDay.trim();
+  const hasDay = dayStr !== '';
+  const day = parseInt(dayStr, 10);
+  if(!nameQ || (hasDay && (isNaN(day) || day < 1 || day > 31))){
+    holder.innerHTML = '<div class="empty">Completează numele (ziua e opțională, 1-31).</div>';
+    return;
+  }
+  holder.innerHTML = '<div class="empty">Se caută...</div>';
+
+  const all = await getAllTaggedBlocks();
+  const matches = all.filter(t => normalize(t.block.name).includes(nameQ));
+
+  if(matches.length === 0){
+    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu numele „' + escapeHtml(state.teamName) + '”.</div>';
+    return;
+  }
+
+  function crewFor(m, d, code){
+    const seen = new Set();
+    const crew = all.filter(o => o !== m && o.block.role !== m.block.role && (o.block.dayCodes[d]||[]).includes(code))
+      .map(o => ({ name:o.block.name, role:o.block.role }))
+      .filter(c=>{
+        const key = c.name + '|' + c.role;
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+    return crew.length
+      ? crew.map(c=>'<div class="crew-row"><span class="crew-name">' + escapeHtml(c.name) + '</span><span class="crew-role">' + escapeHtml(c.role) + '</span></div>').join('')
+      : '<div class="crew-row"><span class="crew-name">— niciun coleg găsit —</span></div>';
+  }
+
+  if(hasDay){
+    holder.innerHTML = matches.map(m=>{
+      const codes = trainCodesForDay(m.block, day);
+      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
+        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
+
+      if(codes.length === 0){
+        return '<div class="person-card">' + header +
+          '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
+      }
+
+      const groupsHtml = codes.map(code=>
+        '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, day, code) + '</div>'
+      ).join('');
+
+      return '<div class="person-card">' + header + groupsHtml + '</div>';
+    }).join('');
+  } else {
+    holder.innerHTML = matches.map(m=>{
+      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
+        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
+
+      let dayGroups = '';
+      for(let d=1; d<=31; d++){
+        const codes = trainCodesForDay(m.block, d);
+        if(codes.length === 0) continue;
+        const codesHtml = codes.map(code=>
+          '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, d, code) + '</div>'
+        ).join('');
+        dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
+      }
+
+      if(!dayGroups){
+        dayGroups = '<div class="hint" style="margin-top:10px;">Niciun cod de tren găsit în această lună.</div>';
+      }
+
+      return '<div class="person-card">' + header + dayGroups + '</div>';
+    }).join('');
+  }
+}
+
+async function render(){
+  if(state.view === 'team'){ await renderTeam(); return; }
+  if(state.view === 'cross'){ await renderCross(); return; }
+  if(state.view==='detail' && state.openDocId){
+    const doc = (state.docsMeta[state.category]||[]).find(d=>d.id===state.openDocId);
+    if(doc){ await renderDetail(state.category, doc); return; }
+    state.view='list';
+  }
+  renderList();
+}
+
+(async function init(){
+  setTabHandlers();
+  await loadAllMeta();
+  render();
+})();
+</script>
+</body>
+</html>
