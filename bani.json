@@ -49,17 +49,17 @@
       ]
     },
     {
-      "id": 105,
+      "id": 106,
       "name": "Bomba",
       "entries": [
         {
-          "id": 216,
-          "amount": 200,
-          "reason": "M"
+          "id": 217,
+          "amount": 100,
+          "reason": "G"
         }
       ]
     }
   ],
-  "nextPersonId": 106,
-  "nextEntryId": 217
+  "nextPersonId": 107,
+  "nextEntryId": 218
 }
