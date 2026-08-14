@@ -47,8 +47,19 @@
           "reason": "Masina"
         }
       ]
+    },
+    {
+      "id": 105,
+      "name": "Bomba",
+      "entries": [
+        {
+          "id": 216,
+          "amount": 200,
+          "reason": "M"
+        }
+      ]
     }
   ],
-  "nextPersonId": 105,
-  "nextEntryId": 216
+  "nextPersonId": 106,
+  "nextEntryId": 217
 }
