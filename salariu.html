@@ -53,6 +53,7 @@ label{font-family:'Rajdhani',sans-serif;font-size:.68rem;font-weight:600;color:v
 .badge{font-family:'Share Tech Mono',monospace;font-size:0.6rem;padding:1px 5px;border-radius:4px;letter-spacing:.2px}
 .by{background:var(--acc2);color:var(--acc);border:1px solid rgba(0,200,232,.3)}
 .bg{background:var(--grn2);color:var(--grn);border:1px solid rgba(0,229,160,.25)}
+.br{background:var(--red2);color:var(--red);border:1px solid rgba(255,77,109,.3)}
 .input-wrap{position:relative}
 .input-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.68rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);pointer-events:none}
 input[type="number"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.95rem;padding:8px 42px 8px 11px;width:100%;outline:none;-moz-appearance:textfield;transition:border-color .2s,box-shadow .2s}
@@ -63,6 +64,7 @@ input[readonly]:focus{border-color:rgba(0,229,160,.4);box-shadow:none}
 .info-box{font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);margin-top:8px;padding:8px 10px;background:var(--surf2);border-radius:6px;border:1px solid var(--bord);border-left:3px solid var(--acc);line-height:1.7}
 .info-box .y{color:var(--acc);font-weight:700}
 .info-box .g{color:var(--grn);font-weight:700}
+.info-box .r{color:var(--red);font-weight:700}
 
 .breakdown{display:flex;flex-direction:column}
 .brow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bord);font-family:'Share Tech Mono',monospace;font-size:.74rem;gap:8px}
@@ -139,9 +141,16 @@ input[readonly]:focus{border-color:rgba(0,229,160,.4);box-shadow:none}
     <div class="card-title"><span class="dot dot-green"></span> Ore lucrate</div>
     <div class="grid">
       <div class="field">
-        <label>Ore normale (realizate)</label>
+        <label>Ore normale <span class="badge bg">auto = normă − CO</span></label>
         <div class="input-wrap">
-          <input type="number" id="oreNormale" value="160" min="0" oninput="onChange()">
+          <input type="number" id="oreNormale" readonly>
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>CO (concediu odihnă) <span class="badge br">1 zi = 8h</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreCO" value="0" min="0" oninput="onChange()">
           <span class="input-unit">ore</span>
         </div>
       </div>
@@ -188,6 +197,7 @@ input[readonly]:focus{border-color:rgba(0,229,160,.4);box-shadow:none}
         </div>
       </div>
     </div>
+    <div class="info-box" id="coInfo">—</div>
   </div>
 
   <!-- BONURI -->
@@ -237,6 +247,8 @@ input[readonly]:focus{border-color:rgba(0,229,160,.4);box-shadow:none}
   <div class="card">
     <div class="card-title"><span class="dot dot-org"></span> Formula WinMENTOR (verificată)</div>
     <div class="formula-note">
+      <span class="g">Ore normale</span> = Normă ore/lună − Ore CO<br>
+      <span class="g">Nr. bonuri</span> = Ore normale ÷ 8 (rotunjit jos)<br>
       <span class="g">Brut</span> = Salar realizat + Sporuri (fără bonuri)<br>
       <span class="g">Baza CASS</span> = Brut + Bonuri → CASS 10%<br>
       <span class="g">Baza CAS</span> = Brut → CAS 25%<br>
@@ -273,13 +285,13 @@ input[readonly]:focus{border-color:rgba(0,229,160,.4);box-shadow:none}
 
 <script>
 const FIELDS = [
-  'salariuBaza','normaOre','oreNormale','oreSuplI',
+  'salariuBaza','normaOre','oreCO','oreSuplI',
   'oreFestive','oreNoapte','oreCapSectie','oreScoala','oreFormator',
   'valoareBon','avansRon','alteAvansuri'
 ];
 const STORAGE_KEY = 'emx_fluturas_v2';
 const DEFAULTS = {
-  salariuBaza:6710, normaOre:176, oreNormale:160, oreSuplI:20,
+  salariuBaza:6710, normaOre:176, oreCO:0, oreSuplI:20,
   oreFestive:44, oreNoapte:23, oreCapSectie:61, oreScoala:6,
   oreFormator:0, valoareBon:43,
   avansRon:2500, alteAvansuri:0
@@ -332,7 +344,7 @@ function v(id){return parseFloat(document.getElementById(id).value)||0;}
 function calculeaza() {
   const salBaza        = v('salariuBaza');
   const normaOre       = v('normaOre')||1;
-  const oreNormale     = v('oreNormale');
+  const oreCO          = v('oreCO');
   const oreSuplI       = v('oreSuplI');
   const oreFestive     = v('oreFestive');
   const oreNoapte      = v('oreNoapte');
@@ -343,7 +355,15 @@ function calculeaza() {
   const avansRon       = v('avansRon');
   const alteAvansuri   = v('alteAvansuri');
 
-  // Bonuri automat: 1 bon / 8 ore normale
+  // Ore normale = Normă ore/lună − Ore CO (automat)
+  const oreNormale = Math.max(0, normaOre - oreCO);
+  document.getElementById('oreNormale').value = oreNormale;
+
+  const zileCO = oreCO / 8;
+  document.getElementById('coInfo').innerHTML =
+    `CO: <span class="r">${fmt(oreCO)} ore</span> (${fmt(zileCO)} zile) → Ore normale: <span class="y">${normaOre} − ${fmt(oreCO)} = ${fmt(oreNormale)} ore</span>`;
+
+  // Bonuri automat: 1 bon / 8 ore normale (CO deja scăzut din ore normale => taie automat bonuri)
   const nrBonuri = Math.floor(oreNormale / 8);
   document.getElementById('nrBonuri').value = nrBonuri;
 
@@ -389,6 +409,9 @@ function calculeaza() {
   rows.filter(r=>r.show).forEach(r=>{
     html+=`<div class="brow"><span class="lbl">${r.lbl}</span><span class="val" style="color:${r.col}">${fmtInt(r.val)} RON</span></div>`;
   });
+  if(oreCO>0){
+    html+=`<div class="brow"><span class="lbl" style="color:var(--red)">CO — ${fmt(oreCO)} ore (${fmt(zileCO)} zile), scăzute din ore normale</span><span class="val" style="color:var(--red)">−</span></div>`;
+  }
   html+=`<div class="brow sep"><span class="lbl">Venit BRUT (fără bonuri)</span><span class="val" style="color:var(--acc);font-size:15px;">${fmtInt(totalBrut)} RON</span></div>`;
   if(totalBonuri>0){
     html+=`<div class="brow"><span class="lbl" style="color:var(--grn)">+ Bonuri masă — ${nrBonuri} × ${fmt(valoareBon)} RON</span><span class="val" style="color:var(--grn)">+ ${fmtInt(totalBonuri)} RON</span></div>`;
