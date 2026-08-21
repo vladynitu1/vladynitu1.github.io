@@ -197,7 +197,6 @@ input[readonly]:focus{border-color:rgba(0,229,160,.4);box-shadow:none}
         </div>
       </div>
     </div>
-    <div class="info-box" id="coInfo">—</div>
   </div>
 
   <!-- BONURI -->
@@ -240,23 +239,6 @@ input[readonly]:focus{border-color:rgba(0,229,160,.4);box-shadow:none}
           <span class="input-unit">RON</span>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- FORMULA -->
-  <div class="card">
-    <div class="card-title"><span class="dot dot-org"></span> Formula WinMENTOR (verificată)</div>
-    <div class="formula-note">
-      <span class="g">Ore normale</span> = Normă ore/lună − Ore CO<br>
-      <span class="g">CO</span> se plătește separat, la tarif normal (nu se pierde)<br>
-      <span class="g">Nr. bonuri</span> = Ore normale ÷ 8 (rotunjit jos)<br>
-      <span class="g">Brut</span> = Salar realizat + CO plătit + Sporuri (fără bonuri)<br>
-      <span class="g">Baza CASS</span> = Brut + Bonuri → CASS 10%<br>
-      <span class="g">Baza CAS</span> = Brut → CAS 25%<br>
-      <span class="g">Net</span> = Brut − CASS − CAS<br>
-      <span class="g">Baza impozit</span> = Net + Bonuri → Impozit 10%<br>
-      <span class="y">Salar net</span> = Net − Impozit<br>
-      <span class="y">Lichidare</span> = Salar net − Avans − Alte avansuri
     </div>
   </div>
 
@@ -361,9 +343,6 @@ function calculeaza() {
   document.getElementById('oreNormale').value = oreNormale;
 
   const zileCO = oreCO / 8;
-  const tPreview = Math.round(salBaza / normaOre * 100) / 100;
-  document.getElementById('coInfo').innerHTML =
-    `CO: <span class="r">${fmt(oreCO)} ore</span> (${fmt(zileCO)} zile) → Ore normale: <span class="y">${normaOre} − ${fmt(oreCO)} = ${fmt(oreNormale)} ore</span> · CO se plătește la tarif normal: <span class="g">${fmt(oreCO)} × ${fmt(tPreview)} = ${fmt(Math.round(tPreview*oreCO))} RON</span>`;
 
   // Bonuri automat: 1 bon / 8 ore normale (CO deja scăzut din ore normale => taie automat bonuri)
   const nrBonuri = Math.floor(oreNormale / 8);
