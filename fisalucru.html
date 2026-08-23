@@ -309,7 +309,7 @@ async function extractPdfRows(file){
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
     const items = content.items
-      .map(item => ({ x: item.transform[4], y: item.transform[5], str: item.str.trim() }))
+      .map(item => ({ x: item.transform[4], y: item.transform[5], w: item.width || 0, str: item.str.trim() }))
       .filter(i => i.str.length > 0);
     items.sort((a,b) => b.y - a.y || a.x - b.x);
     let clusters = [];
@@ -325,7 +325,7 @@ async function extractPdfRows(file){
     if(current) clusters.push(current);
     clusters.forEach(c=>{
       const sorted = c.items.slice().sort((a,b)=>a.x-b.x);
-      allRows.push({ y: c.refY, items: sorted.map(i=>({x:i.x, str:i.str})) });
+      allRows.push({ y: c.refY, items: sorted.map(i=>({x:i.x, w:i.w, str:i.str})) });
     });
   }
   return allRows;
@@ -355,7 +355,9 @@ function splitBlocksStructured(rows){
   rows.forEach(row=>{
     if(isHeaderRow(row.items)){
       if(current) blocks.push(current);
-      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str));
+      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str))
+        .map(i=>({ x: i.x, w: i.w, str: i.str, day: parseInt(i.str, 10) }))
+        .filter(i=>i.day >= 1 && i.day <= 31);
       current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
     } else if(current){
       current.allRows.push(row);
@@ -367,7 +369,8 @@ function splitBlocksStructured(rows){
   if(current) blocks.push(current);
 
   return blocks.map((b, idx)=>{
-    const colX = b.dayTokens.map(t=>t.x);
+    const colX = b.dayTokens.map(t=>t.x + (t.w||0)/2);
+    const colDay = b.dayTokens.map(t=>t.day);
     const n = colX.length;
     let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
 
@@ -380,10 +383,20 @@ function splitBlocksStructured(rows){
     // Using the raw tokens directly (not a regex with \b) avoids mangling
     // Romanian diacritics like ă/â/î/ș/ț and works regardless of ALL-CAPS vs Title Case.
     const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU']);
+    // pdf.js sometimes emits several adjacent label words as ONE text item with an embedded
+    // space (e.g. "Serv efect" as a single token instead of two). A plain NON_NAME.has(t) exact
+    // match misses that, so also treat a token as a label if EVERY space-separated word in it
+    // is a known label word.
+    function isLabelToken(t){
+      if(NON_NAME.has(t)) return true;
+      const words = t.split(/\s+/).filter(Boolean);
+      return words.length > 0 && words.every(w => NON_NAME.has(w));
+    }
     function firstNameToken(tokens){
       for(const t of tokens){
-        if(/^\d+([:./]\d+)?$/.test(t)) continue;
-        if(NON_NAME.has(t)) continue;
+        if(/\d/.test(t)) continue; // reject ANY token containing a digit (day codes, "6luni", "R16560", etc. - not just pure numbers)
+        if(isLabelToken(t)) continue;
+        if(t.length < 2) continue; // reject stray single letters like "R"
         return t;
       }
       return '';
@@ -395,7 +408,7 @@ function splitBlocksStructured(rows){
         let sIdx = -1;
         for(let k=0;k<tokens.length;k++){
           const t = tokens[k];
-          if(/^\d+([:./]\d+)?$/.test(t) || NON_NAME.has(t)) continue;
+          if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
           sIdx = k; break;
         }
         surname = sIdx >= 0 ? tokens[sIdx] : '';
@@ -430,11 +443,11 @@ function splitBlocksStructured(rows){
       b.codeRows.forEach(row=>{
         row.items.forEach(item=>{
           if(excludeTokens.has(item.str)) return;
-          const x = item.x;
+          const x = item.x + (item.w||0)/2;
           let bestDay = -1, bestDist = Infinity;
           for(let k=0;k<n;k++){
             const dist = Math.abs(x - colX[k]);
-            if(dist < bestDist){ bestDist = dist; bestDay = k+1; }
+            if(dist < bestDist){ bestDist = dist; bestDay = colDay[k]; }
           }
           if(bestDay === -1 || bestDist > maxGapAllowed) return;
           dayCodes[bestDay].push(item.str);
