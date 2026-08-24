@@ -197,6 +197,17 @@
 <div class="page-nav">
   <span class="page-nav-btn active">📋 Fișă de lucru</span>
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
+  <span class="page-nav-btn" id="gh-account-btn">🔑 Cont GitHub</span>
+</div>
+
+<div class="card" id="gh-panel" style="max-width:1100px; margin:14px auto 0; display:none;">
+  <div class="row">
+    <div style="flex:1;"><label>Token GitHub (acces scriere)</label><input type="text" id="gh-token-input" placeholder="ghp_..." style="min-width:260px; width:100%;"></div>
+    <button class="btn" id="gh-token-save">Salvează</button>
+    <button class="btn ghost" id="gh-token-clear">Șterge token</button>
+  </div>
+  <div class="status" id="gh-token-status"></div>
+  <div class="hint">Tokenul e stocat doar în acest browser (localStorage) și e trimis direct către api.github.com — nu trece prin niciun server intermediar. Folosește un token dedicat, cu scope minim (ex. doar acces la repo-ul <strong>vladynitu1.github.io</strong>), nu unul cu acces total la cont. Fără token poți doar căuta (tot ce e deja încărcat rămâne vizibil), nu poți încărca sau șterge fișiere.</div>
 </div>
 
 <main id="app"></main>
@@ -221,101 +232,157 @@ let state = {
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// ---- Local persistence via IndexedDB (works on any static site, incl. GitHub Pages) ----
-const DB_NAME = 'emx-arhiva-db';
-const STORE_NAME = 'kv';
-let _dbPromise = null;
-function openDb(){
-  if(_dbPromise) return _dbPromise;
-  _dbPromise = new Promise((resolve, reject)=>{
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = ()=>{
-      req.result.createObjectStore(STORE_NAME);
-    };
-    req.onsuccess = ()=> resolve(req.result);
-    req.onerror = ()=> reject(req.error);
-  });
-  return _dbPromise;
+// ---- Persistence on GitHub: reading is public (no token needed), writing needs a token ----
+const GH_OWNER = 'vladynitu1';
+const GH_REPO = 'vladynitu1.github.io';
+const GH_BRANCH = 'main';
+const DATA_DIR = 'data';
+const TOKEN_KEY = 'emx_gh_token';
+
+function getToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
+function setTokenLS(t){ try{ localStorage.setItem(TOKEN_KEY, t); }catch(e){} }
+function clearTokenLS(){ try{ localStorage.removeItem(TOKEN_KEY); }catch(e){} }
+function hasToken(){ return !!getToken(); }
+
+function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function encodePath(path){ return path.split('/').map(encodeURIComponent).join('/'); }
+
+async function verifyToken(token){
+  try{
+    const res = await fetch('https://api.github.com/user', {
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' }
+    });
+    if(!res.ok) return { ok:false };
+    const data = await res.json();
+    return { ok:true, login: data.login };
+  }catch(e){ return { ok:false }; }
 }
-const storage = {
-  async get(key){
-    const db = await openDb();
-    return new Promise((resolve, reject)=>{
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const req = tx.objectStore(STORE_NAME).get(key);
-      req.onsuccess = ()=> resolve(req.result !== undefined ? { key, value: req.result } : null);
-      req.onerror = ()=> reject(req.error);
-    });
-  },
-  async set(key, value){
-    const db = await openDb();
-    return new Promise((resolve, reject)=>{
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).put(value, key);
-      tx.oncomplete = ()=> resolve({ key, value });
-      tx.onerror = ()=> reject(tx.error);
-    });
-  },
-  async delete(key){
-    const db = await openDb();
-    return new Promise((resolve, reject)=>{
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).delete(key);
-      tx.oncomplete = ()=> resolve({ key, deleted: true });
-      tx.onerror = ()=> reject(tx.error);
-    });
-  },
-  async list(prefix){
-    const db = await openDb();
-    return new Promise((resolve, reject)=>{
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const req = tx.objectStore(STORE_NAME).getAllKeys();
-      req.onsuccess = ()=>{
-        let keys = req.result;
-        if(prefix) keys = keys.filter(k => String(k).startsWith(prefix));
-        resolve({ keys });
-      };
-      req.onerror = ()=> reject(req.error);
-    });
+
+// Public read: goes through the GitHub API first (reflects the latest commit immediately,
+// unlike the raw.githubusercontent.com CDN which can lag a few minutes behind a write).
+// Falls back to the CDN copy only if the API call fails (e.g. rate limit) so search stays usable.
+async function ghFetchRaw(path){
+  const token = getToken();
+  const apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH;
+  try{
+    const headers = { Accept: 'application/vnd.github.raw' };
+    if(token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(apiUrl, { cache: 'no-store', headers });
+    if(res.status === 404) return null;
+    if(res.ok){
+      const text = await res.text();
+      try{ return JSON.parse(text); }catch(e){ return null; }
+    }
+  }catch(e){ /* fall through to CDN fallback below */ }
+
+  try{
+    const cdnUrl = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + path + '?t=' + Date.now();
+    const res2 = await fetch(cdnUrl, { cache: 'no-store' });
+    if(res2.status === 404) return null;
+    if(!res2.ok) return null;
+    return await res2.json();
+  }catch(e2){
+    console.error('ghFetchRaw failed', path, e2);
+    return null;
   }
-};
+}
+
+async function ghGetSha(path, token){
+  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH, {
+    headers: token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : { Accept: 'application/vnd.github+json' }
+  });
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('Nu am putut verifica fișierul existent pe GitHub (' + res.status + ')');
+  const data = await res.json();
+  return data.sha;
+}
+
+// Write: requires a token with write access to the repo.
+async function ghPutFile(path, obj, message){
+  const token = getToken();
+  if(!token) throw new Error('Lipsește tokenul GitHub — introdu-l din butonul „Cont GitHub”.');
+  const sha = await ghGetSha(path, token).catch(()=>null);
+  const body = { message, content: b64EncodeUnicode(JSON.stringify(obj, null, 2)), branch: GH_BRANCH };
+  if(sha) body.sha = sha;
+  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const errText = await res.text().catch(()=>'');
+    throw new Error('Eroare la salvarea pe GitHub (' + res.status + '): ' + errText);
+  }
+  return await res.json();
+}
+
+async function ghDeleteFile(path, message){
+  const token = getToken();
+  if(!token) throw new Error('Lipsește tokenul GitHub — introdu-l din butonul „Cont GitHub”.');
+  const sha = await ghGetSha(path, token);
+  if(!sha) return null;
+  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, sha, branch: GH_BRANCH })
+  });
+  if(!res.ok){
+    const errText = await res.text().catch(()=>'');
+    throw new Error('Eroare la ștergerea de pe GitHub (' + res.status + '): ' + errText);
+  }
+  return await res.json();
+}
 
 
 function uid(){ return 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
 
 async function loadMeta(cat){
-  try{
-    const r = await storage.get('docs-meta:' + cat);
-    state.docsMeta[cat] = r ? JSON.parse(r.value) : [];
-  }catch(e){
-    state.docsMeta[cat] = [];
-  }
+  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/index.json');
+  state.docsMeta[cat] = Array.isArray(data) ? data : [];
 }
 async function saveMeta(cat){
-  await storage.set('docs-meta:' + cat, JSON.stringify(state.docsMeta[cat]));
+  await ghPutFile(DATA_DIR + '/' + cat + '/index.json', state.docsMeta[cat], 'update index ' + cat);
 }
 async function loadAllMeta(){
   await loadMeta('conductori');
   await loadMeta('mecanici');
 }
 
+function renderTabs(){
+  const tabsEl = document.getElementById('tabs');
+  const authed = hasToken();
+  let html = '';
+  if(authed){
+    html += '<div class="tab' + (state.category==='conductori' && state.view==='list' || (state.view==='detail'&&state.category==='conductori') ? ' active':'') + '" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>';
+    html += '<div class="tab' + (state.category==='mecanici' && (state.view==='list'||state.view==='detail') ? ' active':'') + '" data-cat="mecanici">Mecanici</div>';
+  }
+  html += '<div class="tab cross' + (state.view==='cross' ? ' active':'') + '" data-cat="cross">Cine e la trenul X?</div>';
+  html += '<div class="tab team' + (state.view==='team' ? ' active':'') + '" data-cat="team">Programul unei persoane</div>';
+  tabsEl.innerHTML = html;
+  setTabHandlers();
+}
+
 function setTabHandlers(){
   document.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
       if(t.dataset.cat === 'cross'){
         state.view = 'cross';
+        renderTabs();
         render();
         return;
       }
       if(t.dataset.cat === 'team'){
         state.view = 'team';
+        renderTabs();
         render();
         return;
       }
+      if((t.dataset.cat === 'conductori' || t.dataset.cat === 'mecanici') && !hasToken()){
+        return; // guarded: shouldn't be reachable without a token, but double-check
+      }
       state.category = t.dataset.cat;
       state.view='list'; state.openDocId=null; state.query=''; state.dayQuery='';
+      renderTabs();
       render();
     };
   });
@@ -475,33 +542,43 @@ function splitBlocksStructured(rows){
 
 async function handleUpload(cat, file, month){
   const statusEl = document.getElementById('upload-status');
+  if(!hasToken()){ statusEl.textContent = 'Ai nevoie de un token GitHub pentru a încărca fișiere.'; return; }
   if(!file){ statusEl.textContent = 'Alege un fișier PDF.'; return; }
   statusEl.textContent = 'Se extrage textul din PDF...';
   try{
     const rows = await extractPdfRows(file);
-    const text = rowsToText(rows);
     const id = uid();
-    await storage.set('doc-content:' + id, text);
-    await storage.set('doc-rows:' + id, JSON.stringify(rows));
+    statusEl.textContent = 'Se urcă pe GitHub...';
+    await ghPutFile(DATA_DIR + '/' + cat + '/' + id + '.json', { rows }, 'add doc ' + file.name);
     const meta = { id, filename: file.name, month: month || '', uploadedAt: new Date().toISOString() };
     state.docsMeta[cat].unshift(meta);
     await saveMeta(cat);
-    statusEl.textContent = 'Salvat: ' + file.name;
+    statusEl.textContent = 'Salvat pe GitHub: ' + file.name;
     render();
   }catch(e){
     console.error(e);
-    statusEl.textContent = 'Eroare la citirea PDF-ului: ' + e.message;
+    statusEl.textContent = 'Eroare: ' + e.message;
   }
 }
 
 async function deleteDoc(cat, id){
+  if(!hasToken()){ alert('Ai nevoie de un token GitHub pentru a șterge fișiere.'); return; }
   if(!confirm('Ștergi definitiv acest program?')) return;
-  state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
-  await saveMeta(cat);
-  await storage.delete('doc-content:' + id).catch(()=>{});
-  await storage.delete('doc-rows:' + id).catch(()=>{});
-  if(state.openDocId===id){ state.view='list'; state.openDocId=null; }
-  render();
+  const statusEl = document.getElementById('upload-status');
+  if(statusEl) statusEl.textContent = 'Se șterge de pe GitHub...';
+  try{
+    await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.json', 'delete doc ' + id);
+    state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
+    await saveMeta(cat);
+    delete _blocksCache[cat + ':' + id];
+    if(state.openDocId===id){ state.view='list'; state.openDocId=null; }
+    if(statusEl) statusEl.textContent = 'Șters.';
+    render();
+  }catch(e){
+    console.error(e);
+    alert('Eroare la ștergere: ' + e.message);
+    if(statusEl) statusEl.textContent = 'Eroare la ștergere.';
+  }
 }
 
 function normalize(s){
@@ -523,14 +600,16 @@ function highlight(text, query){
   return esc.replace(new RegExp('('+safeQ+')','gi'), '<mark>$1</mark>');
 }
 
-async function getBlocksForDoc(id){
-  let rows = [];
-  try{
-    const r = await storage.get('doc-rows:' + id);
-    rows = r ? JSON.parse(r.value) : [];
-  }catch(e){ rows = []; }
+const _blocksCache = {};
+async function getBlocksForDoc(cat, id){
+  const cacheKey = cat + ':' + id;
+  if(_blocksCache[cacheKey]) return _blocksCache[cacheKey];
+  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/' + id + '.json');
+  const rows = data && Array.isArray(data.rows) ? data.rows : [];
   if(!rows.length) return [];
-  return splitBlocksStructured(rows);
+  const blocks = splitBlocksStructured(rows);
+  _blocksCache[cacheKey] = blocks;
+  return blocks;
 }
 
 async function renderDetail(cat, doc){
@@ -551,7 +630,7 @@ async function renderDetail(cat, doc){
 
   document.getElementById('back-btn').onclick = ()=>{ state.view='list'; state.openDocId=null; render(); };
 
-  const blocks = await getBlocksForDoc(doc.id);
+  const blocks = await getBlocksForDoc(cat, doc.id);
 
   document.getElementById('search-btn').onclick = ()=>{
     state.query = document.getElementById('q-code').value.trim();
@@ -620,7 +699,7 @@ function renderList(){
         '<div><label>Lună / an (etichetă)</label><input type="text" id="month-input" placeholder="ex. Iulie 2026"></div>' +
         '<button class="btn" id="upload-btn">Încarcă</button>' +
       '</div>' +
-      '<div class="hint">Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile.</div>' +
+      '<div class="hint">Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile, apoi se urcă pe GitHub (repo public) — nu se mai salvează local.</div>' +
       '<div class="status" id="upload-status"></div>' +
     '</div>' +
     '<div class="section-title">Programe salvate</div>' +
@@ -699,7 +778,7 @@ async function runCrossSearch(){
   for(const cat of Object.keys(CATS)){
     const docs = state.docsMeta[cat] || [];
     for(const d of docs){
-      const blocks = await getBlocksForDoc(d.id);
+      const blocks = await getBlocksForDoc(cat, d.id);
       blocks.forEach(b=>{
         const codes = b.dayCodes[day] || [];
         const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
@@ -730,7 +809,7 @@ async function getAllTaggedBlocks(){
   for(const cat of Object.keys(CATS)){
     const docs = state.docsMeta[cat] || [];
     for(const d of docs){
-      const blocks = await getBlocksForDoc(d.id);
+      const blocks = await getBlocksForDoc(cat, d.id);
       blocks.forEach(b => out.push({ block: b, cat, doc: d }));
     }
   }
@@ -840,6 +919,10 @@ async function runTeamSearch(){
 }
 
 async function render(){
+  if((state.view==='list' || state.view==='detail') && !hasToken() && (state.category==='conductori' || state.category==='mecanici')){
+    state.view = 'cross'; state.openDocId = null;
+    renderTabs();
+  }
   if(state.view === 'team'){ await renderTeam(); return; }
   if(state.view === 'cross'){ await renderCross(); return; }
   if(state.view==='detail' && state.openDocId){
@@ -850,8 +933,55 @@ async function render(){
   renderList();
 }
 
+function updateGhAccountBtn(){
+  const btn = document.getElementById('gh-account-btn');
+  btn.textContent = hasToken() ? '🔑 Autentificat' : '🔑 Cont GitHub';
+}
+
+function toggleGhPanel(forceOpen){
+  const panel = document.getElementById('gh-panel');
+  const open = forceOpen !== undefined ? forceOpen : panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+}
+
+function setupGhPanel(){
+  const statusEl = document.getElementById('gh-token-status');
+  const input = document.getElementById('gh-token-input');
+  input.value = getToken();
+  updateGhAccountBtn();
+
+  document.getElementById('gh-account-btn').onclick = ()=> toggleGhPanel();
+
+  document.getElementById('gh-token-save').onclick = async ()=>{
+    const t = input.value.trim();
+    if(!t){ statusEl.textContent = 'Introdu un token.'; return; }
+    statusEl.textContent = 'Se verifică tokenul...';
+    const r = await verifyToken(t);
+    if(!r.ok){
+      statusEl.textContent = 'Token invalid sau fără acces. Verifică-l și încearcă din nou.';
+      return;
+    }
+    setTokenLS(t);
+    statusEl.textContent = 'Autentificat ca ' + r.login + '. Ai acces la Mecanici și Șefi Tren / Vânzători Bilete.';
+    updateGhAccountBtn();
+    renderTabs();
+    render();
+  };
+
+  document.getElementById('gh-token-clear').onclick = ()=>{
+    clearTokenLS();
+    input.value = '';
+    statusEl.textContent = 'Token șters. Ai acces doar la căutare.';
+    updateGhAccountBtn();
+    renderTabs();
+    render();
+  };
+}
+
 (async function init(){
-  setTabHandlers();
+  if(!hasToken()){ state.view = 'cross'; }
+  setupGhPanel();
+  renderTabs();
   await loadAllMeta();
   render();
 })();
