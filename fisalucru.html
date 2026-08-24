@@ -9,14 +9,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
-    --bg:#07090f;--surf:#0d1117;--surf2:#141b27;--surf3:#1a2236;
-    --bord:#1e3356;--bord2:#2a4070;
-    --acc:#00c8e8;--acc2:rgba(0,200,232,0.14);
-    --grn:#00e5a0;--grn2:rgba(0,229,160,0.10);
+    --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
+    --bord:#3d1414;--bord2:#5c1c1c;
+    --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
+    --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
     --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
-    --red:#ff4d6d;--red2:rgba(255,77,109,0.09);
+    --red:#ff2d55;--red2:rgba(255,45,85,0.09);
     --org:#ff8c42;--org2:rgba(255,140,66,0.12);
-    --txt:#d8e8f5;--txtd:#5a7a9a;--txtm:#8aafcc;
+    --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -28,23 +28,26 @@
     padding-bottom:60px;
     position:relative;
   }
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,232,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,232,0.018) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
   h1,h2,h3,.display{font-family:'Rajdhani',sans-serif; letter-spacing:0.03em; text-transform:uppercase;}
 
   .board{
     border-bottom:1px solid var(--bord);
-    background:linear-gradient(135deg,#0a0a1a,#0d1530,#0a1a0a);
+    background:linear-gradient(135deg,#0a0303,#150606,#0a0303);
     padding:22px 24px 18px;
     position:sticky; top:0; z-index:20;
     backdrop-filter:blur(6px);
     overflow:hidden;
+    box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05);
   }
   .board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .board::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
+  @keyframes hdrShine{0%{left:-100%}100%{left:200%}}
   .board-top{display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:1;}
   .emx-logo{display:flex; align-items:center; gap:0; line-height:1;}
-  .emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(0,200,255,0.5)}
+  .emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(255,31,61,0.5)}
   .emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
-  .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(0,255,100,0.5)}
+  .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
   .emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
   .board-sub{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin-top:4px;}
@@ -57,11 +60,11 @@
     transition:background .15s, color .15s;
   }
   .tab:hover{color:var(--txt); background:var(--surf2);}
-  .tab.active{color:#07090f; background:var(--acc); border-color:var(--acc);}
-  .tab.cross{border:1px solid rgba(0,229,160,.4);}
-  .tab.cross.active{background:var(--grn); color:#07090f; border-color:var(--grn);}
+  .tab.active{color:#050505; background:var(--acc); border-color:var(--acc);}
+  .tab.cross{border:1px solid rgba(255,107,61,.4);}
+  .tab.cross.active{background:var(--grn); color:#050505; border-color:var(--grn);}
   .tab.team{border:1px solid rgba(255,140,66,.4);}
-  .tab.team.active{background:var(--org); color:#07090f; border-color:var(--org);}
+  .tab.team.active{background:var(--org); color:#050505; border-color:var(--org);}
 
   main{max-width:1100px; margin:0 auto; padding:24px; position:relative; z-index:1;}
 
@@ -76,14 +79,14 @@
   }
   input[type=text]:focus, input[type=month]:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc2);}
   .btn{
-    background:var(--acc); color:#07090f; border:none; padding:10px 18px; border-radius:6px;
+    background:var(--acc); color:#050505; border:none; padding:10px 18px; border-radius:6px;
     font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; font-size:12px;
     cursor:pointer; transition:filter .15s;
   }
   .btn:hover{filter:brightness(1.1);}
   .btn.ghost{background:transparent; border:1px solid var(--bord2); color:var(--txtd);}
   .btn.ghost:hover{color:var(--red); border-color:var(--red);}
-  .btn.solid-green{background:var(--grn); color:#07090f;}
+  .btn.solid-green{background:var(--grn); color:#050505;}
   .btn:disabled{opacity:.4; cursor:not-allowed;}
   input[type=file]{
     font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--txtd);
@@ -127,7 +130,7 @@
   .raw-text{
     font-family:'Share Tech Mono',monospace; font-size:11.5px; line-height:1.7; white-space:pre-wrap; word-break:break-all; color:var(--txtm); max-height:220px; overflow:auto;
   }
-  .raw-text mark{background:var(--acc); color:#07090f; padding:0 2px; border-radius:2px;}
+  .raw-text mark{background:var(--acc); color:#050505; padding:0 2px; border-radius:2px;}
 
   .back-link{color:var(--txtd); font-family:'Rajdhani',sans-serif; font-weight:600; letter-spacing:.05em; text-transform:uppercase; font-size:12px; cursor:pointer; margin-bottom:14px; display:inline-block;}
   .back-link:hover{color:var(--acc);}
