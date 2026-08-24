@@ -160,6 +160,20 @@
 
   ::-webkit-scrollbar{width:8px; height:8px;}
   ::-webkit-scrollbar-thumb{background:var(--bord2); border-radius:4px;}
+
+  .page-nav{
+    max-width:1100px; margin:16px auto 0; padding:12px 16px;
+    background:var(--surf); border:1px solid var(--bord); border-radius:10px;
+    display:flex; gap:10px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1;
+  }
+  .page-nav-btn{
+    display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
+    text-decoration:none; transition:background .15s,color .15s,border-color .15s;
+  }
+  .page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
+  .page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
 </style>
 </head>
 <body>
@@ -178,6 +192,11 @@
     <div class="tab cross" data-cat="cross">Cine e la trenul X?</div>
     <div class="tab team" data-cat="team">Programul unei persoane</div>
   </div>
+</div>
+
+<div class="page-nav">
+  <span class="page-nav-btn active">📋 Fișă de lucru</span>
+  <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
 </div>
 
 <main id="app"></main>
@@ -381,15 +400,7 @@ function splitBlocksStructured(rows){
     for(let d=1; d<=31; d++) dayCodes[d] = [];
 
     const allText = rowsToText(b.allRows);
-    // Find the row whose last token is literally "Festive" (surname row),
-    // then take the first non-numeric token of the row right after it (firstname row).
-    // Using the raw tokens directly (not a regex with \b) avoids mangling
-    // Romanian diacritics like ă/â/î/ș/ț and works regardless of ALL-CAPS vs Title Case.
     const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU']);
-    // pdf.js sometimes emits several adjacent label words as ONE text item with an embedded
-    // space (e.g. "Serv efect" as a single token instead of two). A plain NON_NAME.has(t) exact
-    // match misses that, so also treat a token as a label if EVERY space-separated word in it
-    // is a known label word.
     function isLabelToken(t){
       if(NON_NAME.has(t)) return true;
       const words = t.split(/\s+/).filter(Boolean);
@@ -397,9 +408,9 @@ function splitBlocksStructured(rows){
     }
     function firstNameToken(tokens){
       for(const t of tokens){
-        if(/\d/.test(t)) continue; // reject ANY token containing a digit (day codes, "6luni", "R16560", etc. - not just pure numbers)
+        if(/\d/.test(t)) continue;
         if(isLabelToken(t)) continue;
-        if(t.length < 2) continue; // reject stray single letters like "R"
+        if(t.length < 2) continue;
         return t;
       }
       return '';
@@ -498,9 +509,6 @@ function normalize(s){
     .replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/ș/g,'s').replace(/ț/g,'t');
 }
 
-// A "train-like" code is any day-cell token that contains at least one digit
-// (this naturally excludes labels like CO, L, ITS, SSM, SU which never carry digits,
-// since hour/time rows are already filtered out upstream).
 function trainCodesForDay(block, day){
   return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
 }
