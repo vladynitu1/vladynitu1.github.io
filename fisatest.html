@@ -258,16 +258,31 @@ async function verifyToken(token){
   }catch(e){ return { ok:false }; }
 }
 
-// Public read: raw file straight from GitHub, no auth needed (works even without a token).
+// Public read: goes through the GitHub API first (reflects the latest commit immediately,
+// unlike the raw.githubusercontent.com CDN which can lag a few minutes behind a write).
+// Falls back to the CDN copy only if the API call fails (e.g. rate limit) so search stays usable.
 async function ghFetchRaw(path){
-  const url = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + path + '?t=' + Date.now();
+  const token = getToken();
+  const apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH;
   try{
-    const res = await fetch(url, { cache: 'no-store' });
+    const headers = { Accept: 'application/vnd.github.raw' };
+    if(token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(apiUrl, { cache: 'no-store', headers });
     if(res.status === 404) return null;
-    if(!res.ok) return null;
-    return await res.json();
-  }catch(e){
-    console.error('ghFetchRaw', path, e);
+    if(res.ok){
+      const text = await res.text();
+      try{ return JSON.parse(text); }catch(e){ return null; }
+    }
+  }catch(e){ /* fall through to CDN fallback below */ }
+
+  try{
+    const cdnUrl = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + path + '?t=' + Date.now();
+    const res2 = await fetch(cdnUrl, { cache: 'no-store' });
+    if(res2.status === 404) return null;
+    if(!res2.ok) return null;
+    return await res2.json();
+  }catch(e2){
+    console.error('ghFetchRaw failed', path, e2);
     return null;
   }
 }
@@ -549,15 +564,20 @@ async function handleUpload(cat, file, month){
 async function deleteDoc(cat, id){
   if(!hasToken()){ alert('Ai nevoie de un token GitHub pentru a șterge fișiere.'); return; }
   if(!confirm('Ștergi definitiv acest program?')) return;
+  const statusEl = document.getElementById('upload-status');
+  if(statusEl) statusEl.textContent = 'Se șterge de pe GitHub...';
   try{
+    await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.json', 'delete doc ' + id);
     state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
     await saveMeta(cat);
-    await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.json', 'delete doc ' + id);
+    delete _blocksCache[cat + ':' + id];
     if(state.openDocId===id){ state.view='list'; state.openDocId=null; }
+    if(statusEl) statusEl.textContent = 'Șters.';
     render();
   }catch(e){
     console.error(e);
     alert('Eroare la ștergere: ' + e.message);
+    if(statusEl) statusEl.textContent = 'Eroare la ștergere.';
   }
 }
 
