@@ -4,41 +4,76 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>EMX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
 :root{
-  --bg:#07090f;--surf:#0d1117;--surf2:#141b27;--surf3:#1a2236;
-  --bord:#1e3356;--bord2:#2a4070;
-  --acc:#00c8e8;--acc2:rgba(0,200,232,0.14);
-  --grn:#00e5a0;--grn2:rgba(0,229,160,0.10);
+  --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
+  --bord:#3d1414;--bord2:#5c1c1c;
+  --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
+  --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
   --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
-  --red:#ff4d6d;--red2:rgba(255,77,109,0.09);
+  --red:#ff2d55;--red2:rgba(255,45,85,0.09);
   --org:#ff8c42;--org2:rgba(255,140,66,0.12);
-  --txt:#d8e8f5;--txtd:#5a7a9a;--txtm:#8aafcc;
+  --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,232,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,232,0.018) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
-.app{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:14px 14px 60px}
+html,body{background:var(--bg);}
+body{color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh;position:relative;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
-.hdr{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 24px;background:linear-gradient(135deg,#0a0a1a,#0d1530,#0a1a0a);border:1px solid transparent;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,200,255,0.08),0 0 80px rgba(0,255,100,0.04)}
-.hdr::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-.hdr::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(0,200,255,0.03),transparent);animation:hdrShine 4s infinite;pointer-events:none}
+/* ===== BOARD (same banner as the rest of the EMX suite) ===== */
+.board{
+  border-bottom:1px solid var(--bord);
+  background:linear-gradient(135deg,#0a0303,#150606,#0a0303);
+  padding:22px 24px 18px;
+  position:sticky; top:0; z-index:20;
+  backdrop-filter:blur(6px);
+  overflow:hidden;
+  box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05);
+}
+.board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.board::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
 @keyframes hdrShine{0%{left:-100%}100%{left:200%}}
+.board-top{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1}
 .emx-logo{display:flex;align-items:center;gap:0;line-height:1}
-.emx-e{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--acc);letter-spacing:-2px;text-shadow:0 0 30px var(--acc),0 0 60px rgba(0,200,255,0.5)}
-.emx-m{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:#fff;letter-spacing:-2px;text-shadow:0 0 20px rgba(255,255,255,0.4)}
-.emx-x{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--grn);letter-spacing:-2px;text-shadow:0 0 30px var(--grn),0 0 60px rgba(0,255,100,0.5)}
-.emx-dot{font-size:.7rem;color:var(--acc);margin-left:8px;animation:blink 1.5s infinite;align-self:center}
+.emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(255,31,61,0.5)}
+.emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
+.emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
+.emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-.emx-tag{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--txtd);letter-spacing:3px;text-transform:uppercase;margin-top:6px}
-.gh-status{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:1px;margin-top:8px;min-height:14px}
+.board-sub{color:var(--txtd);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-top:4px}
 
-.hdr-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px;position:relative;z-index:1}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;transition:filter .15s,background .15s}
+.gh-bar{
+  margin-top:16px;padding:10px 14px;background:var(--surf);border:1px solid var(--bord);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+  font-family:'Share Tech Mono',monospace;font-size:11.5px;position:relative;z-index:1;
+  max-width:640px;margin-left:auto;margin-right:auto;
+}
+#ghStatus{color:var(--txtd);min-height:14px}
+
+/* ===== PAGE NAV (same as the rest of the suite) ===== */
+.page-nav{
+  max-width:1100px;margin:16px auto 0;padding:12px 16px;
+  background:var(--surf);border:1px solid var(--bord);border-radius:10px;
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;
+}
+.page-nav-btn{
+  display:inline-flex;align-items:center;gap:7px;padding:9px 18px;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--txtd);background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;
+  text-decoration:none;transition:background .15s,color .15s,border-color .15s;cursor:pointer;
+}
+.page-nav-btn:hover{color:var(--txt);border-color:var(--acc)}
+.page-nav-btn.active{background:var(--acc);color:#050505;border-color:var(--acc);cursor:default}
+
+.app{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:20px 14px 60px}
+
+.hdr-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;position:relative;z-index:1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;transition:filter .15s,background .15s}
 .btn:hover{filter:brightness(1.12)}
-.btn-p{background:var(--acc);color:#07090f}
-.btn-g{background:var(--grn);color:#07090f}
+.btn-p{background:var(--acc);color:#050505}
+.btn-g{background:var(--grn);color:#050505}
 .btn-s{background:var(--surf3);color:var(--txt);border:1px solid var(--bord2)}
 .btn-s:hover{border-color:var(--acc);color:var(--acc);filter:none}
 .btn-r{background:var(--red2);color:var(--red);border:1px solid var(--red)}
@@ -74,7 +109,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .item-del:hover{background:var(--red);color:#fff}
 
 /* MODAL */
-.overlay{display:none;position:fixed;inset:0;background:rgba(7,9,15,0.92);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px;backdrop-filter:blur(5px)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(5,5,5,0.92);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px;backdrop-filter:blur(5px)}
 .overlay.open{display:flex}
 .modal{background:var(--surf2);border:1px solid var(--bord2);border-radius:14px;padding:20px;width:100%;max-width:520px;position:relative;margin:auto}
 .modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),var(--grn),transparent)}
@@ -89,23 +124,39 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .fields-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:480px){.fields-row{grid-template-columns:1fr}}
 .calc-preview{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--grn);margin:-2px 0 12px}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--bord2);border-radius:4px}
 </style>
 </head>
 <body>
+
+<div class="board">
+  <div class="board-top">
+    <div class="emx-logo">
+      <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
+      <span class="emx-dot">●</span>
+    </div>
+    <div class="board-sub">TRENURI ÎNTÂRZIATE</div>
+  </div>
+  <div class="gh-bar">
+    <span id="ghStatus"></span>
+    <button class="btn btn-s" onclick="openGhModal()">🔑 Token</button>
+    <button class="btn btn-g" onclick="ghSave()">☁ Salvează</button>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
+  <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
+  <a href="bani.html" class="page-nav-btn">💵 Bani de luat</a>
+  <span class="page-nav-btn active">🚆 Întârzieri</span>
+</div>
+
 <div class="app">
 
-<div class="hdr">
-  <div class="emx-logo">
-    <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
-    <span class="emx-dot">●</span>
-  </div>
-  <div class="emx-tag">TRENURI ÎNTÂRZIATE</div>
-  <div class="gh-status" id="ghStatus"></div>
-  <div class="hdr-actions">
-    <button class="btn btn-p" onclick="openAddModal()">+ Adaugă întârziere</button>
-    <button class="btn btn-g" onclick="ghSave()">☁ Salvează</button>
-    <button class="btn btn-s" onclick="openGhModal()">🔑 Token</button>
-  </div>
+<div class="hdr-actions">
+  <button class="btn btn-p" onclick="openAddModal()">+ Adaugă întârziere</button>
 </div>
 
 <div class="summary" id="summary"></div>
@@ -199,7 +250,7 @@ let entries = [];
 const GH_USER='vladynitu1';
 const GH_REPO='Vlad';
 const GH_FILE='intarzieri.json';
-let ghToken = localStorage.getItem('gh_token_intarzieri') || localStorage.getItem('gh_token') || '';
+let ghToken = localStorage.getItem('gh_token_intarzieri') || localStorage.getItem('gh_token') || localStorage.getItem('emx_gh_token') || '';
 
 // ── LOCAL SAVE/LOAD ──
 function saveLocal(){
