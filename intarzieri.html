@@ -141,7 +141,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
   <div class="gh-bar">
     <span id="ghStatus"></span>
-    <button class="btn btn-s" onclick="openGhModal()">🔑 Token</button>
+    <a href="index.html" class="btn btn-s" id="gh-account-link">🔑 Neautentificat</a>
     <button class="btn btn-g" onclick="ghSave()">☁ Salvează</button>
   </div>
 </div>
@@ -149,9 +149,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="page-nav">
   <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
-  <a href="bani.html" class="page-nav-btn">💵 Bani de luat</a>
+  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
   <span class="page-nav-btn active">🚆 Întârzieri</span>
 </div>
+
+<script>
+  if(!localStorage.getItem('emx_gh_token')){
+    var navBani = document.getElementById('navBani');
+    if(navBani) navBani.remove();
+  }
+</script>
 
 <div class="app">
 
@@ -199,24 +206,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 </div>
 </div>
 
-<!-- MODAL TOKEN -->
-<div class="overlay" id="ghOverlay">
-<div class="modal" style="max-width:460px">
-  <button class="mclose" onclick="closeGhModal()">✕</button>
-  <h2 style="color:var(--grn)">🔑 GitHub Token</h2>
-  <p style="font-size:.8rem;color:var(--txtm);margin-bottom:12px;line-height:1.6">
-    Introdu Personal Access Token-ul GitHub ca să se sincronizeze datele pe toate dispozitivele.<br><br>
-    <strong style="color:var(--acc)">Cum obții tokenul:</strong><br>
-    1. Mergi pe <a href="https://github.com/settings/tokens/new" target="_blank" style="color:var(--grn)">github.com/settings/tokens/new</a><br>
-    2. Bifează permisiunea <b>repo</b><br>
-    3. Click <b>Generate token</b> și copiază-l
-  </p>
-  <input id="ghTokenInput" type="password" placeholder="ghp_xxxxxxxxxxxx"
-    style="width:100%;background:var(--surf);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.85rem;padding:9px 10px;margin-bottom:10px;box-sizing:border-box">
-  <button class="btn btn-g" style="width:100%" onclick="saveToken()">✓ Salvează Token</button>
-  <button class="btn btn-s" style="width:100%;margin-top:8px" onclick="testConnection()">🔌 Testează Conexiunea</button>
-</div>
-</div>
+
 
 <script>
 // ── TIME UTILS ──
@@ -250,7 +240,7 @@ let entries = [];
 const GH_USER='vladynitu1';
 const GH_REPO='Vlad';
 const GH_FILE='intarzieri.json';
-let ghToken = localStorage.getItem('gh_token_intarzieri') || localStorage.getItem('gh_token') || localStorage.getItem('emx_gh_token') || '';
+let ghToken = localStorage.getItem('emx_gh_token') || '';
 
 // ── LOCAL SAVE/LOAD ──
 function saveLocal(){
@@ -336,31 +326,11 @@ function showGhStatus(msg,color){
   const el=document.getElementById('ghStatus');
   if(el){el.textContent=msg;el.style.color=color;setTimeout(()=>{if(el.textContent===msg)el.textContent='';},4000);}
 }
-function openGhModal(){document.getElementById('ghOverlay').classList.add('open');}
-function closeGhModal(){document.getElementById('ghOverlay').classList.remove('open');}
-function saveToken(){
-  const t=document.getElementById('ghTokenInput').value.trim();
-  if(!t){alert('Introdu tokenul!');return;}
-  ghToken=t;
-  localStorage.setItem('gh_token_intarzieri',t);
-  closeGhModal();
-  showGhStatus('🔑 Token salvat!','var(--grn)');
-  ghLoadAndRefresh();
-}
-async function testConnection(){
-  if(!ghToken){showGhStatus('❌ Token lipsă','var(--red)');return;}
-  showGhStatus('⏳ Test conexiune...','var(--yel)');
-  try{
-    const r=await fetch('https://api.github.com/user',{headers:ghHeaders(),cache:'no-store',mode:'cors'});
-    if(r.ok){
-      const u=await r.json();
-      showGhStatus('✅ Conectat ca: '+u.login,'var(--grn)');
-    } else {
-      showGhStatus('❌ Status: '+r.status,'var(--red)');
-    }
-  }catch(e){
-    showGhStatus('❌ '+e.name+': '+e.message,'var(--red)');
-  }
+function updateGhAccountLink(){
+  const el = document.getElementById('gh-account-link');
+  if(!el) return;
+  const authed = !!ghToken;
+  el.textContent = authed ? '🟢 Autentificat' : '🔑 Neautentificat';
 }
 async function ghLoadAndRefresh(){
   showGhStatus('⏳ Se încarcă datele...','var(--yel)');
@@ -467,9 +437,13 @@ function escapeHtml(s){
 (async function init(){
   loadLocal();
   render();
+  updateGhAccountLink();
   if(ghToken){ await ghLoadAndRefresh(); }
   document.addEventListener('visibilitychange', function(){
     if(document.visibilityState==='visible' && ghToken){ ghLoadAndRefresh(); }
+  });
+  window.addEventListener('storage', function(e){
+    if(e.key === 'emx_gh_token'){ location.reload(); }
   });
 })();
 </script>
