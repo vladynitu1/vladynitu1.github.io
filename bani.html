@@ -3,115 +3,153 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EMX Finance Tracker</title>
+  <title>EMX Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { background: #0b0b10; min-height: 100%; }
+    :root{
+      --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
+      --bord:#3d1414;--bord2:#5c1c1c;
+      --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
+      --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
+      --org:#ff8c42;--org2:rgba(255,140,66,0.12);
+      --red:#ff2d55;--red2:rgba(255,45,85,0.09);
+      --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
+    }
+    html { background: var(--bg); min-height: 100%; }
     body {
-      min-height: 100vh; background: #0b0b10;
-      font-family: 'Georgia', 'Times New Roman', serif;
-      display: flex; flex-direction: column; align-items: center; color: #e0ddf0;
+      min-height: 100vh; background: var(--bg);
+      font-family: 'Exo 2', sans-serif;
+      display: flex; flex-direction: column; align-items: center; color: var(--txt);
+      position:relative;
     }
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
-    #banner {
-      width: 100%;
-      background: linear-gradient(135deg, #0f0f1a 0%, #18122a 50%, #0f0f1a 100%);
-      border-bottom: 2px solid #e8b84b33;
-      display: flex; justify-content: space-between; align-items: center; padding: 14px 20px;
+    /* ===== BOARD (same banner as Fișă de lucru / Calcul salariu) ===== */
+    .board{
+      width:100%;
+      border-bottom:1px solid var(--bord);
+      background:linear-gradient(135deg,#0a0303,#150606,#0a0303);
+      padding:22px 24px 18px;
+      position:sticky; top:0; z-index:20;
+      backdrop-filter:blur(6px);
+      overflow:hidden;
+      box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05);
     }
-    .banner-left { display: flex; align-items: baseline; gap: 10px; }
-    .banner-emx { font-size: 28px; font-weight: bold; letter-spacing: 7px; color: #e8b84b; font-family: monospace; text-shadow: 0 0 24px #e8b84b66; }
-    .banner-sub { font-size: 10px; letter-spacing: 3px; color: #6a6a80; font-family: monospace; text-transform: uppercase; }
-    .token-btn {
-      display: flex; align-items: center; gap: 5px;
-      background: #1a1a28; border: 1px solid #3a3a55; color: #9996b0;
-      border-radius: 8px; padding: 7px 13px; cursor: pointer; font-size: 12px; font-family: monospace;
-    }
-    .token-btn:hover { border-color: #e8b84b66; color: #e8b84b; }
+    .board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+    .board::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
+    @keyframes hdrShine{0%{left:-100%}100%{left:200%}}
+    .board-top{display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:1;}
+    .emx-logo{display:flex; align-items:center; gap:0; line-height:1;}
+    .emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(255,31,61,0.5)}
+    .emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
+    .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
+    .emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+    .board-sub{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin-top:4px;}
 
-    #container { width: 100%; max-width: 520px; padding: 20px 16px 60px; }
+    .gh-bar{
+      margin-top:16px; padding:10px 14px; background:var(--surf); border:1px solid var(--bord);
+      border-radius:8px; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
+      font-family:'Share Tech Mono',monospace; font-size:11.5px; position:relative; z-index:1;
+      max-width:640px; margin-left:auto; margin-right:auto;
+    }
+    #sync-msg{color:var(--txtd); letter-spacing:.02em;}
+
+    /* ===== PAGE NAV (same as other EMX tools) ===== */
+    .page-nav{
+      max-width:1100px; margin:16px auto 0; padding:12px 16px;
+      background:var(--surf); border:1px solid var(--bord); border-radius:10px;
+      display:flex; gap:10px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1;
+    }
+    .page-nav-btn{
+      display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
+      font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+      color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
+      text-decoration:none; transition:background .15s,color .15s,border-color .15s; cursor:pointer;
+    }
+    .page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
+    .page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
+
+    /* ===== BUTTONS (shared with rest of suite) ===== */
+    .btn{
+      background:var(--acc); color:#050505; border:none; padding:9px 16px; border-radius:6px;
+      font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; font-size:12px;
+      cursor:pointer; transition:filter .15s;
+    }
+    .btn:hover{filter:brightness(1.1);}
+    .btn.ghost{background:transparent; border:1px solid var(--bord2); color:var(--txtd);}
+    .btn.ghost:hover{color:var(--red); border-color:var(--red);}
+    .btn.solid-green{background:var(--grn); color:#050505;}
+
+    #container { width: 100%; max-width: 560px; padding: 20px 16px 60px; position:relative; z-index:1; }
 
     .sub-header {
       display: flex; justify-content: space-between; align-items: flex-end;
-      margin-bottom: 12px; padding-bottom: 16px; border-bottom: 1px solid #1e1e2a;
+      margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--bord);
     }
-    .header-label { font-size: 9px; letter-spacing: 4px; color: #4a4a62; font-family: monospace; margin-bottom: 4px; }
-    .header-title { font-size: 24px; font-weight: bold; color: #e8e4d9; }
-    .total-badge { background: #16161f; border: 1px solid #e8b84b33; border-radius: 10px; padding: 8px 14px; text-align: right; }
-    .total-label { font-size: 8px; letter-spacing: 3px; color: #e8b84b88; font-family: monospace; margin-bottom: 2px; }
-    .total-amount { font-size: 18px; font-weight: bold; color: #e8b84b; font-family: monospace; }
+    .header-label { font-family:'Share Tech Mono',monospace; font-size: 10px; letter-spacing: 4px; color: var(--txtd); margin-bottom: 4px; }
+    .header-title { font-family:'Rajdhani',sans-serif; font-size: 26px; font-weight: 700; text-transform:uppercase; letter-spacing:.02em; color: var(--txt); }
+    .total-badge { background: var(--surf); border: 1px solid var(--bord2); border-radius: 10px; padding: 8px 14px; text-align: right; }
+    .total-label { font-family:'Share Tech Mono',monospace; font-size: 9px; letter-spacing: 3px; color: var(--txtd); margin-bottom: 2px; }
+    .total-amount { font-family:'Share Tech Mono',monospace; font-size: 18px; font-weight: bold; color: var(--acc); }
 
-    .sync-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #13131a; border: 1px solid #1e1e2a;
-      border-radius: 10px; padding: 8px 14px; margin-bottom: 18px; gap: 8px;
-    }
-    #sync-msg { font-size: 11px; font-family: monospace; color: #5a5a72; flex: 1; }
-    .sync-btns { display: flex; gap: 6px; flex-shrink: 0; }
-    .load-btn {
-      background: #1e1e2a; border: 1px solid #303045; color: #7ec0e8;
-      border-radius: 7px; padding: 5px 10px; cursor: pointer; font-size: 11px; font-family: monospace;
-    }
-    .save-btn {
-      background: #2a3d28; border: 1px solid #3d7a3a; color: #7ec89a;
-      border-radius: 7px; padding: 5px 12px; cursor: pointer; font-size: 11px; font-family: monospace; font-weight: bold;
-    }
-    .load-btn:hover { background: #252535; }
-    .save-btn:hover { background: #334d30; }
+    .sync-actions { display:flex; gap:6px; flex-shrink:0; }
 
     #card-list { display: flex; flex-direction: column; gap: 16px; }
-    .card { background: #16161f; border: 1px solid #252530; border-radius: 14px; overflow: hidden; }
+    .card { background: var(--surf); border: 1px solid var(--bord); border-radius: 12px; overflow: hidden; }
     .card-header {
       display: flex; align-items: center; gap: 12px;
-      padding: 13px 16px; background: #1c1c28; border-bottom: 1px solid #252530;
+      padding: 13px 16px; background: var(--surf2); border-bottom: 1px solid var(--bord);
     }
     .avatar {
       width: 34px; height: 34px; border-radius: 50%;
-      background: #2d2d42; border: 2px solid #3d3d58;
+      background: var(--surf3); border: 2px solid var(--bord2);
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: bold; color: #a8a4c0; flex-shrink: 0;
+      font-family:'Rajdhani',sans-serif; font-size: 15px; font-weight: 800; color: var(--acc); flex-shrink: 0;
     }
-    .card-name { flex: 1; font-size: 16px; font-weight: bold; color: #e0ddf0; }
-    .person-total { font-size: 13px; font-weight: bold; color: #7ec89a; font-family: monospace; }
+    .card-name { flex: 1; font-family:'Rajdhani',sans-serif; font-size: 17px; font-weight: 700; color: var(--txt); }
+    .person-total { font-family:'Share Tech Mono',monospace; font-size: 13px; font-weight: bold; color: var(--grn); }
 
     .entries { padding: 4px 0; }
     .entry { display: flex; align-items: center; padding: 9px 16px; gap: 8px; }
-    .entry:nth-child(odd) { background: #18181f; }
-    .entry-reason { flex: 1; font-size: 13px; color: #9996b0; font-family: monospace; }
-    .entry-amount { font-size: 13px; color: #e0ddf0; font-family: monospace; font-weight: bold; min-width: 80px; text-align: right; }
-    .delete-btn { background: none; border: none; color: #5a3a3a; font-size: 18px; cursor: pointer; padding: 0 2px; line-height: 1; }
-    .delete-btn:hover { color: #e07a7a; }
+    .entry:nth-child(odd) { background: rgba(255,31,61,0.03); }
+    .entry-reason { flex: 1; font-family:'Share Tech Mono',monospace; font-size: 13px; color: var(--txtm); }
+    .entry-amount { font-family:'Share Tech Mono',monospace; font-size: 13px; color: var(--txt); font-weight: bold; min-width: 80px; text-align: right; }
+    .delete-btn { background: none; border: none; color: var(--bord2); font-size: 18px; cursor: pointer; padding: 0 2px; line-height: 1; }
+    .delete-btn:hover { color: var(--red); }
 
-    .add-row { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: #13131a; border-top: 1px dashed #303045; }
+    .add-row { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: var(--surf2); border-top: 1px dashed var(--bord2); }
     .add-row-inputs { display: flex; gap: 8px; }
     .add-entry-btn {
-      width: 100%; background: none; border: none; border-top: 1px dashed #252530; color: #4a4a65;
-      padding: 10px 16px; text-align: left; cursor: pointer; font-size: 12px; font-family: monospace; letter-spacing: 1px;
+      width: 100%; background: none; border: none; border-top: 1px dashed var(--bord); color: var(--txtd);
+      padding: 10px 16px; text-align: left; cursor: pointer; font-family:'Share Tech Mono',monospace; font-size: 11.5px; letter-spacing: 1px; text-transform:uppercase;
     }
-    .add-entry-btn:hover { color: #7ec89a; }
+    .add-entry-btn:hover { color: var(--grn); }
 
     .total-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 16px; background: #1a1f1a; border-top: 1px solid #252530;
+      padding: 10px 16px; background: rgba(255,107,61,0.05); border-top: 1px solid var(--bord);
     }
-    .total-row-label { font-size: 11px; color: #5a7a65; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; }
-    .total-row-amt { font-size: 15px; font-weight: bold; color: #7ec89a; font-family: monospace; }
+    .total-row-label { font-family:'Share Tech Mono',monospace; font-size: 10.5px; color: var(--txtd); letter-spacing: 1px; text-transform: uppercase; }
+    .total-row-amt { font-family:'Share Tech Mono',monospace; font-size: 15px; font-weight: bold; color: var(--grn); }
 
-    .new-person-card { margin-top: 16px; background: #16161f; border: 1px dashed #303045; border-radius: 14px; padding: 20px; }
-    .new-person-title { font-size: 10px; letter-spacing: 3px; color: #5a5a72; font-family: monospace; margin-bottom: 14px; text-transform: uppercase; }
+    .new-person-card { margin-top: 16px; background: var(--surf); border: 1px dashed var(--bord2); border-radius: 12px; padding: 20px; }
+    .new-person-title { font-family:'Share Tech Mono',monospace; font-size: 10px; letter-spacing: 3px; color: var(--txtd); margin-bottom: 14px; text-transform: uppercase; }
     #add-person-btn {
-      margin-top: 16px; width: 100%; background: #16161f; border: 1px dashed #303045;
-      border-radius: 14px; color: #4a4a65; padding: 14px; cursor: pointer;
-      font-family: monospace; font-size: 12px; letter-spacing: 2px;
+      margin-top: 16px; width: 100%; background: var(--surf); border: 1px dashed var(--bord2);
+      border-radius: 12px; color: var(--txtd); padding: 14px; cursor: pointer;
+      font-family:'Share Tech Mono',monospace; font-size: 12px; letter-spacing: 2px; text-transform:uppercase;
     }
-    #add-person-btn:hover { border-color: #4a4a65; color: #7ec89a; }
+    #add-person-btn:hover { border-color: var(--acc); color: var(--grn); }
 
     input[type=text], input[type=number], input[type=password] {
-      background: #1e1e2a; border: 1px solid #3a3a55; border-radius: 7px; padding: 9px 10px;
-      color: #e0ddf0; font-size: 14px; font-family: monospace; outline: none; width: 100%;
+      background: var(--surf2); border: 1px solid var(--bord2); border-radius: 6px; padding: 9px 10px;
+      color: var(--txt); font-size: 13.5px; font-family:'Share Tech Mono',monospace; outline: none; width: 100%;
     }
-    input::placeholder { color: #4a4a62; }
-    input:focus { border-color: #e8b84b55; }
+    input::placeholder { color: var(--txtd); }
+    input:focus { border-color: var(--acc); box-shadow:0 0 0 3px var(--acc2); }
     .input-amt { width: 38%; flex-shrink: 0; }
     .input-reason { flex: 1; }
     .input-full { margin-bottom: 10px; }
@@ -119,61 +157,81 @@
 
     .btn-row { display: flex; gap: 8px; }
     .confirm-btn {
-      flex: 1; background: #2a4a35; border: 1px solid #3d7a52; color: #7ec89a;
-      border-radius: 7px; padding: 9px; cursor: pointer; font-size: 14px; font-weight: bold; font-family: monospace;
+      flex: 1; background: var(--grn); border: 1px solid var(--grn); color: #050505;
+      border-radius: 6px; padding: 9px; cursor: pointer; font-family:'Rajdhani',sans-serif; font-size: 14px; font-weight: 700; text-transform:uppercase; letter-spacing:.03em;
     }
-    .confirm-btn:hover { background: #334d3a; }
+    .confirm-btn:hover { filter:brightness(1.1); }
     .cancel-btn {
-      flex: 1; background: #2a1a1a; border: 1px solid #5a3030; color: #c87e7e;
-      border-radius: 7px; padding: 9px; cursor: pointer; font-size: 14px; font-family: monospace;
+      flex: 1; background: transparent; border: 1px solid var(--bord2); color: var(--txtm);
+      border-radius: 6px; padding: 9px; cursor: pointer; font-family:'Share Tech Mono',monospace; font-size: 13px;
     }
-    .cancel-btn:hover { background: #331a1a; }
+    .cancel-btn:hover { color:var(--red); border-color:var(--red); }
 
-    .overlay { position: fixed; inset: 0; background: #000c; display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+    .overlay { position: fixed; inset: 0; background: rgba(5,5,5,.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
     .hidden { display: none !important; }
-    .modal { background: #1c1c28; border: 1px solid #303045; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; }
-    .modal-title { color: #e0ddf0; font-size: 15px; font-family: monospace; font-weight: bold; margin-bottom: 14px; }
-    .modal-hint { font-size: 12px; color: #7a7a90; font-family: monospace; line-height: 1.8; margin-bottom: 14px; }
-    .modal-hint a { color: #e8b84b; }
-    .modal-hint strong { color: #e8b84b; }
+    .modal { background: var(--surf); border: 1px solid var(--bord2); border-radius: 14px; padding: 24px; width: 100%; max-width: 400px; }
+    .modal-title { color: var(--txt); font-family:'Rajdhani',sans-serif; font-size: 17px; font-weight: 700; text-transform:uppercase; letter-spacing:.03em; margin-bottom: 14px; }
+    .modal-hint { font-family:'Share Tech Mono',monospace; font-size: 11.5px; color: var(--txtm); line-height: 1.8; margin-bottom: 14px; }
+    .modal-hint a { color: var(--org); }
+    .modal-hint strong { color: var(--org); }
     .modal-field { margin-bottom: 10px; }
-    .modal-label { font-size: 10px; letter-spacing: 2px; color: #5a5a72; font-family: monospace; margin-bottom: 5px; }
+    .modal-label { font-family:'Share Tech Mono',monospace; font-size: 10px; letter-spacing: 2px; color: var(--txtd); margin-bottom: 5px; }
 
     .info-box {
-      background: #1a1a10; border: 1px solid #e8b84b33; border-radius: 8px;
+      background: var(--org2); border: 1px solid rgba(255,140,66,.35); border-radius: 8px;
       padding: 10px 12px; margin-bottom: 12px;
-      font-size: 11px; font-family: monospace; color: #a09060; line-height: 1.7;
+      font-family:'Share Tech Mono',monospace; font-size: 11px; color: var(--org); line-height: 1.7;
     }
     .error-box {
-      background: #2a1a1a; border: 1px solid #7a3030; border-radius: 8px;
+      background: var(--red2); border: 1px solid rgba(255,45,85,.4); border-radius: 8px;
       padding: 10px 12px; margin-bottom: 12px;
-      font-size: 12px; font-family: monospace; color: #e07a7a; line-height: 1.6;
+      font-family:'Share Tech Mono',monospace; font-size: 12px; color: var(--red); line-height: 1.6;
       white-space: pre-line;
     }
 
     .clear-token-btn {
-      margin-top: 8px; width: 100%; background: #2a1a1a; border: 1px solid #5a3030; color: #c87e7e;
-      border-radius: 8px; padding: 8px; cursor: pointer; font-family: monospace; font-size: 12px;
+      margin-top: 8px; width: 100%; background: transparent; border: 1px solid var(--bord2); color: var(--txtm);
+      border-radius: 8px; padding: 8px; cursor: pointer; font-family:'Share Tech Mono',monospace; font-size: 12px;
     }
+    .clear-token-btn:hover{ color:var(--red); border-color:var(--red); }
     .delete-confirm-btn {
-      flex: 1; background: #3a1a1a; border: 1px solid #7a3030; color: #e07a7a;
-      border-radius: 7px; padding: 9px; cursor: pointer; font-size: 14px; font-family: monospace;
+      flex: 1; background: var(--red2); border: 1px solid var(--red); color: var(--red);
+      border-radius: 6px; padding: 9px; cursor: pointer; font-family:'Rajdhani',sans-serif; font-weight:700; font-size: 14px; text-transform:uppercase;
     }
+    .delete-confirm-btn:hover{ background:var(--red); color:#050505; }
+
+    ::-webkit-scrollbar{width:8px; height:8px;}
+    ::-webkit-scrollbar-thumb{background:var(--bord2); border-radius:4px;}
   </style>
 </head>
 <body>
 
-<div id="banner">
-  <div class="banner-left">
-    <span class="banner-emx">EMX</span>
-    <span class="banner-sub">Finance Tracker</span>
+<div class="board">
+  <div class="board-top">
+    <div class="emx-logo">
+      <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
+      <span class="emx-dot">●</span>
+    </div>
+    <div class="board-sub">REGISTRU FINANCIAR</div>
   </div>
-  <button class="token-btn" onclick="openTokenModal()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-    </svg>
-    <span id="token-btn-label">Token GitHub</span>
-  </button>
+
+  <div class="gh-bar">
+    <span id="sync-msg">Fără token — datele nu se sincronizează</span>
+    <div class="sync-actions">
+      <button class="btn ghost" onclick="openTokenModal()">
+        <span id="token-btn-label">Token GitHub</span>
+      </button>
+      <button class="btn ghost" id="sync-load-btn" onclick="loadFromRepo()">↓ Încarcă</button>
+      <button class="btn solid-green" onclick="saveToRepo()">💾 Salvează</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
+  <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
+  <span class="page-nav-btn active">💵 Bani de luat</span>
+  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
 </div>
 
 <div id="container">
@@ -185,14 +243,6 @@
     <div class="total-badge">
       <div class="total-label">TOTAL</div>
       <div class="total-amount" id="grand-total">0,00 lei</div>
-    </div>
-  </div>
-
-  <div class="sync-bar">
-    <span id="sync-msg">Fără token — datele nu se sincronizează</span>
-    <div class="sync-btns">
-      <button class="load-btn" id="sync-load-btn" onclick="loadFromRepo()">↓ Încarcă</button>
-      <button class="save-btn" onclick="saveToRepo()">💾 Salvează</button>
     </div>
   </div>
 
@@ -217,10 +267,10 @@
 <!-- TOKEN MODAL -->
 <div class="overlay hidden" id="token-modal">
   <div class="modal">
-    <div class="modal-title">⚙️ Configurare GitHub</div>
+    <div class="modal-title">⚙ Configurare GitHub</div>
     <div class="info-box">
-      Datele se salvează în fișierul <strong style="color:#e8b84b">bani.json</strong>
-      din repo-ul <strong style="color:#e8b84b">vladynitu1/Vlad</strong> pe GitHub.
+      Datele se salvează în fișierul <strong>bani.json</strong>
+      din repo-ul <strong>vladynitu1/Vlad</strong> pe GitHub.
     </div>
     <div class="modal-hint">
       Mergi la <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens</a>
@@ -279,7 +329,7 @@
   function setSyncMsg(msg, color) {
     const el = document.getElementById("sync-msg");
     el.textContent = msg;
-    el.style.color = color || "#5a5a72";
+    el.style.color = color || "";
   }
   function showError(msg) {
     const el = document.getElementById("token-error");
@@ -424,7 +474,7 @@
     ghToken = t;
     localStorage.setItem("emx_gh_token", t);
     closeTokenModal();
-    setSyncMsg("Token salvat! Se încarcă datele...", "#7ec89a");
+    setSyncMsg("Token salvat! Se încarcă datele...");
     render();
     loadFromRepo();
   }
@@ -433,31 +483,31 @@
     localStorage.removeItem("emx_gh_token");
     fileSha = null;
     closeTokenModal();
-    setSyncMsg("Fără token — datele nu se sincronizează", "#5a5a72");
+    setSyncMsg("Fără token — datele nu se sincronizează");
     render();
   }
 
   // ── GITHUB REPO SYNC ─────────────────────────────────────────────
   async function loadFromRepo() {
     if (!ghToken) { openTokenModal(); return; }
-    setSyncMsg("Se încarcă...", "#e8b84b");
+    setSyncMsg("Se încarcă...");
     try {
       const res = await fetch(API, { headers: ghHeaders() });
 
       if (res.status === 401) {
-        setSyncMsg("✗ Token invalid.", "#e07a7a");
+        setSyncMsg("✗ Token invalid.");
         showError("❌ Token invalid sau expirat (401).\nGenerează un token nou cu permisiunea 'repo'.");
         return;
       }
       if (res.status === 403) {
-        setSyncMsg("✗ Acces refuzat.", "#e07a7a");
+        setSyncMsg("✗ Acces refuzat.");
         showError("❌ Acces refuzat (403).\nTokenul nu are permisiunea 'repo'. Generează un token nou cu 'repo' bifat.");
         return;
       }
       if (res.status === 404) {
         // Fișierul nu există încă — e ok, îl creăm la prima salvare
         fileSha = null;
-        setSyncMsg("bani.json nu există încă — apasă Salvează pentru a-l crea.", "#e8b84b");
+        setSyncMsg("bani.json nu există încă — apasă Salvează pentru a-l crea.");
         return;
       }
       if (!res.ok) throw new Error(`GitHub ${res.status}`);
@@ -471,16 +521,16 @@
       nextEntryId  = content.nextEntryId  || 200;
 
       render();
-      setSyncMsg("✓ Date încărcate din GitHub", "#7ec89a");
-      setTimeout(() => setSyncMsg("Sincronizat cu vladynitu1/Vlad", "#5a5a72"), 3000);
+      setSyncMsg("✓ Date încărcate din GitHub");
+      setTimeout(() => setSyncMsg("Sincronizat cu vladynitu1/Vlad"), 3000);
     } catch (e) {
-      setSyncMsg("✗ " + e.message, "#e07a7a");
+      setSyncMsg("✗ " + e.message);
     }
   }
 
   async function saveToRepo() {
     if (!ghToken) { openTokenModal(); return; }
-    setSyncMsg("Se salvează...", "#e8b84b");
+    setSyncMsg("Se salvează...");
 
     const content = btoa(unescape(encodeURIComponent(
       JSON.stringify({ people, nextPersonId, nextEntryId }, null, 2)
@@ -500,18 +550,18 @@
       });
 
       if (res.status === 401) {
-        setSyncMsg("✗ Token invalid.", "#e07a7a");
+        setSyncMsg("✗ Token invalid.");
         showError("❌ Token invalid sau expirat (401).\nGenerează un token nou cu permisiunea 'repo'.");
         return;
       }
       if (res.status === 403) {
-        setSyncMsg("✗ Acces refuzat.", "#e07a7a");
+        setSyncMsg("✗ Acces refuzat.");
         showError("❌ Tokenul nu are permisiunea 'repo' (403).\nGenerează un token classic cu 'repo' bifat complet.");
         return;
       }
       if (res.status === 409) {
         // Conflict SHA — reîncarcă sha și reîncearcă
-        setSyncMsg("Conflict — se resincronizează...", "#e8b84b");
+        setSyncMsg("Conflict — se resincronizează...");
         await loadFromRepo();
         await saveToRepo();
         return;
@@ -524,10 +574,10 @@
       const data = await res.json();
       fileSha = data.content.sha; // actualizăm sha pentru următorul save
 
-      setSyncMsg("✓ Salvat în vladynitu1/Vlad/bani.json", "#7ec89a");
-      setTimeout(() => setSyncMsg("Sincronizat cu vladynitu1/Vlad", "#5a5a72"), 3000);
+      setSyncMsg("✓ Salvat în vladynitu1/Vlad/bani.json");
+      setTimeout(() => setSyncMsg("Sincronizat cu vladynitu1/Vlad"), 3000);
     } catch (e) {
-      setSyncMsg("✗ " + e.message, "#e07a7a");
+      setSyncMsg("✗ " + e.message);
     }
   }
 
