@@ -150,7 +150,7 @@
     }
     input::placeholder { color: var(--txtd); }
     input:focus { border-color: var(--acc); box-shadow:0 0 0 3px var(--acc2); }
-    .input-amt { width: 38%; flex-shrink: 0; }
+    .input-amt { flex: 1; }
     .input-reason { flex: 1; }
     .input-full { margin-bottom: 10px; }
     .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
@@ -222,7 +222,6 @@
         <span id="token-btn-label">Token GitHub</span>
       </button>
       <button class="btn ghost" id="sync-load-btn" onclick="loadFromRepo()">↓ Încarcă</button>
-      <button class="btn solid-green" onclick="saveToRepo()">💾 Salvează</button>
     </div>
   </div>
 </div>
@@ -415,6 +414,7 @@
     const person = people.find(p => p.id === personId);
     if (person) person.entries.push({ id: nextEntryId++, amount: amt, reason });
     render();
+    saveToRepo();
   }
 
   // ── ADD PERSON ───────────────────────────────────────────────────
@@ -436,6 +436,7 @@
     people.push({ id: nextPersonId++, name, entries: [{ id: nextEntryId++, amount: amt, reason }] });
     cancelAddPerson();
     render();
+    saveToRepo();
   }
 
   // ── DELETE ───────────────────────────────────────────────────────
@@ -452,6 +453,7 @@
     pendingDelete = null;
     closeDeleteModal();
     render();
+    saveToRepo();
   }
   function closeDeleteModal() {
     pendingDelete = null;
@@ -529,7 +531,7 @@
   }
 
   async function saveToRepo() {
-    if (!ghToken) { openTokenModal(); return; }
+    if (!ghToken) { setSyncMsg("Salvat local (fără token)"); return; }
     setSyncMsg("Se salvează...");
 
     const content = btoa(unescape(encodeURIComponent(
