@@ -174,6 +174,8 @@
   }
   .page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
   .page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
+  .page-nav-btn.auth{border-color:rgba(255,107,61,.4);}
+  .page-nav-btn.auth.connected{color:var(--grn); border-color:rgba(255,107,61,.6);}
 </style>
 </head>
 <body>
@@ -195,19 +197,12 @@
 </div>
 
 <div class="page-nav">
+  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
   <span class="page-nav-btn active">📋 Fișă de lucru</span>
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
-  <span class="page-nav-btn" id="gh-account-btn">🔑 Cont GitHub</span>
-</div>
-
-<div class="card" id="gh-panel" style="max-width:1100px; margin:14px auto 0; display:none;">
-  <div class="row">
-    <div style="flex:1;"><label>Token GitHub (acces scriere)</label><input type="text" id="gh-token-input" placeholder="ghp_..." style="min-width:260px; width:100%;"></div>
-    <button class="btn" id="gh-token-save">Salvează</button>
-    <button class="btn ghost" id="gh-token-clear">Șterge token</button>
-  </div>
-  <div class="status" id="gh-token-status"></div>
-  <div class="hint">Tokenul e stocat doar în acest browser (localStorage) și e trimis direct către api.github.com — nu trece prin niciun server intermediar. Folosește un token dedicat, cu scope minim (ex. doar acces la repo-ul <strong>vladynitu1.github.io</strong>), nu unul cu acces total la cont. Fără token poți doar căuta (tot ce e deja încărcat rămâne vizibil), nu poți încărca sau șterge fișiere.</div>
+  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
+  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
+  <a href="index.html" class="page-nav-btn auth" id="gh-account-btn">🔑 Neautentificat</a>
 </div>
 
 <main id="app"></main>
@@ -240,23 +235,10 @@ const DATA_DIR = 'data';
 const TOKEN_KEY = 'emx_gh_token';
 
 function getToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
-function setTokenLS(t){ try{ localStorage.setItem(TOKEN_KEY, t); }catch(e){} }
-function clearTokenLS(){ try{ localStorage.removeItem(TOKEN_KEY); }catch(e){} }
 function hasToken(){ return !!getToken(); }
 
 function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
 function encodePath(path){ return path.split('/').map(encodeURIComponent).join('/'); }
-
-async function verifyToken(token){
-  try{
-    const res = await fetch('https://api.github.com/user', {
-      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' }
-    });
-    if(!res.ok) return { ok:false };
-    const data = await res.json();
-    return { ok:true, login: data.login };
-  }catch(e){ return { ok:false }; }
-}
 
 // Public read: goes through the GitHub API first (reflects the latest commit immediately,
 // unlike the raw.githubusercontent.com CDN which can lag a few minutes behind a write).
@@ -300,7 +282,7 @@ async function ghGetSha(path, token){
 // Write: requires a token with write access to the repo.
 async function ghPutFile(path, obj, message){
   const token = getToken();
-  if(!token) throw new Error('Lipsește tokenul GitHub — introdu-l din butonul „Cont GitHub”.');
+  if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
   const sha = await ghGetSha(path, token).catch(()=>null);
   const body = { message, content: b64EncodeUnicode(JSON.stringify(obj, null, 2)), branch: GH_BRANCH };
   if(sha) body.sha = sha;
@@ -318,7 +300,7 @@ async function ghPutFile(path, obj, message){
 
 async function ghDeleteFile(path, message){
   const token = getToken();
-  if(!token) throw new Error('Lipsește tokenul GitHub — introdu-l din butonul „Cont GitHub”.');
+  if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
   const sha = await ghGetSha(path, token);
   if(!sha) return null;
   const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
@@ -360,6 +342,7 @@ function renderTabs(){
   html += '<div class="tab team' + (state.view==='team' ? ' active':'') + '" data-cat="team">Programul unei persoane</div>';
   tabsEl.innerHTML = html;
   setTabHandlers();
+  updateGhAccountBtn();
 }
 
 function setTabHandlers(){
@@ -935,52 +918,22 @@ async function render(){
 
 function updateGhAccountBtn(){
   const btn = document.getElementById('gh-account-btn');
-  btn.textContent = hasToken() ? '🔑 Autentificat' : '🔑 Cont GitHub';
+  const authed = hasToken();
+  if(btn){
+    btn.textContent = authed ? '🟢 Autentificat' : '🔑 Neautentificat';
+    btn.classList.toggle('connected', authed);
+  }
+  const navBani = document.getElementById('navBani');
+  if(navBani && !authed) navBani.remove();
 }
 
-function toggleGhPanel(forceOpen){
-  const panel = document.getElementById('gh-panel');
-  const open = forceOpen !== undefined ? forceOpen : panel.style.display === 'none';
-  panel.style.display = open ? 'block' : 'none';
-}
-
-function setupGhPanel(){
-  const statusEl = document.getElementById('gh-token-status');
-  const input = document.getElementById('gh-token-input');
-  input.value = getToken();
-  updateGhAccountBtn();
-
-  document.getElementById('gh-account-btn').onclick = ()=> toggleGhPanel();
-
-  document.getElementById('gh-token-save').onclick = async ()=>{
-    const t = input.value.trim();
-    if(!t){ statusEl.textContent = 'Introdu un token.'; return; }
-    statusEl.textContent = 'Se verifică tokenul...';
-    const r = await verifyToken(t);
-    if(!r.ok){
-      statusEl.textContent = 'Token invalid sau fără acces. Verifică-l și încearcă din nou.';
-      return;
-    }
-    setTokenLS(t);
-    statusEl.textContent = 'Autentificat ca ' + r.login + '. Ai acces la Mecanici și Șefi Tren / Vânzători Bilete.';
-    updateGhAccountBtn();
-    renderTabs();
-    render();
-  };
-
-  document.getElementById('gh-token-clear').onclick = ()=>{
-    clearTokenLS();
-    input.value = '';
-    statusEl.textContent = 'Token șters. Ai acces doar la căutare.';
-    updateGhAccountBtn();
-    renderTabs();
-    render();
-  };
-}
+// Picks up a token connected/disconnected from index.html in another tab, without needing a manual refresh.
+window.addEventListener('storage', function(e){
+  if(e.key === TOKEN_KEY){ location.reload(); }
+});
 
 (async function init(){
-  if(!hasToken()){ state.view = 'cross'; }
-  setupGhPanel();
+  state.view = hasToken() ? 'list' : 'cross';
   renderTabs();
   await loadAllMeta();
   render();
