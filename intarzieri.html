@@ -283,7 +283,7 @@ async function ghLoad(){
   }catch(e){return false;}
 }
 async function ghSave(){
-  if(!ghToken){alert('Introdu mai întâi tokenul GitHub!');openGhModal();return;}
+  if(!ghToken){ showGhStatus('💾 Salvat local (fără token)','var(--txtd)'); return; }
   showGhStatus('⏳ Se salvează...','var(--yel)');
   saveLocal();
   try{
