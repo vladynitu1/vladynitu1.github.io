@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ro">
 <head>
@@ -171,29 +172,7 @@
     .hidden { display: none !important; }
     .modal { background: var(--surf); border: 1px solid var(--bord2); border-radius: 14px; padding: 24px; width: 100%; max-width: 400px; }
     .modal-title { color: var(--txt); font-family:'Rajdhani',sans-serif; font-size: 17px; font-weight: 700; text-transform:uppercase; letter-spacing:.03em; margin-bottom: 14px; }
-    .modal-hint { font-family:'Share Tech Mono',monospace; font-size: 11.5px; color: var(--txtm); line-height: 1.8; margin-bottom: 14px; }
-    .modal-hint a { color: var(--org); }
-    .modal-hint strong { color: var(--org); }
-    .modal-field { margin-bottom: 10px; }
-    .modal-label { font-family:'Share Tech Mono',monospace; font-size: 10px; letter-spacing: 2px; color: var(--txtd); margin-bottom: 5px; }
 
-    .info-box {
-      background: var(--org2); border: 1px solid rgba(255,140,66,.35); border-radius: 8px;
-      padding: 10px 12px; margin-bottom: 12px;
-      font-family:'Share Tech Mono',monospace; font-size: 11px; color: var(--org); line-height: 1.7;
-    }
-    .error-box {
-      background: var(--red2); border: 1px solid rgba(255,45,85,.4); border-radius: 8px;
-      padding: 10px 12px; margin-bottom: 12px;
-      font-family:'Share Tech Mono',monospace; font-size: 12px; color: var(--red); line-height: 1.6;
-      white-space: pre-line;
-    }
-
-    .clear-token-btn {
-      margin-top: 8px; width: 100%; background: transparent; border: 1px solid var(--bord2); color: var(--txtm);
-      border-radius: 8px; padding: 8px; cursor: pointer; font-family:'Share Tech Mono',monospace; font-size: 12px;
-    }
-    .clear-token-btn:hover{ color:var(--red); border-color:var(--red); }
     .delete-confirm-btn {
       flex: 1; background: var(--red2); border: 1px solid var(--red); color: var(--red);
       border-radius: 6px; padding: 9px; cursor: pointer; font-family:'Rajdhani',sans-serif; font-weight:700; font-size: 14px; text-transform:uppercase;
@@ -218,19 +197,18 @@
   <div class="gh-bar">
     <span id="sync-msg">Fără token — datele nu se sincronizează</span>
     <div class="sync-actions">
-      <button class="btn ghost" onclick="openTokenModal()">
-        <span id="token-btn-label">Token GitHub</span>
-      </button>
       <button class="btn ghost" id="sync-load-btn" onclick="loadFromRepo()">↓ Încarcă</button>
     </div>
   </div>
 </div>
 
 <div class="page-nav">
+  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
   <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
   <span class="page-nav-btn active">💵 Bani de luat</span>
   <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
+  <a href="index.html" class="page-nav-btn" id="token-btn-label-link">🔑 <span id="token-btn-label">Token GitHub</span></a>
 </div>
 
 <div id="container">
@@ -245,6 +223,15 @@
     </div>
   </div>
 
+  <div id="restricted-notice" class="new-person-card hidden" style="text-align:center;">
+    <div class="new-person-title">🔒 Acces restricționat</div>
+    <p style="color:var(--txtm); font-size:13.5px; line-height:1.6; margin-bottom:14px;">
+      Această pagină e vizibilă doar cu tokenul GitHub conectat.
+    </p>
+    <a href="index.html" class="confirm-btn" style="display:inline-block; text-decoration:none;">Conectează-te din pagina principală</a>
+  </div>
+
+  <div id="bani-content">
   <div id="card-list"></div>
 
   <div class="new-person-card hidden" id="new-person-form">
@@ -261,30 +248,6 @@
   </div>
 
   <button id="add-person-btn" onclick="showAddPersonForm()">+ Adaugă persoană</button>
-</div>
-
-<!-- TOKEN MODAL -->
-<div class="overlay hidden" id="token-modal">
-  <div class="modal">
-    <div class="modal-title">⚙ Configurare GitHub</div>
-    <div class="info-box">
-      Datele se salvează în fișierul <strong>bani.json</strong>
-      din repo-ul <strong>vladynitu1/Vlad</strong> pe GitHub.
-    </div>
-    <div class="modal-hint">
-      Mergi la <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens</a>
-      → <strong>Generate new token (classic)</strong> → bifează <strong>repo</strong> → copiază tokenul.
-    </div>
-    <div class="error-box hidden" id="token-error"></div>
-    <div class="modal-field">
-      <div class="modal-label">TOKEN GITHUB (ghp_...)</div>
-      <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
-    </div>
-    <div class="btn-row" style="margin-top:4px">
-      <button class="confirm-btn" onclick="saveToken()">Salvează</button>
-      <button class="cancel-btn" onclick="closeTokenModal()">Închide</button>
-    </div>
-    <button class="clear-token-btn hidden" id="clear-token-btn" onclick="clearToken()">🗑 Șterge token salvat</button>
   </div>
 </div>
 
@@ -304,6 +267,7 @@
   const REPO  = "vladynitu1/Vlad";
   const FILE  = "bani.json";
   const API   = `https://api.github.com/repos/${REPO}/contents/${FILE}`;
+  const TOKEN_KEY = "emx_gh_token";
 
   // ── STATE ────────────────────────────────────────────────────────
   let nextPersonId = 100;
@@ -316,7 +280,7 @@
     { id: 2, name: "Ionuț", entries: [{ id: 1, amount: 30, reason: "Cină" }] },
   ];
 
-  let ghToken = localStorage.getItem("emx_gh_token") || "";
+  let ghToken = localStorage.getItem(TOKEN_KEY) || "";
 
   // ── HELPERS ──────────────────────────────────────────────────────
   function formatLei(n) {
@@ -329,12 +293,6 @@
     const el = document.getElementById("sync-msg");
     el.textContent = msg;
     el.style.color = color || "";
-  }
-  function showError(msg) {
-    const el = document.getElementById("token-error");
-    el.textContent = msg;
-    el.classList.remove("hidden");
-    document.getElementById("token-modal").classList.remove("hidden");
   }
   function ghHeaders() {
     return {
@@ -460,56 +418,18 @@
     document.getElementById("delete-modal").classList.add("hidden");
   }
 
-  // ── TOKEN ────────────────────────────────────────────────────────
-  function openTokenModal() {
-    document.getElementById("token-input").value = "";
-    document.getElementById("token-error").classList.add("hidden");
-    document.getElementById("clear-token-btn").classList.toggle("hidden", !ghToken);
-    document.getElementById("token-modal").classList.remove("hidden");
-  }
-  function closeTokenModal() {
-    document.getElementById("token-modal").classList.add("hidden");
-  }
-  function saveToken() {
-    const t = document.getElementById("token-input").value.trim();
-    if (!t) return;
-    ghToken = t;
-    localStorage.setItem("emx_gh_token", t);
-    closeTokenModal();
-    setSyncMsg("Token salvat! Se încarcă datele...");
-    render();
-    loadFromRepo();
-  }
-  function clearToken() {
-    ghToken = "";
-    localStorage.removeItem("emx_gh_token");
-    fileSha = null;
-    closeTokenModal();
-    setSyncMsg("Fără token — datele nu se sincronizează");
-    render();
-  }
-
   // ── GITHUB REPO SYNC ─────────────────────────────────────────────
   async function loadFromRepo() {
-    if (!ghToken) { openTokenModal(); return; }
+    if (!ghToken) { setSyncMsg("Conectează-te din pagina principală (Admin)."); return; }
     setSyncMsg("Se încarcă...");
     try {
       const res = await fetch(API, { headers: ghHeaders() });
 
-      if (res.status === 401) {
-        setSyncMsg("✗ Token invalid.");
-        showError("❌ Token invalid sau expirat (401).\nGenerează un token nou cu permisiunea 'repo'.");
-        return;
-      }
-      if (res.status === 403) {
-        setSyncMsg("✗ Acces refuzat.");
-        showError("❌ Acces refuzat (403).\nTokenul nu are permisiunea 'repo'. Generează un token nou cu 'repo' bifat.");
-        return;
-      }
+      if (res.status === 401) { setSyncMsg("✗ Token invalid."); return; }
+      if (res.status === 403) { setSyncMsg("✗ Acces refuzat — tokenul nu are permisiunea 'repo'."); return; }
       if (res.status === 404) {
-        // Fișierul nu există încă — e ok, îl creăm la prima salvare
         fileSha = null;
-        setSyncMsg("bani.json nu există încă — apasă Salvează pentru a-l crea.");
+        setSyncMsg("bani.json nu există încă — se creează la prima adăugare.");
         return;
       }
       if (!res.ok) throw new Error(`GitHub ${res.status}`);
@@ -551,18 +471,9 @@
         body: JSON.stringify(body),
       });
 
-      if (res.status === 401) {
-        setSyncMsg("✗ Token invalid.");
-        showError("❌ Token invalid sau expirat (401).\nGenerează un token nou cu permisiunea 'repo'.");
-        return;
-      }
-      if (res.status === 403) {
-        setSyncMsg("✗ Acces refuzat.");
-        showError("❌ Tokenul nu are permisiunea 'repo' (403).\nGenerează un token classic cu 'repo' bifat complet.");
-        return;
-      }
+      if (res.status === 401) { setSyncMsg("✗ Token invalid."); return; }
+      if (res.status === 403) { setSyncMsg("✗ Tokenul nu are permisiunea 'repo'."); return; }
       if (res.status === 409) {
-        // Conflict SHA — reîncarcă sha și reîncearcă
         setSyncMsg("Conflict — se resincronizează...");
         await loadFromRepo();
         await saveToRepo();
@@ -583,9 +494,20 @@
     }
   }
 
+  // Picks up a token connected/disconnected from index.html in another tab.
+  window.addEventListener('storage', function(e){
+    if(e.key === TOKEN_KEY){ location.reload(); }
+  });
+
   // ── INIT ─────────────────────────────────────────────────────────
-  render();
-  if (ghToken) loadFromRepo();
+  if (!ghToken) {
+    document.getElementById('restricted-notice').classList.remove('hidden');
+    document.getElementById('bani-content').classList.add('hidden');
+    setSyncMsg("Fără token — pagina e restricționată.");
+  } else {
+    render();
+    loadFromRepo();
+  }
 </script>
 </body>
 </html>
