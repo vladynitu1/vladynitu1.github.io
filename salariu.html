@@ -129,9 +129,19 @@ input[readonly]:focus{border-color:rgba(255,107,61,.4);box-shadow:none}
 </div>
 
 <div class="page-nav">
+  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
   <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
   <span class="page-nav-btn active">💰 Calcul salariu</span>
+  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
+  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
 </div>
+
+<script>
+  if(!localStorage.getItem('emx_gh_token')){
+    var navBani = document.getElementById('navBani');
+    if(navBani) navBani.remove();
+  }
+</script>
 
   <!-- SALARIU & NORMA -->
   <div class="card">
