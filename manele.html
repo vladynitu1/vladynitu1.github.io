@@ -2,563 +2,659 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EMX Manele // Generator</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EMX Fluturas</title>
 <style>
-  :root{
-    --bg:#07090f;
-    --panel:#0d1119;
-    --panel2:#11161f;
-    --cyan:#00e5ff;
-    --green:#39ff88;
-    --red:#ff3355;
-    --orange:#ff9a2e;
-    --text:#c9d3de;
-    --textdim:#5c6878;
-    --border:#1c2330;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:
-      radial-gradient(circle at 15% 0%, rgba(0,229,255,0.07), transparent 40%),
-      radial-gradient(circle at 85% 100%, rgba(255,58,90,0.06), transparent 45%),
-      var(--bg);
-    color:var(--text);
-    font-family:'Exo 2', sans-serif;
-    min-height:100vh;
-    padding:24px 16px 60px;
-  }
-  .wrap{max-width:760px;margin:0 auto;}
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
+:root{
+  --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
+  --bord:#3d1414;--bord2:#5c1c1c;
+  --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
+  --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
+  --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
+  --red:#ff2d55;--red2:rgba(255,45,85,0.09);
+  --org:#ff8c42;--org2:rgba(255,140,66,0.12);
+  --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:14px 14px 60px}
 
-  /* header */
-  header{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px;flex-wrap:wrap;}
-  .logo{
-    font-family:'Rajdhani',sans-serif;
-    font-weight:700;
-    font-size:2.4rem;
-    letter-spacing:3px;
-    color:var(--cyan);
-    text-shadow:0 0 14px rgba(0,229,255,0.55);
-    animation:blink 2.6s infinite;
-  }
-  @keyframes blink{
-    0%,100%{opacity:1;}
-    50%{opacity:.55;}
-    52%{opacity:1;}
-    54%{opacity:.3;}
-    56%{opacity:1;}
-  }
-  .sub{
-    font-family:'Share Tech Mono', monospace;
-    color:var(--textdim);
-    font-size:.8rem;
-    letter-spacing:2px;
-    text-transform:uppercase;
-  }
-  h1.title{
-    text-align:center;
-    font-family:'Rajdhani',sans-serif;
-    font-weight:600;
-    font-size:1.15rem;
-    color:var(--orange);
-    letter-spacing:2px;
-    margin:0 0 30px;
-    text-transform:uppercase;
-  }
+.hdr{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 24px;background:linear-gradient(135deg,#0a0303,#150606,#0a0303);border:1px solid transparent;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05)}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.hdr::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
+@keyframes hdrShine{0%{left:-100%}100%{left:200%}}
+.emx-logo{display:flex;align-items:center;gap:0;line-height:1}
+.emx-e{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--acc);letter-spacing:-2px;text-shadow:0 0 30px var(--acc),0 0 60px rgba(255,31,61,0.5)}
+.emx-m{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:#fff;letter-spacing:-2px;text-shadow:0 0 20px rgba(255,255,255,0.4)}
+.emx-x{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--grn);letter-spacing:-2px;text-shadow:0 0 30px var(--grn),0 0 60px rgba(255,107,61,0.5)}
+.emx-dot{font-size:.7rem;color:var(--acc);margin-left:8px;animation:blink 1.5s infinite;align-self:center}
+.emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 12px rgba(46,213,115,.85); }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.emx-tag{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--txtd);letter-spacing:3px;text-transform:uppercase;margin-top:6px}
+.save-row{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px}
+.save-badge{display:inline-flex;align-items:center;gap:5px;font-size:.62rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);padding:4px 12px;background:var(--surf2);border:1px solid var(--bord2);border-radius:20px;letter-spacing:1px;transition:color .3s,border-color .3s}
+.save-badge.saved{color:var(--grn);border-color:rgba(255,107,61,.3)}
+.save-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.btn-reset{padding:4px 14px;background:var(--red2);border:1px solid var(--red);border-radius:20px;color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.62rem;cursor:pointer;letter-spacing:1px;transition:background .2s,color .2s}
+.btn-reset:hover{background:var(--red);color:#fff}
 
-  .panel{
-    background:linear-gradient(180deg, var(--panel), var(--panel2));
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:20px;
-    margin-bottom:20px;
-    position:relative;
-  }
-  .panel::before{
-    content:'';
-    position:absolute;top:0;left:16px;right:16px;height:1px;
-    background:linear-gradient(90deg, transparent, var(--cyan), transparent);
-    opacity:.5;
-  }
-  .panel-label{
-    font-family:'Share Tech Mono', monospace;
-    font-size:.7rem;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--cyan);
-    margin-bottom:14px;
-    display:flex;align-items:center;gap:8px;
-  }
-  .panel-label::before{content:'▸';color:var(--green);}
+.page-nav{
+  display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+  background:var(--surf); border:1px solid var(--bord); border-radius:12px;
+  padding:12px 16px; margin-bottom:14px;
+}
+.page-nav-btn{
+  display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
+  text-decoration:none; transition:background .15s,color .15s,border-color .15s;
+}
+.page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
+.page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
 
-  /* mode toggle */
-  .modes{display:flex;gap:10px;margin-bottom:14px;}
-  .mode-btn{
-    flex:1;
-    padding:10px 8px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    color:var(--textdim);
-    font-family:'Rajdhani',sans-serif;
-    font-weight:600;
-    font-size:.95rem;
-    letter-spacing:1px;
-    border-radius:6px;
-    cursor:pointer;
-    transition:.15s;
-  }
-  .mode-btn.active{
-    color:var(--bg);
-    background:var(--cyan);
-    border-color:var(--cyan);
-    box-shadow:0 0 14px rgba(0,229,255,0.4);
-  }
-  .mode-btn:hover:not(.active){border-color:var(--cyan);color:var(--cyan);}
+.card{background:var(--surf);border:1px solid var(--bord);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.card-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--acc);margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:8px}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);flex-shrink:0}
+.dot-green{background:var(--grn)!important}
+.dot-red{background:var(--red)!important}
+.dot-org{background:var(--org)!important}
 
-  select, input[type=text]{
-    width:100%;
-    background:var(--panel);
-    border:1px solid var(--border);
-    color:var(--text);
-    padding:10px 12px;
-    border-radius:6px;
-    font-family:'Exo 2', sans-serif;
-    font-size:.95rem;
-    margin-bottom:12px;
-  }
-  select:focus, input:focus{outline:none;border-color:var(--cyan);}
-  label.field-label{
-    font-family:'Share Tech Mono', monospace;
-    font-size:.68rem;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--textdim);
-    display:block;
-    margin-bottom:6px;
-  }
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-family:'Rajdhani',sans-serif;font-size:.68rem;font-weight:600;color:var(--txtd);letter-spacing:1.3px;text-transform:uppercase;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.badge{font-family:'Share Tech Mono',monospace;font-size:0.6rem;padding:1px 5px;border-radius:4px;letter-spacing:.2px}
+.by{background:var(--acc2);color:var(--acc);border:1px solid rgba(255,31,61,.3)}
+.bg{background:var(--grn2);color:var(--grn);border:1px solid rgba(255,107,61,.25)}
+.br{background:var(--red2);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+.input-wrap{position:relative}
+.input-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.68rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);pointer-events:none}
+input[type="number"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.95rem;padding:8px 42px 8px 11px;width:100%;outline:none;-moz-appearance:textfield;transition:border-color .2s,box-shadow .2s}
+input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
+input[readonly]{background:var(--grn2);border-color:rgba(255,107,61,.3);color:var(--grn);cursor:default}
+input[readonly]:focus{border-color:rgba(255,107,61,.4);box-shadow:none}
+.info-box{font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);margin-top:8px;padding:8px 10px;background:var(--surf2);border-radius:6px;border:1px solid var(--bord);border-left:3px solid var(--acc);line-height:1.7}
+.info-box .y{color:var(--acc);font-weight:700}
+.info-box .g{color:var(--grn);font-weight:700}
+.info-box .r{color:var(--red);font-weight:700}
 
-  .btn{
-    font-family:'Rajdhani',sans-serif;
-    font-weight:700;
-    font-size:1rem;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    padding:12px 20px;
-    border-radius:6px;
-    border:1px solid var(--green);
-    background:rgba(57,255,136,0.08);
-    color:var(--green);
-    cursor:pointer;
-    transition:.15s;
-    width:100%;
-  }
-  .btn:hover{background:var(--green);color:var(--bg);box-shadow:0 0 16px rgba(57,255,136,0.5);}
-  .btn:disabled{opacity:.4;cursor:not-allowed;}
-  .btn.red{border-color:var(--red);color:var(--red);background:rgba(255,51,85,0.08);}
-  .btn.red:hover{background:var(--red);color:var(--bg);box-shadow:0 0 16px rgba(255,51,85,0.5);}
-  .btn.orange{border-color:var(--orange);color:var(--orange);background:rgba(255,154,46,0.08);}
-  .btn.orange:hover{background:var(--orange);color:var(--bg);box-shadow:0 0 16px rgba(255,154,46,0.5);}
+.breakdown{display:flex;flex-direction:column}
+.brow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bord);font-family:'Share Tech Mono',monospace;font-size:.74rem;gap:8px}
+.brow:last-child{border-bottom:none}
+.brow .lbl{color:var(--txtm);flex:1;line-height:1.5;font-family:'Exo 2',sans-serif}
+.brow .val{font-weight:700;white-space:nowrap}
+.brow.sep{border-top:1px solid var(--bord2);margin-top:4px;padding-top:10px;border-bottom:none}
+.brow.sep .lbl{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:1px}
+.brow.sep2{border-top:1px solid rgba(255,77,109,.3);margin-top:4px;padding-top:10px;border-bottom:none}
+.brow.sep2 .lbl{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px}
+.brow.grand{border-top:2px solid rgba(255,107,61,.4);margin-top:4px;padding-top:12px;border-bottom:none}
+.brow.grand .lbl{font-family:'Rajdhani',sans-serif;font-size:.8rem;font-weight:700;color:var(--grn);text-transform:uppercase;letter-spacing:1.5px}
 
-  /* lyrics output */
-  .lyrics-box{
-    margin-top:16px;
-    background:#000;
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:18px 20px;
-    min-height:120px;
-    font-family:'Share Tech Mono', monospace;
-    font-size:.95rem;
-    line-height:1.9;
-    color:var(--green);
-    white-space:pre-wrap;
-  }
-  .lyrics-box.empty{color:var(--textdim);font-style:italic;}
-  .lyrics-box .verse-title{color:var(--orange);display:block;margin-bottom:8px;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.result-grid{grid-template-columns:1fr}}
+.result-box{border-radius:12px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;position:relative;overflow:hidden}
+.result-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.result-box.avans{background:var(--surf);border:1px solid var(--bord2)}
+.result-box.avans::before{background:var(--red)}
+.result-box.lichidare{background:var(--surf);border:1px solid var(--bord2)}
+.result-box.lichidare::before{background:var(--grn)}
+.rb-label{font-family:'Rajdhani',sans-serif;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:2px}
+.result-box.avans .rb-label{color:var(--red)}
+.result-box.lichidare .rb-label{color:var(--grn)}
+.rb-amount{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,6vw,38px);line-height:1;letter-spacing:-1px}
+.result-box.avans .rb-amount{color:var(--red)}
+.result-box.lichidare .rb-amount{color:var(--grn)}
+.rb-sub{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--txtd);margin-top:2px;line-height:1.6}
 
-  /* beat panel */
-  .row{display:flex;gap:14px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
-  .row label.field-label{margin-bottom:0;}
-  .slider-row{display:flex;align-items:center;gap:12px;}
-  .slider-row span.val{
-    font-family:'Share Tech Mono', monospace;
-    color:var(--cyan);
-    min-width:52px;
-    text-align:right;
-    font-size:.85rem;
-  }
-  input[type=range]{
-    flex:1;
-    accent-color:var(--cyan);
-  }
-  .beat-controls{display:flex;gap:10px;}
-  .beat-controls .btn{width:auto;flex:1;}
-  .pulse{
-    width:14px;height:14px;border-radius:50%;
-    background:var(--border);
-    display:inline-block;
-    margin-left:8px;
-    transition:.05s;
-  }
-  .pulse.on{background:var(--cyan);box-shadow:0 0 10px var(--cyan);}
+.formula-note{font-size:.7rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);padding:10px 12px;background:var(--surf2);border:1px solid var(--bord);border-left:3px solid var(--grn);border-radius:8px;line-height:1.9}
+.formula-note .g{color:var(--grn)}
+.formula-note .y{color:var(--acc)}
 
-  .status{
-    font-family:'Share Tech Mono', monospace;
-    font-size:.75rem;
-    color:var(--textdim);
-    margin-top:10px;
-    min-height:16px;
-  }
-  .status.error{color:var(--red);}
-  .status.ok{color:var(--green);}
-
-  footer{
-    text-align:center;
-    font-family:'Share Tech Mono', monospace;
-    font-size:.65rem;
-    color:var(--textdim);
-    letter-spacing:1px;
-    margin-top:30px;
-  }
+.upload-row{display:flex;flex-direction:column;gap:10px}
+.file-drop{position:relative;border:1px dashed var(--bord2);border-radius:9px;background:var(--surf2);padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,background .2s}
+.file-drop:hover{border-color:var(--acc)}
+.file-drop input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.file-drop .fi-icon{font-size:1.3rem;flex-shrink:0}
+.file-drop .fi-txt{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--txtm);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-drop .fi-txt b{color:var(--txt)}
+input[type="text"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.9rem;padding:9px 11px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s}
+input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
+.btn-extract{width:100%;padding:11px;background:linear-gradient(135deg,var(--acc),#c4102a);border:none;border-radius:8px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-extract:hover{opacity:.9}
+.btn-extract:active{transform:scale(.98)}
+.btn-extract:disabled{opacity:.5;cursor:default}
+.extract-status{font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);margin-top:2px;padding:10px 12px;background:var(--surf2);border-radius:6px;border:1px solid var(--bord);border-left:3px solid var(--txtd);line-height:1.8;display:none}
+.extract-status.show{display:block}
+.extract-status.ok{border-left-color:var(--grn);color:var(--txtm)}
+.extract-status.ok .hl{color:var(--grn);font-weight:700}
+.extract-status.err{border-left-color:var(--red);color:var(--txtm)}
+.extract-status.err .hl{color:var(--red);font-weight:700}
+.extract-status.busy{border-left-color:var(--acc)}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="app">
 
-  <header>
-    <div class="logo">EMX</div>
-  </header>
-  <div style="text-align:center;margin-bottom:4px;">
-    <span class="sub">// suita de unelte personale</span>
+<div class="hdr">
+  <div class="emx-logo">
+    <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
+    <span class="emx-dot" id="statusDot">●</span>
   </div>
-  <h1 class="title">Generator de Manele</h1>
-
-  <!-- LYRICS PANEL -->
-  <div class="panel">
-    <div class="panel-label">Versuri</div>
-
-    <div class="modes">
-      <button class="mode-btn active" id="modeRandomBtn" onclick="setMode('random')">🎲 Random</button>
-      <button class="mode-btn" id="modeAiBtn" onclick="setMode('ai')">🤖 AI</button>
-    </div>
-
-    <div id="randomFields">
-      <label class="field-label">Temă</label>
-      <select id="themeSelect">
-        <option value="dragoste">Dragoste / dor</option>
-        <option value="bani">Bani / lux</option>
-        <option value="fite">Fițe / superioritate</option>
-        <option value="petrecere">Petrecere</option>
-        <option value="dusmani">Dușmani / invidie</option>
-      </select>
-    </div>
-
-    <div id="aiFields" style="display:none;">
-      <label class="field-label">Despre ce sunt versurile?</label>
-      <input type="text" id="aiThemeInput" placeholder="ex: mi-am luat tren nou de serviciu, sunt mecanic de locomotivă...">
-    </div>
-
-    <button class="btn" id="generateBtn" onclick="generateLyrics()">Generează versuri</button>
-
-    <div class="lyrics-box empty" id="lyricsBox">Apasă „Generează versuri" ca să înceapă showul.</div>
-    <div class="status" id="lyricsStatus"></div>
+  <div class="emx-tag">CALCUL SALARIU</div>
+  <div class="save-row">
+    <span class="save-badge" id="saveBadge"><span class="save-dot"></span><span id="saveText">Se încarcă...</span></span>
+    <button class="btn-reset" onclick="resetDate()">↺ RESET</button>
   </div>
+</div>
 
-  <!-- BEAT PANEL -->
-  <div class="panel">
-    <div class="panel-label">Instrumental <span class="pulse" id="pulseDot"></span></div>
-
-    <div class="slider-row">
-      <label class="field-label" style="min-width:60px;">Tempo</label>
-      <input type="range" id="bpmSlider" min="70" max="170" value="128" oninput="updateBpmLabel()">
-      <span class="val" id="bpmVal">128 BPM</span>
-    </div>
-
-    <div class="slider-row">
-      <label class="field-label" style="min-width:60px;">Volum</label>
-      <input type="range" id="volSlider" min="0" max="100" value="60">
-      <span class="val" id="volVal">60%</span>
-    </div>
-
-    <div class="beat-controls">
-      <button class="btn orange" id="playBtn" onclick="toggleBeat()">▶ Play beat</button>
-      <button class="btn red" onclick="stopBeat()">■ Stop</button>
-    </div>
-    <div class="status" id="beatStatus">Sintetizat live în browser, gamă orientală + ritm de darbuka.</div>
-  </div>
-
-  <footer>EMX // unelte personale · vladynitu1.github.io</footer>
+<div class="page-nav">
+  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
+  <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
+  <span class="page-nav-btn active">💰 Calcul salariu</span>
+  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
+  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
 </div>
 
 <script>
-/* ============== LYRICS GENERATOR ============== */
-let mode = 'random';
+  (function(){
+    var connected = !!localStorage.getItem('emx_gh_token');
+    if(!connected){
+      var navBani = document.getElementById('navBani');
+      if(navBani) navBani.remove();
+    }
+    var dot = document.getElementById('statusDot');
+    if(dot) dot.classList.toggle('status-connected', connected);
+  })();
+</script>
 
-function setMode(m){
-  mode = m;
-  document.getElementById('modeRandomBtn').classList.toggle('active', m==='random');
-  document.getElementById('modeAiBtn').classList.toggle('active', m==='ai');
-  document.getElementById('randomFields').style.display = m==='random' ? 'block' : 'none';
-  document.getElementById('aiFields').style.display = m==='ai' ? 'block' : 'none';
-}
+  <!-- PRELUARE DIN FISA DE LUCRU -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-org"></span> Preia din fișă de lucru (grafic)</div>
+    <div class="upload-row">
+      <div class="field">
+        <label>Nume angajat (nume + prenume, ca în grafic)</label>
+        <input type="text" id="numeAngajat" placeholder="ex: Nițu Ionuț">
+      </div>
+      <div class="field">
+        <label>Fișă de lucru <span class="badge bg">PDF / poză / Excel</span></label>
+        <div class="file-drop" id="fileDrop">
+          <input type="file" id="fisaFile" accept="application/pdf,image/*,.xlsx,.xls">
+          <span class="fi-icon">📎</span>
+          <span class="fi-txt" id="fisaFileTxt">Alege fișierul cu graficul lunii...</span>
+        </div>
+      </div>
+      <button class="btn-extract" id="btnExtract" onclick="extrageDinFisa()">⚡ Preia orele automat</button>
+      <div class="extract-status" id="extractStatus"></div>
+    </div>
+  </div>
 
-const banks = {
-  dragoste: {
-    nume: ["Andreea","Larisa","Bianca","prințesa mea","comoara mea","dulceața mea","inima mea"],
-    obiecte: ["poza ta","numărul tău","inelul dat de mine","brățara de-aur","mesajul tău de noapte"],
-    locuri: ["pe balcon","la geam, în noapte","în mașina mea","pe ringul de dans","sub luna plină"],
-    sentimente: ["dor nebun","foc în piept","dragoste de milioane","supărare mare","gelozie cruntă"],
-    superlative: ["fără margini","ca-n filme","cum n-a mai fost","de nedescris","până la capăt"],
-    actiuni: ["te aștept la geam","plâng în mașină","sun de zece ori","scriu numele tău", "ard o lumânare pentru noi"]
-  },
-  bani: {
-    nume: ["Bosu","Mister X","Rambo","Nasty","Regele"],
-    obiecte: ["Mercedes-ul negru","lanțul de-aur","ceasul de firmă","vila din deal","banii din portbagaj"],
-    locuri: ["în fața blocului","la munte, la vilă","în Dubai","pe litoral, la Vip","la crâșma din centru"],
-    sentimente: ["mândrie de neoprit","putere fără limite","satisfacție totală","respect câștigat greu"],
-    superlative: ["de milioane","fără egal","cel mai tare din oraș","greu ca aurul","de nota zece"],
-    actiuni: ["arunc banii-n aer","număr note verzi","plătesc tot cu cash","urc la volan tras", "sar peste toți din cartier"]
-  },
-  fite: {
-    nume: ["frate","dușmane","lume","tot cartierul","toată gașca"],
-    obiecte: ["fițele mele","hainele de firmă","ochelarii de soare","stilul meu unic"],
-    locuri: ["pe bulevard","la evenimentul anului","la nunta din sat","în fața tuturor"],
-    sentimente: ["încredere fără limite","stil pe care nu-l ai","clasă naturală"],
-    superlative: ["nimeni nu mă-ntrece","sunt unic în tot orașul","stau deasupra tuturor"],
-    actiuni: ["defilez încet","arăt lumii cine sunt","las gura tuturor căscată","calc apăsat, cu stil"]
-  },
-  petrecere: {
-    nume: ["prieteni","lăutari","toată sala","nuntași","tot satul"],
-    obiecte: ["șampania","muzica de la formație","paharul ridicat","toastul de onoare"],
-    locuri: ["la nuntă","la botez","la masa mare","pe ringul de dans","până dimineața"],
-    sentimente: ["veselie mare","bucurie fără sfârșit","poftă de viață"],
-    superlative: ["ca la carte","cum se cuvine","până cade tavanul","fără oprire"],
-    actiuni: ["ridic paharul sus","dansez fără oprire","chem toată lumea la joc","strig către lăutari"]
-  },
-  dusmani: {
-    nume: ["dușmanii mei","invidioșii","lumea rea","cei care mă vorbesc"],
-    obiecte: ["vorbele lor goale","invidia din priviri","minciunile spuse-n spate"],
-    locuri: ["în spatele meu","în tot cartierul","pe la colțuri","prin sat"],
-    sentimente: ["curaj fără frică","liniște deplină","putere de fier"],
-    superlative: ["nu mă-ating cu nimic","stau mai sus ca oricând","rămân neclintit"],
-    actiuni: ["merg cu capul sus","calc peste vorbe goale","zâmbesc și trec departe","rămân tot eu, cel mai tare"]
-  }
+  <!-- SALARIU & NORMA -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> Salariu & Normă</div>
+    <div class="grid">
+      <div class="field">
+        <label>Salariu de încadrare</label>
+        <div class="input-wrap">
+          <input type="number" id="salariuBaza" value="6710" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Normă ore / lună</label>
+        <div class="input-wrap">
+          <input type="number" id="normaOre" value="176" min="1" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+    </div>
+    <div class="info-box" id="tarifInfo">—</div>
+  </div>
+
+  <!-- ORE LUCRATE -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-green"></span> Ore lucrate</div>
+    <div class="grid">
+      <div class="field">
+        <label>Ore normale <span class="badge bg">auto = normă − CO</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreNormale" readonly>
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>CO (concediu odihnă) <span class="badge br">1 zi = 8h</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreCO" value="0" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ore supl. I <span class="badge by">×1.75</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreSuplI" value="20" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Festive <span class="badge bg">×1.00</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreFestive" value="44" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Noapte 25% <span class="badge by">×0.25</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreNoapte" value="23" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cap Secție <span class="badge by">×0.75</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreCapSectie" value="61" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ore Școală <span class="badge bg">×1.00</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreScoala" value="6" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Formator <span class="badge bg">×1.00</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreFormator" value="0" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BONURI -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-green"></span> Bonuri de masă</div>
+    <div class="grid">
+      <div class="field">
+        <label>Nr. bonuri <span class="badge bg">auto ÷ 8</span></label>
+        <div class="input-wrap">
+          <input type="number" id="nrBonuri" readonly>
+          <span class="input-unit">buc</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Valoare / bon</label>
+        <div class="input-wrap">
+          <input type="number" id="valoareBon" value="43" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+    </div>
+    <div class="info-box" id="bonuriInfo">—</div>
+  </div>
+
+  <!-- AVANS -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-red"></span> Avans</div>
+    <div class="grid">
+      <div class="field">
+        <label>Avans (RON)</label>
+        <div class="input-wrap">
+          <input type="number" id="avansRon" value="2500" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Alte avansuri</label>
+        <div class="input-wrap">
+          <input type="number" id="alteAvansuri" value="0" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETALII -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-org"></span> Detalii calcul complet</div>
+    <div class="breakdown" id="breakdown">
+      <div class="brow"><span class="lbl">Introdu date pentru a vedea detaliile</span><span class="val">—</span></div>
+    </div>
+  </div>
+
+  <!-- REZULTATE -->
+  <div class="result-grid">
+    <div class="result-box avans">
+      <div class="rb-label">Avans</div>
+      <div class="rb-amount" id="rezAvans">0 RON</div>
+      <div class="rb-sub" id="rezAvansInfo">—</div>
+    </div>
+    <div class="result-box lichidare">
+      <div class="rb-label">Lichidare</div>
+      <div class="rb-amount" id="rezLichidare">0 RON</div>
+      <div class="rb-sub" id="rezLichidareInfo">—</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const FIELDS = [
+  'salariuBaza','normaOre','oreCO','oreSuplI',
+  'oreFestive','oreNoapte','oreCapSectie','oreScoala','oreFormator',
+  'valoareBon','avansRon','alteAvansuri'
+];
+const STORAGE_KEY = 'emx_fluturas_v2';
+const DEFAULTS = {
+  salariuBaza:6710, normaOre:176, oreCO:0, oreSuplI:20,
+  oreFestive:44, oreNoapte:23, oreCapSectie:61, oreScoala:6,
+  oreFormator:0, valoareBon:43,
+  avansRon:2500, alteAvansuri:0
 };
 
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-const templates = [
-  b => `Cu ${pick(b.obiecte)} ${pick(b.locuri)},`,
-  b => `simt ${pick(b.sentimente)}, ${pick(b.superlative)}.`,
-  b => `${pick(b.nume)}, să știi că nu mă opresc,`,
-  b => `${pick(b.actiuni)}, ${pick(b.locuri)}.`,
-  b => `E ${pick(b.sentimente)} în tot ce fac,`,
-  b => `și ${pick(b.actiuni)}, ${pick(b.superlative)}.`,
-  b => `Nu-i nimeni ca mine, ${pick(b.nume)},`,
-  b => `${pick(b.actiuni)}, mereu ${pick(b.superlative)}.`
-];
-
-function generateRandomLyrics(themeKey){
-  const b = banks[themeKey];
-  const lines = [];
-  const nLines = 8;
-  for(let i=0;i<nLines;i++){
-    lines.push(templates[i % templates.length](b));
-  }
-  const title = "EMX Manea // " + themeKey.toUpperCase();
-  return title + "\n\n" + lines.join("\n") + "\n\n[Refren, de două ori]";
+function salveaza() {
+  const data = {};
+  FIELDS.forEach(id => { data[id] = document.getElementById(id).value; });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const badge = document.getElementById('saveBadge');
+  badge.classList.add('saved');
+  document.getElementById('saveText').textContent = '✓ Salvat';
+  clearTimeout(window._st);
+  window._st = setTimeout(() => {
+    document.getElementById('saveText').textContent = 'Salvat local';
+  }, 1500);
 }
 
-async function generateAiLyrics(theme){
-  const prompt = `Scrie versuri de manea românească, stil parodic și amuzant, pe tema: "${theme}".
-Reguli:
-- Limba română, 8-14 versuri plus un refren scurt de 2-4 versuri.
-- Rime cât mai naturale, ritm specific manelelor (lăudăroșenie, exagerări, emoție mare).
-- Nu folosi nume de artiști reali sau persoane reale.
-- Răspunde DOAR cu versurile, fără explicații, fără ghilimele, fără markdown.`;
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-
-  if(!response.ok){
-    throw new Error("Eroare API: " + response.status);
-  }
-  const data = await response.json();
-  const text = (data.content || [])
-    .filter(item => item.type === "text")
-    .map(item => item.text)
-    .join("\n")
-    .trim();
-  if(!text) throw new Error("Răspuns gol de la AI.");
-  return "EMX Manea // AI\n\n" + text;
-}
-
-async function generateLyrics(){
-  const box = document.getElementById('lyricsBox');
-  const status = document.getElementById('lyricsStatus');
-  const btn = document.getElementById('generateBtn');
-  status.className = 'status';
-  status.textContent = '';
-
-  if(mode === 'random'){
-    const theme = document.getElementById('themeSelect').value;
-    box.classList.remove('empty');
-    box.textContent = generateRandomLyrics(theme);
-    status.className = 'status ok';
-    status.textContent = 'Generat local, fără AI.';
-  } else {
-    const theme = document.getElementById('aiThemeInput').value.trim();
-    if(!theme){
-      status.className = 'status error';
-      status.textContent = 'Scrie mai întâi despre ce vrei să fie manea.';
+function incarca() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      FIELDS.forEach(id => {
+        if (data[id] !== undefined) document.getElementById(id).value = data[id];
+      });
+      document.getElementById('saveBadge').classList.add('saved');
+      document.getElementById('saveText').textContent = 'Salvat local';
       return;
-    }
-    btn.disabled = true;
-    box.classList.remove('empty');
-    box.textContent = 'Se compune manea...';
-    status.textContent = '';
-    try{
-      const lyrics = await generateAiLyrics(theme);
-      box.textContent = lyrics;
-      status.className = 'status ok';
-      status.textContent = 'Generat cu AI.';
-    }catch(err){
-      box.classList.add('empty');
-      box.textContent = 'Nu am putut genera versurile.';
-      status.className = 'status error';
-      status.textContent = err.message || 'Eroare necunoscută.';
-    }finally{
-      btn.disabled = false;
-    }
+    } catch(e) {}
   }
+  document.getElementById('saveText').textContent = 'Date implicite';
 }
 
-/* ============== BEAT PLAYER (Web Audio API) ============== */
-let audioCtx = null;
-let isPlaying = false;
-let schedulerTimer = null;
-let nextNoteTime = 0;
-let step = 0;
-const stepsPerBar = 16;
-const lookahead = 25; // ms
-const scheduleAheadTime = 0.1; // s
-
-// Hijaz-ish scale (semitone offsets from root) — gives the oriental manele flavor
-const scale = [0,1,4,5,7,8,10];
-const rootFreq = 196.00; // G3
-
-function noteFreq(scaleIndex, octave=0){
-  const semis = scale[((scaleIndex % scale.length) + scale.length) % scale.length] + 12*octave;
-  return rootFreq * Math.pow(2, semis/12);
+function resetDate() {
+  if (!confirm('Resetezi toate câmpurile la valorile implicite?')) return;
+  FIELDS.forEach(id => { document.getElementById(id).value = DEFAULTS[id]; });
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('saveBadge').classList.remove('saved');
+  document.getElementById('saveText').textContent = 'Resetat';
+  calculeaza();
 }
 
-// catchy syncopated riff, indices into scale (with octave jumps)
-const riff = [0,2,4,2,0,-1,0,4, 7,4,2,0,2,4,5,4];
+function onChange() { calculeaza(); salveaza(); }
 
-// darbuka-ish pattern: D = dum (low), T = tek (high), . = rest
-const percPattern = "D..T D.TD D..T D.TD".replace(/ /g,'');
+function fmt(n){return n.toLocaleString('ro-RO',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtInt(n){return Math.round(n).toLocaleString('ro-RO');}
+function v(id){return parseFloat(document.getElementById(id).value)||0;}
 
-function getBpm(){ return parseInt(document.getElementById('bpmSlider').value, 10); }
-function getVol(){ return parseInt(document.getElementById('volSlider').value, 10) / 100; }
+function calculeaza() {
+  const salBaza        = v('salariuBaza');
+  const normaOre       = v('normaOre')||1;
+  const oreCO          = v('oreCO');
+  const oreSuplI       = v('oreSuplI');
+  const oreFestive     = v('oreFestive');
+  const oreNoapte      = v('oreNoapte');
+  const oreCapSectie   = v('oreCapSectie');
+  const oreScoala      = v('oreScoala');
+  const oreFormator    = v('oreFormator');
+  const valoareBon     = v('valoareBon');
+  const avansRon       = v('avansRon');
+  const alteAvansuri   = v('alteAvansuri');
 
-function updateBpmLabel(){
-  document.getElementById('bpmVal').textContent = getBpm() + ' BPM';
+  const oreNormale = Math.max(0, normaOre - oreCO);
+  document.getElementById('oreNormale').value = oreNormale;
+
+  const zileCO = oreCO / 8;
+
+  const nrBonuri = Math.floor(oreNormale / 8);
+  document.getElementById('nrBonuri').value = nrBonuri;
+
+  const t = Math.round(salBaza / normaOre * 100) / 100;
+  document.getElementById('tarifInfo').innerHTML =
+    `Tarif orar: <span class="y">${fmt(t)} RON/oră</span> &nbsp;(${fmt(salBaza)} RON ÷ ${normaOre} ore)`;
+
+  const salReal     = Math.round(salBaza * (oreNormale / normaOre));
+  const plataCO     = Math.round(t * oreCO * 1.00);
+  const plataSuplI  = Math.round(oreSuplI     * t * 1.75);
+  const plataFest   = Math.round(oreFestive   * t * 1.00);
+  const plataNoapte = Math.round(oreNoapte    * t * 0.25);
+  const plataCapS   = Math.round(oreCapSectie * t * 0.75);
+  const plataScoala = Math.round(oreScoala    * t * 1.00);
+  const plataForm   = Math.round(oreFormator  * t * 1.00);
+
+  const totalBrut = salReal + plataCO + plataSuplI + plataFest + plataNoapte + plataCapS + plataScoala + plataForm;
+  const totalBonuri = nrBonuri * valoareBon;
+
+  document.getElementById('bonuriInfo').innerHTML =
+    `<span class="g">${oreNormale} ore ÷ 8 = ${nrBonuri} bonuri</span> × ${fmt(valoareBon)} RON = <span class="y">${fmt(totalBonuri)} RON</span>`;
+
+  const bazaCASS = totalBrut + totalBonuri;
+  const bazaCAS  = totalBrut;
+  const CASS = Math.round(bazaCASS * 0.10);
+  const CAS  = Math.round(bazaCAS  * 0.25);
+  const net  = totalBrut - CASS - CAS;
+  const bazaImpozit = Math.max(0, net + totalBonuri);
+  const impozit  = Math.round(bazaImpozit * 0.10);
+  const salarNet = net - impozit;
+  const lichidare = salarNet - avansRon - alteAvansuri;
+
+  let html = '';
+  const rows = [
+    {show:true,           col:'var(--txt)',   lbl:`Salar realizat — ${oreNormale} ore / ${normaOre} normă`,  val:salReal},
+    {show:oreSuplI>0,     col:'var(--acc)', lbl:`Ore supl. I — ${oreSuplI} ore × ${fmt(t)} × 1.75`,        val:plataSuplI},
+    {show:oreFestive>0,   col:'var(--txt)',   lbl:`Festive — ${oreFestive} ore × ${fmt(t)}`,                 val:plataFest},
+    {show:oreNoapte>0,    col:'var(--acc)', lbl:`Noapte 25% — ${oreNoapte} ore × ${fmt(t*0.25)}`,          val:plataNoapte},
+    {show:oreCapSectie>0, col:'var(--acc)', lbl:`Cap Secție 75% — ${oreCapSectie} ore × ${fmt(t*0.75)}`,   val:plataCapS},
+    {show:oreScoala>0,    col:'var(--txt)',   lbl:`Ore Școală — ${oreScoala} ore × ${fmt(t)}`,               val:plataScoala},
+    {show:oreFormator>0,  col:'var(--txt)',   lbl:`Formator — ${oreFormator} ore × ${fmt(t)}`,               val:plataForm},
+  ];
+
+  rows.filter(r=>r.show).forEach(r=>{
+    html+=`<div class="brow"><span class="lbl">${r.lbl}</span><span class="val" style="color:${r.col}">${fmtInt(r.val)} RON</span></div>`;
+  });
+  if(oreCO>0){
+    html+=`<div class="brow"><span class="lbl" style="color:var(--grn)">CO plătit — ${fmt(oreCO)} ore (${fmt(zileCO)} zile) × ${fmt(t)}</span><span class="val" style="color:var(--grn)">${fmtInt(plataCO)} RON</span></div>`;
+  }
+  html+=`<div class="brow sep"><span class="lbl">Venit BRUT (fără bonuri)</span><span class="val" style="color:var(--acc);font-size:15px;">${fmtInt(totalBrut)} RON</span></div>`;
+  if(totalBonuri>0){
+    html+=`<div class="brow"><span class="lbl" style="color:var(--grn)">+ Bonuri masă — ${nrBonuri} × ${fmt(valoareBon)} RON</span><span class="val" style="color:var(--grn)">+ ${fmtInt(totalBonuri)} RON</span></div>`;
+  }
+  html+=`<div class="brow sep2"><span class="lbl">Rețineri</span><span class="val"></span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">CASS 10% din ${fmtInt(bazaCASS)} (brut+bonuri)</span><span class="val" style="color:var(--red)">− ${fmtInt(CASS)} RON</span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">CAS 25% din ${fmtInt(bazaCAS)} (brut)</span><span class="val" style="color:var(--red)">− ${fmtInt(CAS)} RON</span></div>`;
+  html+=`<div class="brow sep"><span class="lbl">Venit net (Brut − CASS − CAS)</span><span class="val" style="color:var(--acc);font-size:14px;">${fmtInt(net)} RON</span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--org)">Baza impozit = net + bonuri = ${fmtInt(bazaImpozit)} RON</span><span class="val"></span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">Impozit 10% din ${fmtInt(bazaImpozit)}</span><span class="val" style="color:var(--red)">− ${fmtInt(impozit)} RON</span></div>`;
+  html+=`<div class="brow grand"><span class="lbl">Salar net</span><span class="val" style="color:var(--grn);font-size:16px;">${fmtInt(salarNet)} RON</span></div>`;
+
+  document.getElementById('breakdown').innerHTML = html;
+  document.getElementById('rezAvans').textContent         = fmtInt(avansRon)+' RON';
+  document.getElementById('rezLichidare').textContent     = fmtInt(lichidare)+' RON';
+  document.getElementById('rezAvansInfo').textContent     = `Avans: ${fmtInt(avansRon)} RON`;
+  document.getElementById('rezLichidareInfo').textContent = `Din salar net ${fmtInt(salarNet)} RON`;
 }
-document.getElementById('volSlider').addEventListener('input', () => {
-  document.getElementById('volVal').textContent = getVol()*100 + '%';
+
+// ===== PRELUARE AUTOMATĂ DIN FIȘA DE LUCRU =====
+
+document.getElementById('fisaFile').addEventListener('change', function(e){
+  const f = e.target.files[0];
+  const txt = document.getElementById('fisaFileTxt');
+  if(f){
+    txt.innerHTML = `<b>${f.name}</b>`;
+  } else {
+    txt.textContent = 'Alege fișierul cu graficul lunii...';
+  }
 });
 
-function playSynthNote(freq, time, dur, gainMult=1){
-  const ctx = audioCtx;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(freq, time);
-  const vol = getVol() * 0.18 * gainMult;
-  gain.gain.setValueAtTime(0.0001, time);
-  gain.gain.exponentialRampToValueAtTime(Math.max(vol,0.0001), time + 0.015);
-  gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-  osc.connect(gain).connect(ctx.destination);
-  osc.start(time);
-  osc.stop(time + dur + 0.02);
+function setStatus(msg, cls){
+  const el = document.getElementById('extractStatus');
+  el.className = 'extract-status show' + (cls ? ' '+cls : '');
+  el.innerHTML = msg;
 }
 
-function playDrum(time, low){
-  const ctx = audioCtx;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  const vol = getVol() * (low ? 0.5 : 0.25);
-  osc.frequency.setValueAtTime(low ? 90 : 260, time);
-  osc.frequency.exponentialRampToValueAtTime(low ? 45 : 140, time + 0.12);
-  gain.gain.setValueAtTime(vol, time);
-  gain.gain.exponentialRampToValueAtTime(0.0001, time + (low ? 0.18 : 0.09));
-  osc.connect(gain).connect(ctx.destination);
-  osc.start(time);
-  osc.stop(time + 0.2);
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(',')[1]);
+    r.onerror = () => reject(new Error('Nu am putut citi fișierul'));
+    r.readAsDataURL(file);
+  });
 }
 
-function scheduleStep(stepIndex, time){
-  // melody: one riff note per 16th
-  const deg = riff[stepIndex % riff.length];
-  const octave = deg >= 7 ? 1 : (deg < 0 ? -1 : 0);
-  playSynthNote(noteFreq(deg, 0), time, 0.16, 0.9);
+// Excel -> text tabelar simplu (folosit ca text în promptul către model)
+function excelToText(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = (e) => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:false});
+        let out = '';
+        wb.SheetNames.forEach(name => {
+          out += `--- SHEET: ${name} ---\n`;
+          out += XLSX.utils.sheet_to_csv(wb.Sheets[name], {blankrows:false});
+          out += '\n';
+        });
+        resolve(out);
+      } catch(err){ reject(err); }
+    };
+    r.onerror = () => reject(new Error('Nu am putut citi fișierul Excel'));
+    r.readAsArrayBuffer(file);
+  });
+}
 
-  // percussion
-  const pChar = percPattern[stepIndex % percPattern.length];
-  if(pChar === 'D') playDrum(time, true);
-  if(pChar === 'T') playDrum(time, false);
+// "198:02" -> 198.03 (ore zecimale, minute/60)
+function hmToDec(str){
+  if(str===undefined || str===null) return 0;
+  str = String(str).trim();
+  if(str==='') return 0;
+  const m = str.match(/^(\d+):(\d{1,2})$/);
+  if(m){ return Math.round((parseInt(m[1],10) + parseInt(m[2],10)/60)*100)/100; }
+  const n = parseFloat(str.replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
 
-  // visual pulse on beat 0,4,8,12
-  if(stepIndex % 4 === 0){
-    const dot = document.getElementById('pulseDot');
-    setTimeout(() => {
-      dot.classList.add('on');
-      setTimeout(()=>dot.classList.remove('on'), 90);
-    }, Math.max(0,(time - audioCtx.currentTime)*1000));
+async function extrageDinFisa(){
+  const nume = document.getElementById('numeAngajat').value.trim();
+  const fileInput = document.getElementById('fisaFile');
+  const file = fileInput.files[0];
+  const btn = document.getElementById('btnExtract');
+
+  if(!nume){ setStatus('Introdu numele angajatului (nume + prenume, exact cum apare în grafic).', 'err'); return; }
+  if(!file){ setStatus('Alege mai întâi fișierul cu graficul lunii (PDF, poză sau Excel).', 'err'); return; }
+
+  btn.disabled = true;
+  setStatus('⏳ Citesc fișa de lucru și caut angajatul...', 'busy');
+
+  const promptText =
+`Ai mai jos o fișă/grafic lunar de pontaj feroviar (poate conține artefacte de extragere OCR/PDF: coduri numerice ciudate în loc de unele celule — ignoră-le complet, nu sunt relevante).
+
+Structura tipică a graficului, pentru fiecare angajat, pe mai multe rânduri:
+- un rând cu numele de familie și, pe rândul următor, prenumele (uneori split pe 2 linii), lângă un număr curent
+- un rând "efect" (efectuat) cu coduri zilnice (L = liber, CO = concediu de odihnă, alte coduri de post) — fiecare apariție "CO" = 1 zi de concediu
+- în dreptul/sub eticheta "Festive" (care apare ca titlu de coloană spre rândul cu numele), pe rândul persoanei apare o valoare tip HH:MM = TOTAL ore festive ale lunii pentru acea persoană
+- rândul "Ore serv prestat" cu valori zilnice și, la final, o valoare tip HH:MM = TOTAL ore prestate în lună
+- rândul "Ore de noapte" cu valori zilnice și TOTAL final tip HH:MM
+- rândul "Ore CS 75%" (Cap Secție) cu valori zilnice și TOTAL final tip HH:MM
+- undeva în document (antet/subsol) apare textul "PROGRAM LUCRU ... NORMA <număr>" — acela e norma de ore a lunii
+
+Caută angajatul cu numele complet: "${nume}" (potrivire pe nume ȘI prenume together — pot exista mai mulți angajați cu același nume de familie sau același prenume, NU confunda persoane diferite).
+
+Răspunde STRICT cu un obiect JSON, fără text suplimentar, fără backticks, în formatul exact:
+{"gasit": true/false, "normaOre": <număr>, "totalOreServPrestat": "<HH:MM sau null>", "totalOreNoapte": "<HH:MM sau null>", "totalOreCS75": "<HH:MM sau null>", "totalFestive": "<HH:MM sau null>", "zileCO": <număr întreg zile CO>, "eroare": "<mesaj scurt dacă gasit=false, altfel null>"}`;
+
+  try {
+    let content;
+    if(file.type === 'application/pdf'){
+      const b64 = await fileToBase64(file);
+      content = [
+        { type:'document', source:{ type:'base64', media_type:'application/pdf', data:b64 } },
+        { type:'text', text: promptText }
+      ];
+    } else if(file.type.startsWith('image/')){
+      const b64 = await fileToBase64(file);
+      content = [
+        { type:'image', source:{ type:'base64', media_type:file.type, data:b64 } },
+        { type:'text', text: promptText }
+      ];
+    } else {
+      const csvText = await excelToText(file);
+      content = [
+        { type:'text', text: promptText + '\n\n--- CONȚINUT FIȘIER EXCEL (CSV) ---\n' + csvText }
+      ];
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = (data.content || []).map(b => b.text || '').join('').trim();
+    const clean = raw.replace(/^```json/i,'').replace(/```$/,'').trim();
+    const parsed = JSON.parse(clean);
+
+    if(!parsed.gasit){
+      setStatus(`Nu am găsit "${nume}" în fișă. ${parsed.eroare ? '('+parsed.eroare+')' : 'Verifică numele scris exact ca în grafic.'}`, 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    const norma       = parseFloat(parsed.normaOre) || v('normaOre');
+    const totalServ   = hmToDec(parsed.totalOreServPrestat);
+    const totalNoapte = hmToDec(parsed.totalOreNoapte);
+    const totalCS75   = hmToDec(parsed.totalOreCS75);
+    const totalFest   = hmToDec(parsed.totalFestive);
+    const zileCO       = parseInt(parsed.zileCO,10) || 0;
+    const oreCO         = zileCO * 8;
+    const oreSupl       = Math.max(0, Math.round((totalServ - norma)*100)/100);
+
+    document.getElementById('normaOre').value      = norma;
+    document.getElementById('oreCO').value          = oreCO;
+    document.getElementById('oreSuplI').value       = oreSupl;
+    document.getElementById('oreFestive').value     = totalFest;
+    document.getElementById('oreNoapte').value      = totalNoapte;
+    document.getElementById('oreCapSectie').value   = totalCS75;
+
+    onChange();
+
+    setStatus(
+      `<span class="hl">✓ Preluat pentru ${nume}</span><br>`+
+      `Normă: ${norma} h &nbsp;|&nbsp; CO: ${zileCO} zile (${oreCO} h) &nbsp;|&nbsp; Ore serv. prestat total: ${totalServ} h<br>`+
+      `Supl.: ${oreSupl} h &nbsp;|&nbsp; Festive: ${totalFest} h &nbsp;|&nbsp; Noapte: ${totalNoapte} h &nbsp;|&nbsp; CS 75%: ${totalCS75} h<br>`+
+      `Verifică valorile mai jos înainte de a te baza pe calcul — extragerea e automată, poate greși pe fișiere neclare.`,
+      'ok'
+    );
+  } catch(err){
+    console.error(err);
+    setStatus('A apărut o eroare la citirea fișierului sau la interpretarea răspunsului. Încearcă din nou sau folosește o poză mai clară a fișei.', 'err');
+  } finally {
+    btn.disabled = false;
   }
 }
 
-function scheduler(){
-  const secondsPerStep = 60.0 / getBpm() / 4; // 16th notes
-  while(nextNoteTime < audioCtx.currentTime + scheduleAheadTime){
-    scheduleStep(step, nextNoteTime);
-    nextNoteTime += secondsPerStep;
-    step = (step + 1) % stepsPerBar;
-  }
-  schedulerTimer = setTimeout(scheduler, lookahead);
-}
-
-function toggleBeat(){
-  if(isPlaying){ stopBeat(); return; }
-  if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-  if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
-  isPlaying = true;
-  step = 0;
-  nextNoteTime = audioCtx.currentTime + 0.05;
-  scheduler();
-  document.getElementById('playBtn').textContent = '⏸ Pauză';
-  document.getElementById('beatStatus').textContent = 'Se cântă... ridică volumul, frate!';
-  document.getElementById('beatStatus').className = 'status ok';
-}
-
-function stopBeat(){
-  isPlaying = false;
-  if(schedulerTimer) clearTimeout(schedulerTimer);
-  document.getElementById('playBtn').textContent = '▶ Play beat';
-  document.getElementById('beatStatus').textContent = 'Sintetizat live în browser, gamă orientală + ritm de darbuka.';
-  document.getElementById('beatStatus').className = 'status';
-}
+// Pornire
+incarca();
+calculeaza();
 </script>
 </body>
 </html>
