@@ -49,6 +49,7 @@
   .emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
   .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
   .emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
+  .emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 10px rgba(46,213,115,.85); }
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
   .board-sub{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin-top:4px;}
 
@@ -184,7 +185,7 @@
   <div class="board-top">
     <div class="emx-logo">
       <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
-      <span class="emx-dot">●</span>
+      <span class="emx-dot" id="statusDot">●</span>
     </div>
     <div class="board-sub">PROGRAM DE LUCRU</div>
   </div>
@@ -202,7 +203,6 @@
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
   <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
   <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
-  <a href="index.html" class="page-nav-btn auth" id="gh-account-btn">🔒 Deconectat</a>
 </div>
 
 <main id="app"></main>
@@ -917,12 +917,9 @@ async function render(){
 }
 
 function updateGhAccountBtn(){
-  const btn = document.getElementById('gh-account-btn');
   const authed = hasToken();
-  if(btn){
-    btn.textContent = authed ? '🟢 Conectat' : '🔒 Deconectat';
-    btn.classList.toggle('connected', authed);
-  }
+  const dot = document.getElementById('statusDot');
+  if(dot) dot.classList.toggle('status-connected', authed);
   const navBani = document.getElementById('navBani');
   if(navBani && !authed) navBani.remove();
 }
