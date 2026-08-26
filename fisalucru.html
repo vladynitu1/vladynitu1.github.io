@@ -202,7 +202,7 @@
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
   <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
   <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
-  <a href="index.html" class="page-nav-btn auth" id="gh-account-btn">🔑 Neautentificat</a>
+  <a href="index.html" class="page-nav-btn auth" id="gh-account-btn">🔒 Deconectat</a>
 </div>
 
 <main id="app"></main>
@@ -920,7 +920,7 @@ function updateGhAccountBtn(){
   const btn = document.getElementById('gh-account-btn');
   const authed = hasToken();
   if(btn){
-    btn.textContent = authed ? '🟢 Autentificat' : '🔑 Neautentificat';
+    btn.textContent = authed ? '🟢 Conectat' : '🔒 Deconectat';
     btn.classList.toggle('connected', authed);
   }
   const navBani = document.getElementById('navBani');
