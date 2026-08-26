@@ -136,6 +136,7 @@
   .logo .m{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:#fff; letter-spacing:-2px; text-shadow:0 0 18px rgba(255,255,255,.35);}
   .logo .x{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:var(--grn); letter-spacing:-2px; text-shadow:0 0 26px rgba(255,107,61,.6);}
   .logo .dot{color:var(--acc); font-size:22px; margin-left:6px; animation:blink 1.6s infinite;}
+  .logo .dot.status-connected{ color:#2ed573; text-shadow:0 0 14px rgba(46,213,115,.9); }
   @keyframes blink{0%,100%{opacity:1;} 50%{opacity:.2;}}
 
   .tagline{
@@ -239,7 +240,7 @@
 
 <div id="main">
   <div class="logo">
-    <span class="e">E</span><span class="m">M</span><span class="x">X</span><span class="dot">●</span>
+    <span class="e">E</span><span class="m">M</span><span class="x">X</span><span class="dot" id="statusDot">●</span>
   </div>
   <div class="tagline">alege instrumentul</div>
 
@@ -298,6 +299,7 @@
 
   function refreshAdminUI(){
     adminBtn.classList.toggle('connected', hasToken());
+    document.getElementById('statusDot').classList.toggle('status-connected', hasToken());
     if(hasToken()){
       adminStatus.textContent = '🟢 Conectat la GitHub';
       adminStatus.classList.add('connected');
