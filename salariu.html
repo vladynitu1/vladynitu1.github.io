@@ -30,6 +30,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .emx-m{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:#fff;letter-spacing:-2px;text-shadow:0 0 20px rgba(255,255,255,0.4)}
 .emx-x{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--grn);letter-spacing:-2px;text-shadow:0 0 30px var(--grn),0 0 60px rgba(255,107,61,0.5)}
 .emx-dot{font-size:.7rem;color:var(--acc);margin-left:8px;animation:blink 1.5s infinite;align-self:center}
+.emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 12px rgba(46,213,115,.85); }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 .emx-tag{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--txtd);letter-spacing:3px;text-transform:uppercase;margin-top:6px}
 .save-row{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px}
@@ -119,7 +120,7 @@ input[readonly]:focus{border-color:rgba(255,107,61,.4);box-shadow:none}
 <div class="hdr">
   <div class="emx-logo">
     <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
-    <span class="emx-dot">●</span>
+    <span class="emx-dot" id="statusDot">●</span>
   </div>
   <div class="emx-tag">CALCUL SALARIU</div>
   <div class="save-row">
@@ -137,10 +138,15 @@ input[readonly]:focus{border-color:rgba(255,107,61,.4);box-shadow:none}
 </div>
 
 <script>
-  if(!localStorage.getItem('emx_gh_token')){
-    var navBani = document.getElementById('navBani');
-    if(navBani) navBani.remove();
-  }
+  (function(){
+    var connected = !!localStorage.getItem('emx_gh_token');
+    if(!connected){
+      var navBani = document.getElementById('navBani');
+      if(navBani) navBani.remove();
+    }
+    var dot = document.getElementById('statusDot');
+    if(dot) dot.classList.toggle('status-connected', connected);
+  })();
 </script>
 
   <!-- SALARIU & NORMA -->
