@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ro">
 <head>
@@ -208,7 +207,7 @@
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
   <span class="page-nav-btn active">💵 Bani de luat</span>
   <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
-  <a href="index.html" class="page-nav-btn" id="token-btn-label-link">🔑 <span id="token-btn-label">Token GitHub</span></a>
+  <a href="index.html" class="page-nav-btn" id="token-btn-label-link">🔑 <span id="token-btn-label">Deconectat</span></a>
 </div>
 
 <div id="container">
@@ -345,7 +344,7 @@
     });
 
     document.getElementById("grand-total").textContent = formatLei(grandTotal);
-    document.getElementById("token-btn-label").textContent = ghToken ? "Token ✓" : "Token GitHub";
+    document.getElementById("token-btn-label").textContent = ghToken ? "Conectat" : "Deconectat";
   }
 
   // ── ADD ENTRY ────────────────────────────────────────────────────
