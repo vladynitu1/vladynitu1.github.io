@@ -141,12 +141,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
   <div class="gh-bar">
     <span id="ghStatus"></span>
-    <a href="index.html" class="btn btn-s" id="gh-account-link">🔑 Neautentificat</a>
-    <button class="btn btn-g" onclick="ghSave()">☁ Salvează</button>
+    <a href="index.html" class="btn btn-s" id="gh-account-link">🔑 Deconectat</a>
   </div>
 </div>
 
 <div class="page-nav">
+  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
   <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
   <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
@@ -330,7 +330,7 @@ function updateGhAccountLink(){
   const el = document.getElementById('gh-account-link');
   if(!el) return;
   const authed = !!ghToken;
-  el.textContent = authed ? '🟢 Autentificat' : '🔑 Neautentificat';
+  el.textContent = authed ? '🟢 Conectat' : '🔒 Deconectat';
 }
 async function ghLoadAndRefresh(){
   showGhStatus('⏳ Se încarcă datele...','var(--yel)');
