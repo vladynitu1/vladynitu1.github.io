@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ro">
 <head>
@@ -191,7 +192,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
 <div class="overlay" id="cloudOverlay">
 <div class="modal" style="max-width:480px">
   <button class="mclose" onclick="closeCloudSettings()">✕</button>
-  <h2 style="color:var(--acc)">☁️ Sincronizare Cloud</h2>
+  <h2 style="color:var(--acc)">☁ Sincronizare Cloud</h2>
   <p style="font-size:.78rem;color:var(--txtm);margin-bottom:14px;line-height:1.6">
     Datele se sincronizează automat între telefon, PC și orice dispozitiv.
     Folosește <b>JSONBin.io</b> (gratuit, fără cont obligatoriu).<br><br>
@@ -217,7 +218,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
     <button class="btn btn-s" onclick="closeCloudSettings()">Anulează</button>
   </div>
   <div style="margin-top:10px;font-size:.68rem;color:var(--txtd)">
-    ⚠️ API Key-ul se salvează local pe dispozitiv. Nu îl împărți cu alții.
+    ⚠ API Key-ul se salvează local pe dispozitiv. Nu îl împărți cu alții.
     Același API Key + Bin ID pe orice dispozitiv = date sincronizate.
   </div>
 </div>
@@ -510,7 +511,7 @@ function setSyncStatus(st, msg){
   syncStatus = st;
   const el = document.getElementById('syncIndicator');
   if(!el) return;
-  const icons = {local:'💾',syncing:'🔄',ok:'☁️✓',err:'⚠️'};
+  const icons = {local:'💾',syncing:'🔄',ok:'☁✓',err:'⚠'};
   const colors = {local:'var(--txtd)',syncing:'var(--yel)',ok:'var(--grn)',err:'var(--red)'};
   el.textContent = (icons[st]||'') + ' ' + (msg||'');
   el.style.color = colors[st]||'var(--txtd)';
@@ -565,7 +566,7 @@ async function loadFromCloud(){
     Object.entries(allData).forEach(([k,v])=>{
       try{ localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v)); }catch(e){}
     });
-    setSyncStatus('ok','Sincronizat ☁️');
+    setSyncStatus('ok','Sincronizat ☁');
     return true;
   }catch(e){ setSyncStatus('err','Fără internet'); return false; }
 }
@@ -1446,7 +1447,7 @@ Returnează STRICT JSON, fără markdown.`;
 
     let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
     if(neidentificate.length>0){
-      msg+=`\n⚠️ Neidentificate (verifică manual): zilele ${neidentificate.join(', ')}`;
+      msg+=`\n⚠ Neidentificate (verifică manual): zilele ${neidentificate.join(', ')}`;
     }
     setUploadStatus(msg,'var(--grn)');
     renderTabs(); renderTable();
