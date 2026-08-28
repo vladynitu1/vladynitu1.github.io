@@ -3,715 +3,1463 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>EMX Fluturas</title>
+<title>Fișă Pontaj CFR</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
 :root{
-  --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
-  --bord:#3d1414;--bord2:#5c1c1c;
-  --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
-  --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
+  --bg:#07090f;--surf:#0d1117;--surf2:#141b27;--surf3:#1a2236;
+  --bord:#1e3356;--bord2:#2a4070;
+  --acc:#00c8e8;--acc2:rgba(0,200,232,0.14);
+  --grn:#00e5a0;--grn2:rgba(0,229,160,0.10);
   --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
-  --red:#ff2d55;--red2:rgba(255,45,85,0.09);
+  --red:#ff4d6d;--red2:rgba(255,77,109,0.09);
   --org:#ff8c42;--org2:rgba(255,140,66,0.12);
-  --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
+  --txt:#d8e8f5;--txtd:#5a7a9a;--txtm:#8aafcc;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
-.app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:14px 14px 60px}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,232,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,232,0.018) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:14px}
 
-.hdr{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 24px;background:linear-gradient(135deg,#0a0303,#150606,#0a0303);border:1px solid transparent;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05)}
-.hdr::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-.hdr::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
-@keyframes hdrShine{0%{left:-100%}100%{left:200%}}
-.emx-logo{display:flex;align-items:center;gap:0;line-height:1}
-.emx-e{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--acc);letter-spacing:-2px;text-shadow:0 0 30px var(--acc),0 0 60px rgba(255,31,61,0.5)}
-.emx-m{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:#fff;letter-spacing:-2px;text-shadow:0 0 20px rgba(255,255,255,0.4)}
-.emx-x{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--grn);letter-spacing:-2px;text-shadow:0 0 30px var(--grn),0 0 60px rgba(255,107,61,0.5)}
-.emx-dot{font-size:.7rem;color:var(--acc);margin-left:8px;animation:blink 1.5s infinite;align-self:center}
-.emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 12px rgba(46,213,115,.85); }
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-.emx-tag{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--txtd);letter-spacing:3px;text-transform:uppercase;margin-top:6px}
-.save-row{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px}
-.save-badge{display:inline-flex;align-items:center;gap:5px;font-size:.62rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);padding:4px 12px;background:var(--surf2);border:1px solid var(--bord2);border-radius:20px;letter-spacing:1px;transition:color .3s,border-color .3s}
-.save-badge.saved{color:var(--grn);border-color:rgba(255,107,61,.3)}
-.save-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
-.btn-reset{padding:4px 14px;background:var(--red2);border:1px solid var(--red);border-radius:20px;color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.62rem;cursor:pointer;letter-spacing:1px;transition:background .2s,color .2s}
-.btn-reset:hover{background:var(--red);color:#fff}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:linear-gradient(135deg,var(--surf),var(--surf2));border:1px solid var(--bord2);border-radius:12px;margin-bottom:12px;position:relative;overflow:hidden;flex-wrap:wrap;gap:10px}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),var(--grn),transparent)}
+.hdr h1{font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:3px;color:var(--acc);text-transform:uppercase}
+.hdr p{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--txtd);letter-spacing:2px;margin-top:2px}
+.hdr-right{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 
-.page-nav{
-  display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
-  background:var(--surf); border:1px solid var(--bord); border-radius:12px;
-  padding:12px 16px; margin-bottom:14px;
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;font-family:'Rajdhani',sans-serif;font-size:0.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;transition:all 0.18s;white-space:nowrap}
+.btn-p{background:var(--acc);color:#07090f}.btn-p:hover{background:#00e5ff}
+.btn-s{background:var(--surf3);color:var(--txt);border:1px solid var(--bord2)}.btn-s:hover{border-color:var(--acc);color:var(--acc)}
+.btn-g{background:var(--grn);color:#07090f}.btn-g:hover{background:#00ffb3}
+.btn-r{background:var(--red2);color:var(--red);border:1px solid var(--red)}.btn-r:hover{background:var(--red);color:#fff}
+.btn-o{background:var(--org2);color:var(--org);border:1px solid var(--org)}.btn-o:hover{background:var(--org);color:#07090f}
+.btn-y{background:var(--yel2);color:var(--yel);border:1px solid var(--yel)}.btn-y:hover{background:var(--yel);color:#07090f}
+.btn-sm{padding:4px 9px;font-size:0.75rem}
+
+.infobox{background:var(--surf2);border:1px solid var(--bord2);border-left:3px solid var(--acc);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.78rem;color:var(--txtm);line-height:1.6}
+.infobox strong{color:var(--acc);font-family:'Rajdhani',sans-serif;letter-spacing:1px}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.tag{background:var(--surf3);border:1px solid var(--bord2);border-radius:5px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--grn);cursor:default}
+.tag.t12{color:var(--org);border-color:var(--org)}
+
+.mtabs{display:flex;gap:3px;flex-wrap:wrap;background:var(--surf);border:1px solid var(--bord);border-radius:10px;padding:5px;margin-bottom:10px}
+.mtab{padding:5px 9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:0.76rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:transparent;color:var(--txtd);border:1px solid transparent;transition:all 0.15s;position:relative}
+.mtab:hover{color:var(--txt);border-color:var(--bord2)}
+.mtab.act{background:var(--acc2);border-color:var(--acc);color:var(--acc)}
+.mtab .hd{position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:var(--grn)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.card{background:var(--surf);border:1px solid var(--bord);border-radius:10px;padding:10px 12px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.card.g::before{background:var(--grn)}.card.b::before{background:var(--acc)}.card.y::before{background:var(--yel)}.card.o::before{background:var(--org)}
+.card lbl{display:block;font-size:0.59rem;text-transform:uppercase;letter-spacing:2px;color:var(--txtd);margin-bottom:3px;font-family:'Rajdhani',sans-serif;font-weight:600}
+.cv{font-family:'Share Tech Mono',monospace;font-size:1.22rem;font-weight:700}
+.card.g .cv{color:var(--grn)}.card.b .cv{color:var(--acc)}.card.y .cv{color:var(--yel)}.card.o .cv{color:var(--org)}
+.card sm{font-size:0.6rem;color:var(--txtd);display:block;margin-top:1px}
+
+.cbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:0.68rem;color:var(--txtd);align-items:center}
+.li{display:flex;align-items:center;gap:4px}
+.ld{width:8px;height:8px;border-radius:2px}
+
+.twrap{overflow-x:auto;border-radius:10px;border:1px solid var(--bord);background:var(--surf)}
+table.pt{width:100%;border-collapse:collapse;font-size:0.74rem;min-width:880px}
+table.pt thead th{background:var(--surf3);color:var(--acc);font-family:'Rajdhani',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:8px 5px;border-bottom:2px solid var(--bord2);white-space:nowrap;text-align:center}
+table.pt thead th:first-child{text-align:left;padding-left:10px}
+table.pt thead th:last-child{text-align:left}
+table.pt tbody tr{border-bottom:1px solid var(--bord)}
+table.pt tbody td{padding:4px 5px;text-align:center;vertical-align:middle;font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--txt)}
+table.pt tbody td:first-child{text-align:left;padding-left:10px;font-family:'Exo 2',sans-serif;font-weight:600;font-size:0.74rem;min-width:85px}
+table.pt tbody td:nth-child(2){min-width:36px;font-size:0.68rem;color:var(--txtm)}
+table.pt tbody td:last-child{text-align:left}
+
+tr.rWk td{background:var(--red2)!important}
+tr.rWk td:first-child{border-left:3px solid var(--red)!important}
+tr.rWk .dn{color:var(--red)!important}
+tr.rHol td{background:var(--yel2)!important}
+tr.rHol td:first-child{border-left:3px solid var(--yel)!important}
+tr.rHol .dn{color:var(--yel)!important}
+tr.rWork td{background:rgba(0,229,160,0.03)}
+tr.rOver td{background:rgba(0,229,160,0.05)}
+tr.rWkWork td{background:rgba(255,77,109,0.07)!important}
+tr.rWkWork td:first-child{border-left:3px solid var(--red)!important}
+tr.rWkWork .dn{color:var(--red)!important}
+tr.rHolWork td{background:rgba(255,201,64,0.09)!important}
+tr.rHolWork td:first-child{border-left:3px solid var(--yel)!important}
+tr.rHolWork .dn{color:var(--yel)!important}
+
+.ce{background:transparent;border:1px solid transparent;border-radius:4px;color:inherit;font-family:inherit;font-size:inherit;width:100%;text-align:center;padding:2px 2px;transition:border-color 0.13s;min-width:44px}
+.ce:focus{outline:none;border-color:var(--acc);background:var(--acc2)}
+.ce.ol{color:var(--grn);font-weight:700}.ce.on{color:var(--acc)}.ce.of{color:var(--yel)}.ce.oo{color:var(--org)}.ce.pr,.ce.ie{color:var(--txtm)}
+.ne{background:transparent;border:1px solid transparent;border-radius:4px;color:var(--txtd);font-family:'Exo 2',sans-serif;font-size:0.7rem;width:100%;padding:2px 3px}
+.ne:focus{outline:none;border-color:var(--bord2)}
+
+.tbadge{display:inline-block;background:var(--acc2);border:1px solid var(--acc);border-radius:4px;padding:1px 5px;font-family:'Rajdhani',sans-serif;font-size:0.72rem;font-weight:700;color:var(--acc);white-space:nowrap;vertical-align:middle}
+.tbadge.t12{background:var(--org2);border-color:var(--org);color:var(--org)}
+.tbadge.tov{background:rgba(0,229,160,0.1);border-color:var(--grn);color:var(--grn);font-size:.6rem}
+
+/* BUTOANE TURNUS */
+.tn-inp-wrap{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.tn-inp-wrap input{width:45px;background:var(--surf2);border:1px solid var(--bord2);border-radius:4px;color:var(--acc);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;padding:3px 4px;text-align:center}
+.tn-inp-wrap input:focus{outline:none;border-color:var(--acc)}
+.btn-ok{background:var(--grn);border:none;border-radius:4px;color:#07090f;cursor:pointer;padding:3px 7px;font-size:.8rem;font-family:'Rajdhani',sans-serif;font-weight:700}
+.btn-ok:active{opacity:.7}
+.btn-del{background:var(--red2);border:1px solid var(--red);border-radius:4px;color:var(--red);cursor:pointer;padding:3px 7px;font-size:.8rem;font-family:'Rajdhani',sans-serif;font-weight:700}
+.btn-del:active,.btn-del:hover{background:var(--red);color:#fff}
+
+tr.totrow td{background:var(--surf3)!important;border-top:2px solid var(--bord2)!important;font-weight:700;font-family:'Rajdhani',sans-serif;font-size:0.8rem;letter-spacing:1px;padding:9px 5px}
+tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:10px;font-size:.74rem}
+.tv{color:var(--grn)}.tv.n{color:var(--acc)}.tv.f{color:var(--yel)}.tv.o{color:var(--org)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(7,9,15,0.92);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px;backdrop-filter:blur(5px)}
+.overlay.open{display:flex}
+.modal{background:var(--surf2);border:1px solid var(--bord2);border-radius:14px;padding:20px;width:100%;max-width:700px;position:relative;margin:auto}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--org),var(--yel),transparent)}
+.modal h2{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:2px;color:var(--org);text-transform:uppercase;margin-bottom:14px}
+.mclose{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--txtd);font-size:1.2rem;cursor:pointer}
+.mclose:hover{color:var(--red)}
+
+/* EDITOR TURNUS */
+.tn-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:440px;overflow-y:auto;padding-right:3px}
+.tn-item{background:var(--surf);border:1px solid var(--bord);border-radius:9px;padding:10px 12px}
+.tn-item-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.tn-num{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--acc);min-width:32px}
+.seg-block{background:rgba(0,200,232,0.04);border:1px solid var(--bord);border-radius:7px;padding:8px;margin-bottom:6px}
+.seg-block h5{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:1.5px;color:var(--acc);text-transform:uppercase;margin-bottom:6px}
+.seg-block.dorm{background:rgba(255,140,66,0.06);border-color:rgba(255,140,66,0.2)}
+.seg-block.dorm h5{color:var(--org)}
+.fields-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
+.tn-field{display:flex;flex-direction:column;gap:2px}
+.tn-field label{font-size:0.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--txtd);font-family:'Rajdhani',sans-serif}
+.tn-field input,.tn-field select{background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:0.73rem;padding:4px 6px;width:100%}
+.tn-field input:focus,.tn-field select:focus{outline:none;border-color:var(--acc)}
+.tn-field.wide{grid-column:1/-1}
+.tn-field.wide input{font-family:'Exo 2',sans-serif;font-size:.72rem}
+.seg-actions{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.calc-note{font-size:.65rem;color:var(--grn);font-family:'Share Tech Mono',monospace;margin-top:4px}
+
+/* YEAR MODAL */
+.yr-modal::before{background:linear-gradient(90deg,transparent,var(--acc),var(--grn),transparent)}
+.yr-modal h2{color:var(--acc)}
+.yr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}
+.yr-btn{background:var(--surf);border:1px solid var(--bord2);border-radius:8px;padding:11px 5px;font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;transition:all .18s;letter-spacing:1px}
+.yr-btn:hover,.yr-btn.cur-yr{border-color:var(--acc);color:var(--acc);background:var(--acc2)}
+.yr-badge{background:var(--acc2);border:1px solid var(--acc);border-radius:6px;padding:4px 13px;font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--acc);letter-spacing:2px;cursor:pointer;transition:all .18s;border:none}
+.yr-badge:hover{background:var(--acc);color:#07090f}
+.hol-preview{background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:9px 11px;margin-top:9px;font-size:.7rem;color:var(--txtm);max-height:180px;overflow-y:auto}
+.hol-preview h4{font-family:'Rajdhani',sans-serif;font-size:.77rem;font-weight:600;letter-spacing:1.5px;color:var(--yel);text-transform:uppercase;margin-bottom:6px}
+.hol-row{display:flex;gap:10px;padding:2px 0;border-bottom:1px solid var(--bord)}
+.hol-row:last-child{border-bottom:none}
+.hol-date{color:var(--acc);font-family:'Share Tech Mono',monospace;min-width:62px}
+
+@media print{
+  body{background:white;color:black}
+  body::before,.infobox,.mtabs,.cards,.cbar,.hdr-right{display:none!important}
+  .hdr{border:2px solid #333;background:white}
+  .hdr h1,.hdr p{color:#000}
+  table.pt thead th{background:#e5e5e5!important;color:#000!important}
+  table.pt tbody td{color:#000;border:1px solid #ddd}
+  tr.rWk td,tr.rWkWork td{background:#ffe8ec!important}
+  tr.rHol td,tr.rHolWork td{background:#fff8e0!important}
+  tr.totrow td{background:#e4f8f0!important}
+  .ce,.ne{color:inherit!important}.twrap{overflow:visible;border:none}
+  .btn-ok,.btn-del{display:none!important}
 }
-.page-nav-btn{
-  display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
-  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
-  color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
-  text-decoration:none; transition:background .15s,color .15s,border-color .15s;
-}
-.page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
-.page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
-
-.card{background:var(--surf);border:1px solid var(--bord);border-radius:12px;padding:16px 18px;margin-bottom:12px}
-.card-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--acc);margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:8px}
-.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);flex-shrink:0}
-.dot-green{background:var(--grn)!important}
-.dot-red{background:var(--red)!important}
-.dot-org{background:var(--org)!important}
-
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:480px){.grid{grid-template-columns:1fr}}
-.field{display:flex;flex-direction:column;gap:5px}
-label{font-family:'Rajdhani',sans-serif;font-size:.68rem;font-weight:600;color:var(--txtd);letter-spacing:1.3px;text-transform:uppercase;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
-.badge{font-family:'Share Tech Mono',monospace;font-size:0.6rem;padding:1px 5px;border-radius:4px;letter-spacing:.2px}
-.by{background:var(--acc2);color:var(--acc);border:1px solid rgba(255,31,61,.3)}
-.bg{background:var(--grn2);color:var(--grn);border:1px solid rgba(255,107,61,.25)}
-.br{background:var(--red2);color:var(--red);border:1px solid rgba(255,77,109,.3)}
-.input-wrap{position:relative}
-.input-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.68rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);pointer-events:none}
-input[type="number"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.95rem;padding:8px 42px 8px 11px;width:100%;outline:none;-moz-appearance:textfield;transition:border-color .2s,box-shadow .2s}
-input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none}
-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
-input[readonly]{background:var(--grn2);border-color:rgba(255,107,61,.3);color:var(--grn);cursor:default}
-input[readonly]:focus{border-color:rgba(255,107,61,.4);box-shadow:none}
-.info-box{font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);margin-top:8px;padding:8px 10px;background:var(--surf2);border-radius:6px;border:1px solid var(--bord);border-left:3px solid var(--acc);line-height:1.7}
-.info-box .y{color:var(--acc);font-weight:700}
-.info-box .g{color:var(--grn);font-weight:700}
-.info-box .r{color:var(--red);font-weight:700}
-
-.breakdown{display:flex;flex-direction:column}
-.brow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bord);font-family:'Share Tech Mono',monospace;font-size:.74rem;gap:8px}
-.brow:last-child{border-bottom:none}
-.brow .lbl{color:var(--txtm);flex:1;line-height:1.5;font-family:'Exo 2',sans-serif}
-.brow .val{font-weight:700;white-space:nowrap}
-.brow.sep{border-top:1px solid var(--bord2);margin-top:4px;padding-top:10px;border-bottom:none}
-.brow.sep .lbl{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:1px}
-.brow.sep2{border-top:1px solid rgba(255,77,109,.3);margin-top:4px;padding-top:10px;border-bottom:none}
-.brow.sep2 .lbl{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px}
-.brow.grand{border-top:2px solid rgba(255,107,61,.4);margin-top:4px;padding-top:12px;border-bottom:none}
-.brow.grand .lbl{font-family:'Rajdhani',sans-serif;font-size:.8rem;font-weight:700;color:var(--grn);text-transform:uppercase;letter-spacing:1.5px}
-
-.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:480px){.result-grid{grid-template-columns:1fr}}
-.result-box{border-radius:12px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;position:relative;overflow:hidden}
-.result-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.result-box.avans{background:var(--surf);border:1px solid var(--bord2)}
-.result-box.avans::before{background:var(--red)}
-.result-box.lichidare{background:var(--surf);border:1px solid var(--bord2)}
-.result-box.lichidare::before{background:var(--grn)}
-.rb-label{font-family:'Rajdhani',sans-serif;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:2px}
-.result-box.avans .rb-label{color:var(--red)}
-.result-box.lichidare .rb-label{color:var(--grn)}
-.rb-amount{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,6vw,38px);line-height:1;letter-spacing:-1px}
-.result-box.avans .rb-amount{color:var(--red)}
-.result-box.lichidare .rb-amount{color:var(--grn)}
-.rb-sub{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--txtd);margin-top:2px;line-height:1.6}
-
-.formula-note{font-size:.7rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);padding:10px 12px;background:var(--surf2);border:1px solid var(--bord);border-left:3px solid var(--grn);border-radius:8px;line-height:1.9}
-.formula-note .g{color:var(--grn)}
-.formula-note .y{color:var(--acc)}
-
-.upload-row{display:flex;flex-direction:column;gap:10px}
-.file-drop{position:relative;border:1px dashed var(--bord2);border-radius:9px;background:var(--surf2);padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,background .2s}
-.file-drop:hover{border-color:var(--acc)}
-.file-drop input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.file-drop .fi-icon{font-size:1.3rem;flex-shrink:0}
-.file-drop .fi-txt{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--txtm);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-drop .fi-txt b{color:var(--txt)}
-input[type="text"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.9rem;padding:9px 11px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s}
-input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
-.btn-extract{width:100%;padding:11px;background:linear-gradient(135deg,var(--acc),#c4102a);border:none;border-radius:8px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s}
-.btn-extract:hover{opacity:.9}
-.btn-extract:active{transform:scale(.98)}
-.btn-extract:disabled{opacity:.5;cursor:default}
-.extract-status{font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);margin-top:2px;padding:10px 12px;background:var(--surf2);border-radius:6px;border:1px solid var(--bord);border-left:3px solid var(--txtd);line-height:1.8;display:none}
-.extract-status.show{display:block}
-.extract-status.ok{border-left-color:var(--grn);color:var(--txtm)}
-.extract-status.ok .hl{color:var(--grn);font-weight:700}
-.extract-status.err{border-left-color:var(--red);color:var(--txtm)}
-.extract-status.err .hl{color:var(--red);font-weight:700}
-.extract-status.busy{border-left-color:var(--acc)}
 </style>
 </head>
 <body>
 <div class="app">
 
 <div class="hdr">
-  <div class="emx-logo">
-    <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
-    <span class="emx-dot" id="statusDot">●</span>
+  <div>
+    <h1>Fișă de Pontaj CFR</h1>
+    <p>EVIDENȚĂ ORE • TURNUS 1–12+ • TOATE LUNILE</p>
   </div>
-  <div class="emx-tag">CALCUL SALARIU</div>
-  <div class="save-row">
-    <span class="save-badge" id="saveBadge"><span class="save-dot"></span><span id="saveText">Se încarcă...</span></span>
-    <button class="btn-reset" onclick="resetDate()">↺ RESET</button>
+  <div class="hdr-right">
+    <button class="yr-badge" id="yrBadge" onclick="openYearModal()">📅 2026</button>
+    <span id="syncIndicator" style="font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);cursor:pointer" onclick="openCloudSettings()" title="Setări sincronizare cloud">💾 Local</span>
+    <button class="btn btn-o" onclick="openEditor()">⚙ Turnus-uri</button>
+    <button class="btn btn-g" onclick="openUpload()">📋 Încarcă Fișă</button>
+    <button class="btn btn-y" onclick="exportLuna()">💾 CSV</button>
+    <button class="btn btn-s" onclick="downloadApp()">⬇ HTML</button>
+    <button class="btn btn-p" onclick="window.print()">🖨 Print</button>
   </div>
 </div>
 
-<div class="page-nav">
-  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
-  <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
-  <span class="page-nav-btn active">💰 Calcul salariu</span>
-  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
-  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
+<!-- CLOUD SYNC MODAL -->
+<div class="overlay" id="cloudOverlay">
+<div class="modal" style="max-width:480px">
+  <button class="mclose" onclick="closeCloudSettings()">✕</button>
+  <h2 style="color:var(--acc)">☁️ Sincronizare Cloud</h2>
+  <p style="font-size:.78rem;color:var(--txtm);margin-bottom:14px;line-height:1.6">
+    Datele se sincronizează automat între telefon, PC și orice dispozitiv.
+    Folosește <b>JSONBin.io</b> (gratuit, fără cont obligatoriu).<br><br>
+    <b>Pași:</b><br>
+    1. Mergi pe <b>jsonbin.io</b> → Sign Up gratuit<br>
+    2. Dashboard → API Keys → copiază <b>Master Key</b><br>
+    3. Apasă <b>"+ Creează Bin Nou"</b> mai jos<br>
+    4. Salvează — gata, datele se sincronizează automat!
+  </p>
+  <div class="tn-field" style="margin-bottom:9px">
+    <label>Master API Key (de pe jsonbin.io)</label>
+    <input id="cloudApiKeyIn" type="password" placeholder="$2a$10$..." 
+      style="background:var(--surf);border:1px solid var(--bord2);border-radius:6px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:7px 10px;width:100%">
+  </div>
+  <div class="tn-field" style="margin-bottom:12px">
+    <label>Bin ID (se generează automat sau îl pui manual)</label>
+    <input id="cloudBinIdIn" placeholder="64abc123..." 
+      style="background:var(--surf);border:1px solid var(--bord2);border-radius:6px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:7px 10px;width:100%">
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-g btn-sm" id="createBinBtn" onclick="createNewBin()">+ Creează Bin Nou</button>
+    <button class="btn btn-p" onclick="saveCloudSettings()">✓ Salvează & Conectează</button>
+    <button class="btn btn-s" onclick="closeCloudSettings()">Anulează</button>
+  </div>
+  <div style="margin-top:10px;font-size:.68rem;color:var(--txtd)">
+    ⚠️ API Key-ul se salvează local pe dispozitiv. Nu îl împărți cu alții.
+    Același API Key + Bin ID pe orice dispozitiv = date sincronizate.
+  </div>
+</div>
 </div>
 
+<!-- UPLOAD FISA MODAL -->
+<div class="overlay" id="uploadOverlay">
+<div class="modal" style="max-width:520px">
+  <button class="mclose" onclick="closeUpload()">✕</button>
+  <h2 style="color:var(--grn)">📋 Încarcă Fișă de Lucru</h2>
+  <p style="font-size:.8rem;color:var(--txtm);margin-bottom:12px">
+    Încarcă poza cu fișa de lucru lunară. Scrie numele tău exact cum apare în fișă și luna.
+    AI-ul va citi fișa și va completa pontajul automat.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <div class="tn-field">
+      <label>Numele tău (din fișă)</label>
+      <input id="uploadNume" placeholder="ex: Nitu Ionut" value="Nitu Ionut"
+        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.82rem;padding:6px 9px;width:100%">
+    </div>
+    <div class="tn-field">
+      <label>Luna (1-12)</label>
+      <input id="uploadLuna" type="number" min="1" max="12" placeholder="4"
+        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.82rem;padding:6px 9px;width:100%">
+    </div>
+  </div>
+
+  <!-- Drop zone -->
+  <div id="uploadZone" onclick="document.getElementById('uploadFileIn').click()"
+    style="background:var(--surf);border:2px dashed var(--bord2);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px"
+    ondragover="event.preventDefault();this.style.borderColor='var(--grn)'"
+    ondragleave="this.style.borderColor='var(--bord2)'"
+    ondrop="onUploadDrop(event)">
+    <div style="font-size:2rem;margin-bottom:8px">📸</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:600;color:var(--grn);letter-spacing:1px">CLICK SAU TRAGE POZA</div>
+    <div style="font-size:.73rem;color:var(--txtd);margin-top:4px">JPG, PNG — fișa de lucru lunară CFR</div>
+  </div>
+  <input type="file" id="uploadFileIn" accept="image/*" style="display:none" onchange="onUploadFile(event)">
+
+  <img id="uploadPreview" style="display:none;max-width:100%;max-height:150px;border-radius:8px;border:1px solid var(--bord2);margin-bottom:10px">
+
+  <!-- Status AI -->
+  <div id="uploadStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:.73rem;color:var(--grn);margin-bottom:10px;max-height:160px;overflow-y:auto;white-space:pre-wrap"></div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-g" id="uploadBtn" onclick="runUploadAI()" disabled
+      style="opacity:.4">🤖 Procesează cu AI</button>
+    <button class="btn btn-s" onclick="closeUpload()">Anulează</button>
+  </div>
+</div>
+</div>
+
+<div class="infobox">
+  <strong>CUM FOLOSEȘTI:</strong> Scrie <b>T1…T12</b> și apasă <b>✓</b>. Orele se completează automat pe ambele zile.
+  Butonul <b>💾 Salvează Luna</b> exportă luna curentă ca fișier Excel/CSV pe telefon sau PC.
+  <div class="tags" id="tagList"></div>
+</div>
+
+<div class="mtabs" id="mtabs"></div>
+
+<div class="cards">
+  <div class="card g"><lbl>Ore Lucrate</lbl><div class="cv" id="cL">0:00</div><sm id="cLz">0 zile</sm></div>
+  <div class="card o"><lbl>Odihnă Total</lbl><div class="cv" id="cO">0:00</div><sm>dormitor</sm></div>
+  <div class="card b"><lbl>Ore Noapte</lbl><div class="cv" id="cN">0:00</div><sm>22:00–06:00</sm></div>
+  <div class="card y"><lbl>Ore Festive</lbl><div class="cv" id="cF">0:00</div><sm>Sâm/Dum/sărbători</sm></div>
+  <div class="card" style="border-color:var(--bord2)"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--txtm)"></div><lbl>Normă Lună</lbl><div class="cv" id="cNorma" style="color:var(--txtm)">0:00</div><sm id="cNormaZile">0 zile lucrătoare × 8h</sm></div>
+  <div class="card" id="cardSupl" style="border-color:var(--bord2)"><div id="suplBar" style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--grn)"></div><lbl>Ore Suplimentare</lbl><div class="cv" id="cSupl" style="color:var(--grn)">0:00</div><sm id="cSuplNote">față de normă</sm></div>
+</div>
+
+<div class="cbar">
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:var(--red);opacity:.6"></div>Weekend</div>
+    <div class="li"><div class="ld" style="background:var(--yel);opacity:.7"></div>Zi liberă</div>
+    <div class="li"><div class="ld" style="background:var(--grn);opacity:.6"></div>Lucrat</div>
+  </div>
+</div>
+
+<div class="twrap">
+<table class="pt">
+  <thead><tr>
+    <th>Data</th><th>Zi</th><th>Turnus</th><th></th>
+    <th>Prezentare</th><th>Ieșire</th>
+    <th>Ore Lucrate</th><th>Odihnă</th>
+    <th>Ore Noapte</th><th>Ore Festive</th>
+    <th>Notă</th>
+  </tr></thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+
+<!-- YEAR MODAL -->
+<div class="overlay" id="yearOverlay">
+<div class="modal yr-modal">
+  <button class="mclose" onclick="closeYearModal()">✕</button>
+  <h2>📅 Selectează Anul</h2>
+  <div class="yr-grid" id="yrGrid"></div>
+  <div class="hol-preview"><h4>Zile libere legale</h4><div id="holList"></div></div>
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <button class="btn btn-g" id="yrConfirmBtn">✓ Selectează</button>
+    <button class="btn btn-s" onclick="closeYearModal()">Anulează</button>
+  </div>
+</div>
+</div>
+
+<!-- EDITOR MODAL -->
+<div class="overlay" id="editorOverlay">
+<div class="modal">
+  <button class="mclose" onclick="closeEditor()">✕</button>
+  <h2>⚙ Editor Turnus-uri</h2>
+  <div id="addTnBox"></div>
+  <div class="tn-list" id="tnList"></div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">
+    <button class="btn btn-s" onclick="closeEditor()">✕ Închide</button>
+    <button class="btn btn-s btn-sm" id="resetTNBtn" onclick="resetTN()">↺ Reset la valorile din poze</button>
+  </div>
+  <div id="editorMsg" style="display:none;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--grn)"></div>
+</div>
+</div>
+
+</div>
 <script>
-  (function(){
-    var connected = !!localStorage.getItem('emx_gh_token');
-    if(!connected){
-      var navBani = document.getElementById('navBani');
-      if(navBani) navBani.remove();
-    }
-    var dot = document.getElementById('statusDot');
-    if(dot) dot.classList.toggle('status-connected', connected);
-  })();
-</script>
+// ═══════════════════════════════════════════
+// STRUCTURA TURNUS
+// segmente: array de {prez, iesire} — max 3
+// dormitoare: array de {start, end} — max 2 (calculate automat intre segmente)
+// ol, oo, on = calculate automat
+// ═══════════════════════════════════════════
 
-  <!-- PRELUARE DIN FISA DE LUCRU -->
-  <div class="card">
-    <div class="card-title"><span class="dot dot-org"></span> Preia din fișă de lucru (grafic)</div>
-    <div class="upload-row">
-      <div class="field">
-        <label>Nume angajat (nume + prenume, ca în grafic)</label>
-        <input type="text" id="numeAngajat" placeholder="ex: Nițu Ionuț">
-      </div>
-      <div class="field">
-        <label>Fișă de lucru <span class="badge bg">PDF / poză / Excel</span></label>
-        <div class="file-drop" id="fileDrop">
-          <input type="file" id="fisaFile" accept="application/pdf,image/*,.xlsx,.xls">
-          <span class="fi-icon">📎</span>
-          <span class="fi-txt" id="fisaFileTxt">Alege fișierul cu graficul lunii...</span>
-        </div>
-      </div>
-      <button class="btn-extract" id="btnExtract" onclick="extrageDinFisa()">⚡ Preia orele automat</button>
-      <div class="extract-status" id="extractStatus"></div>
-    </div>
-  </div>
-
-  <!-- SALARIU & NORMA -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span> Salariu & Normă</div>
-    <div class="grid">
-      <div class="field">
-        <label>Salariu de încadrare</label>
-        <div class="input-wrap">
-          <input type="number" id="salariuBaza" value="6710" min="0" oninput="onChange()">
-          <span class="input-unit">RON</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Normă ore / lună</label>
-        <div class="input-wrap">
-          <input type="number" id="normaOre" value="176" min="1" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-    </div>
-    <div class="info-box" id="tarifInfo">—</div>
-  </div>
-
-  <!-- ORE LUCRATE -->
-  <div class="card">
-    <div class="card-title"><span class="dot dot-green"></span> Ore lucrate</div>
-    <div class="grid">
-      <div class="field">
-        <label>Ore normale <span class="badge bg">auto = normă − CO</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreNormale" readonly>
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>CO (concediu odihnă) <span class="badge br">1 zi = 8h</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreCO" value="0" min="0" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Ore supl. I <span class="badge by">×1.75</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreSuplI" value="20" min="0" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Festive <span class="badge bg">×1.00</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreFestive" value="44" min="0" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Noapte 25% <span class="badge by">×0.25</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreNoapte" value="23" min="0" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Cap Secție <span class="badge by">×0.75</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreCapSectie" value="61" min="0" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Ore Școală <span class="badge bg">×1.00</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreScoala" value="6" min="0" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Formator <span class="badge bg">×1.00</span></label>
-        <div class="input-wrap">
-          <input type="number" id="oreFormator" value="0" min="0" oninput="onChange()">
-          <span class="input-unit">ore</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- BONURI -->
-  <div class="card">
-    <div class="card-title"><span class="dot dot-green"></span> Bonuri de masă</div>
-    <div class="grid">
-      <div class="field">
-        <label>Nr. bonuri <span class="badge bg">auto ÷ 8</span></label>
-        <div class="input-wrap">
-          <input type="number" id="nrBonuri" readonly>
-          <span class="input-unit">buc</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Valoare / bon</label>
-        <div class="input-wrap">
-          <input type="number" id="valoareBon" value="43" min="0" oninput="onChange()">
-          <span class="input-unit">RON</span>
-        </div>
-      </div>
-    </div>
-    <div class="info-box" id="bonuriInfo">—</div>
-  </div>
-
-  <!-- AVANS -->
-  <div class="card">
-    <div class="card-title"><span class="dot dot-red"></span> Avans</div>
-    <div class="grid">
-      <div class="field">
-        <label>Avans (RON)</label>
-        <div class="input-wrap">
-          <input type="number" id="avansRon" value="2500" min="0" oninput="onChange()">
-          <span class="input-unit">RON</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Alte avansuri</label>
-        <div class="input-wrap">
-          <input type="number" id="alteAvansuri" value="0" min="0" oninput="onChange()">
-          <span class="input-unit">RON</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- DETALII -->
-  <div class="card">
-    <div class="card-title"><span class="dot dot-org"></span> Detalii calcul complet</div>
-    <div class="breakdown" id="breakdown">
-      <div class="brow"><span class="lbl">Introdu date pentru a vedea detaliile</span><span class="val">—</span></div>
-    </div>
-  </div>
-
-  <!-- REZULTATE -->
-  <div class="result-grid">
-    <div class="result-box avans">
-      <div class="rb-label">Avans</div>
-      <div class="rb-amount" id="rezAvans">0 RON</div>
-      <div class="rb-sub" id="rezAvansInfo">—</div>
-    </div>
-    <div class="result-box lichidare">
-      <div class="rb-label">Lichidare</div>
-      <div class="rb-amount" id="rezLichidare">0 RON</div>
-      <div class="rb-sub" id="rezLichidareInfo">—</div>
-    </div>
-  </div>
-
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
-<script>
-if (window.pdfjsLib) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// ── TIME UTILS ──
+function p2m(s){
+  if(!s||typeof s!=='string')return -1;
+  s=s.trim();
+  const r=s.match(/^(\d{1,3})[:\.](\d{2})$/);
+  if(r)return parseInt(r[1])*60+parseInt(r[2]);
+  return -1;
 }
-</script>
-<script>
-const FIELDS = [
-  'salariuBaza','normaOre','oreCO','oreSuplI',
-  'oreFestive','oreNoapte','oreCapSectie','oreScoala','oreFormator',
-  'valoareBon','avansRon','alteAvansuri'
-];
-const STORAGE_KEY = 'emx_fluturas_v2';
-const DEFAULTS = {
-  salariuBaza:6710, normaOre:176, oreCO:0, oreSuplI:20,
-  oreFestive:44, oreNoapte:23, oreCapSectie:61, oreScoala:6,
-  oreFormator:0, valoareBon:43,
-  avansRon:2500, alteAvansuri:0
+function fmtm(mins){
+  if(mins===undefined||mins===null||mins<0)return'0:00';
+  return`${Math.floor(mins/60)}:${String(mins%60).padStart(2,'0')}`;
+}
+function diffm(a,b){
+  // durata de la ora a la ora b, cross-midnight
+  const s=p2m(a),e=p2m(b);
+  if(s<0||e<0)return 0;
+  let d=e-s;if(d<0)d+=1440;
+  return d;
+}
+function nightMins(startH,endH){
+  // ore intre 22:00 si 06:00
+  const s=p2m(startH),e=p2m(endH);
+  if(s<0||e<0)return 0;
+  let total=e-s;if(total<0)total+=1440;
+  if(total===0)return 0;
+  let n=0,cur=s;
+  for(let i=0;i<total;i++){
+    const t=cur%1440;
+    if(t>=22*60||t<6*60)n++;
+    cur++;
+  }
+  return n;
+}
+
+// ── CALCUL AUTO TURNUS ──
+// Din array de segmente [{prez,iesire}] calculeaza:
+// - ore lucrate = suma durate segmente
+// - dormitoare = intervalele intre segmente (iesire[i] -> prez[i+1])
+// - ore odihna = suma dormitoare
+// - ore noapte = ore 22-06 din TOATE segmentele (nu din dormitoare)
+// - zi1prez, zi1iesire, zi2prez, zi2iesire (pt afisare)
+function calcTurnusAuto(segmente){
+  if(!segmente||segmente.length===0)return{ol:'0:00',oo:'0:00',on:'0:00',dormitoare:[]};
+
+  let olTotal=0, ooTotal=0, onTotal=0;
+  const dormitoare=[];
+
+  // Ore lucrate = suma durate segmente, ore noapte DOAR din segmente lucrate
+  for(const seg of segmente){
+    if(seg.prez&&seg.iesire){
+      const dur=diffm(seg.prez,seg.iesire);
+      olTotal+=dur;
+      onTotal+=nightMins(seg.prez,seg.iesire); // DOAR din ore lucrate
+    }
+  }
+
+  // Dormitoare = intre segmente consecutive (iesire[i] -> prez[i+1])
+  // Orele de noapte din dormitor NU se adauga
+  for(let i=0;i<segmente.length-1;i++){
+    const ie=segmente[i].iesire;
+    const pr=segmente[i+1].prez;
+    if(ie&&pr){
+      const dur=diffm(ie,pr);
+      ooTotal+=dur;
+      // NU adaugam nightMins din dormitor
+      dormitoare.push({start:ie,end:pr,durata:fmtm(dur)});
+    }
+  }
+
+  return{
+    ol:fmtm(olTotal),
+    oo:fmtm(ooTotal),
+    on:fmtm(onTotal),
+    dormitoare,
+    // zi1 = primul segment, zi2 = ultimul daca e altul
+    zi1prez:segmente[0].prez,
+    zi1iesire:segmente[0].iesire,
+    zi2prez:segmente.length>1?segmente[segmente.length-1].prez:'',
+    zi2iesire:segmente.length>1?segmente[segmente.length-1].iesire:'',
+    // turnus pe 2 zile daca prima iesire < prima prezentare (trece miezul noptii)
+    // sau daca exista dormitor care trece de miezul noptii
+    zile:detectZile(segmente)
+  };
+}
+
+function detectZile(segmente){
+  if(!segmente||segmente.length===0)return 1;
+  if(segmente.length===1){
+    // Verifica daca trece miezul noptii (iesire < prez)
+    const s=p2m(segmente[0].prez),e=p2m(segmente[0].iesire);
+    if(s>0&&e>0&&e<s)return 2; // trece miezul noptii
+    return 1;
+  }
+  return 2; // mai multe segmente = 2 zile
+}
+
+// ══════════════════════════════════════════
+// TURNUS DEFAULT (din poze)
+// segmente: [{prez,iesire}, {prez,iesire}, ...]
+// ══════════════════════════════════════════
+const TURNUS_DEFAULT = {
+  1:{segmente:[{prez:'11:45',iesire:'19:45'},{prez:'03:26',iesire:'10:25'}],note:'10245→10251 / 10240→10250'},
+  2:{segmente:[{prez:'12:46',iesire:'20:55'},{prez:'04:02',iesire:'12:26'}],note:'10247→10253 / 10242→10230'},
+  3:{segmente:[{prez:'15:25',iesire:'21:46'},{prez:'05:19',iesire:'13:05'}],note:'10249→10255 / 10246→10252'},
+  4:{segmente:[{prez:'11:58',iesire:'15:00'},{prez:'19:30',iesire:'00:30'},{prez:'08:00',iesire:'16:15'}],note:'10065 / 10119→10122 / 10067'},
+  5:{segmente:[{prez:'11:06',iesire:'15:35'},{prez:'20:51',iesire:'23:29'},{prez:'06:05',iesire:'13:25'}],note:'10227→10232 / 10257 / 10248→10202'},
+  6:{segmente:[{prez:'13:25',iesire:'21:37'}],note:'10229→10238'},
+  7:{segmente:[{prez:'',iesire:''}],note:'completează manual'},
+  8:{segmente:[{prez:'11:15',iesire:'19:00'}],note:'10022 Pl.Vest → 10024 Pl.Vest'},
+  9:{segmente:[{prez:'18:15',iesire:'23:30'},{prez:'05:30',iesire:'12:00'}],note:'10024→10122 / 10021→10022 Pl.Vest'},
+  10:{segmente:[{prez:'18:15',iesire:'23:30'},{prez:'19:15',iesire:'22:40'},{prez:'04:10',iesire:'08:47'}],note:'10109→10116 / 10079 / 10064→10108'},
+  11:{segmente:[{prez:'22:00',iesire:'06:00'}],note:'10123 Gr.Nord → 10106 Grivita'},
+  12:{segmente:[{prez:'18:45',iesire:'19:45'},{prez:'22:00',iesire:'06:00'},{prez:'06:00',iesire:'07:35'}],note:'REGIE: 10024 / Dormitor / 10123 Gr.Nord→10106 / 10021'}
 };
 
-function salveaza() {
-  const data = {};
-  FIELDS.forEach(id => { data[id] = document.getElementById(id).value; });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  const badge = document.getElementById('saveBadge');
-  badge.classList.add('saved');
-  document.getElementById('saveText').textContent = '✓ Salvat';
-  clearTimeout(window._st);
-  window._st = setTimeout(() => {
-    document.getElementById('saveText').textContent = 'Salvat local';
-  }, 1500);
+// ── STATE ──
+const YEAR_MIN=2024,YEAR_MAX=2035;
+let curYear=2026,curM=3;
+let db={},TN={};
+
+const MO=['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+const DZ=['Dum','Lun','Mar','Mie','Joi','Vin','Sâm'];
+const FH={'1-1':'Anul Nou','1-2':'Anul Nou','1-24':'Ziua Unirii','5-1':'1 Mai','6-1':'Ziua Copilului','8-15':'Sf. Maria','11-30':'Sf. Andrei','12-1':'Ziua Națională','12-25':'Crăciun','12-26':'Crăciun'};
+
+function buildHols(y){
+  const h={...FH};
+  const a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7;
+  const em=Math.floor((d+e+114)/31),ed=((d+e+114)%31)+1;
+  const easter=new Date(y,em-1,ed+13);
+  const k=x=>`${x.getMonth()+1}-${x.getDate()}`;
+  const vm=new Date(easter);vm.setDate(vm.getDate()-2);h[k(vm)]='Vinerea Mare';
+  h[k(easter)]='Paști';
+  const em2=new Date(easter);em2.setDate(em2.getDate()+1);h[k(em2)]='Paști';
+  const r1=new Date(easter);r1.setDate(r1.getDate()+49);h[k(r1)]='Rusalii';
+  const r2=new Date(easter);r2.setDate(r2.getDate()+50);h[k(r2)]='Rusalii';
+  return h;
+}
+function isFest(m,d){
+  const dow=new Date(curYear,m,d).getDay();
+  return dow===0||dow===6||!!buildHols(curYear)[`${m+1}-${d}`];
+}
+function deepCopy(o){return JSON.parse(JSON.stringify(o))}
+
+// ── CLOUD SYNC (JSONBin.io) ──
+let cloudApiKey = '';
+let cloudBinId  = '';
+let syncTimeout = null;
+let syncStatus  = 'local'; // 'local' | 'syncing' | 'ok' | 'err'
+
+function loadCloudConfig(){
+  cloudApiKey = localStorage.getItem('cfr_apikey')||'';
+  cloudBinId  = localStorage.getItem('cfr_binid')||'';
+}
+function saveCloudConfig(){
+  localStorage.setItem('cfr_apikey', cloudApiKey);
+  localStorage.setItem('cfr_binid',  cloudBinId);
+}
+function cloudEnabled(){ return cloudApiKey && cloudBinId; }
+
+function setSyncStatus(st, msg){
+  syncStatus = st;
+  const el = document.getElementById('syncIndicator');
+  if(!el) return;
+  const icons = {local:'💾',syncing:'🔄',ok:'☁️✓',err:'⚠️'};
+  const colors = {local:'var(--txtd)',syncing:'var(--yel)',ok:'var(--grn)',err:'var(--red)'};
+  el.textContent = (icons[st]||'') + ' ' + (msg||'');
+  el.style.color = colors[st]||'var(--txtd)';
 }
 
-function incarca() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    try {
-      const data = JSON.parse(raw);
-      FIELDS.forEach(id => {
-        if (data[id] !== undefined) document.getElementById(id).value = data[id];
-      });
-      document.getElementById('saveBadge').classList.add('saved');
-      document.getElementById('saveText').textContent = 'Salvat local';
-      return;
-    } catch(e) {}
+// Salveaza local imediat, in cloud cu debounce 2s
+function save(){
+  try{
+    localStorage.setItem('cfr_'+curYear, JSON.stringify({db,TN}));
+    localStorage.setItem('cfr_yr', String(curYear));
+  }catch(e){}
+  if(cloudEnabled()){
+    setSyncStatus('syncing','Se salvează...');
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(saveToCloud, 2000);
   }
-  document.getElementById('saveText').textContent = 'Date implicite';
 }
 
-function resetDate() {
-  if (!confirm('Resetezi toate câmpurile la valorile implicite?')) return;
-  FIELDS.forEach(id => { document.getElementById(id).value = DEFAULTS[id]; });
-  localStorage.removeItem(STORAGE_KEY);
-  document.getElementById('saveBadge').classList.remove('saved');
-  document.getElementById('saveText').textContent = 'Resetat';
-  calculeaza();
-}
-
-function onChange() { calculeaza(); salveaza(); }
-
-function fmt(n){return n.toLocaleString('ro-RO',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtInt(n){return Math.round(n).toLocaleString('ro-RO');}
-function v(id){return parseFloat(document.getElementById(id).value)||0;}
-
-function calculeaza() {
-  const salBaza        = v('salariuBaza');
-  const normaOre       = v('normaOre')||1;
-  const oreCO          = v('oreCO');
-  const oreSuplI       = v('oreSuplI');
-  const oreFestive     = v('oreFestive');
-  const oreNoapte      = v('oreNoapte');
-  const oreCapSectie   = v('oreCapSectie');
-  const oreScoala      = v('oreScoala');
-  const oreFormator    = v('oreFormator');
-  const valoareBon     = v('valoareBon');
-  const avansRon       = v('avansRon');
-  const alteAvansuri   = v('alteAvansuri');
-
-  const oreNormale = Math.max(0, normaOre - oreCO);
-  document.getElementById('oreNormale').value = oreNormale;
-
-  const zileCO = oreCO / 8;
-
-  const nrBonuri = Math.floor(oreNormale / 8);
-  document.getElementById('nrBonuri').value = nrBonuri;
-
-  const t = Math.round(salBaza / normaOre * 100) / 100;
-  document.getElementById('tarifInfo').innerHTML =
-    `Tarif orar: <span class="y">${fmt(t)} RON/oră</span> &nbsp;(${fmt(salBaza)} RON ÷ ${normaOre} ore)`;
-
-  const salReal     = Math.round(salBaza * (oreNormale / normaOre));
-  const plataCO     = Math.round(t * oreCO * 1.00);
-  const plataSuplI  = Math.round(oreSuplI     * t * 1.75);
-  const plataFest   = Math.round(oreFestive   * t * 1.00);
-  const plataNoapte = Math.round(oreNoapte    * t * 0.25);
-  const plataCapS   = Math.round(oreCapSectie * t * 0.75);
-  const plataScoala = Math.round(oreScoala    * t * 1.00);
-  const plataForm   = Math.round(oreFormator  * t * 1.00);
-
-  const totalBrut = salReal + plataCO + plataSuplI + plataFest + plataNoapte + plataCapS + plataScoala + plataForm;
-  const totalBonuri = nrBonuri * valoareBon;
-
-  document.getElementById('bonuriInfo').innerHTML =
-    `<span class="g">${oreNormale} ore ÷ 8 = ${nrBonuri} bonuri</span> × ${fmt(valoareBon)} RON = <span class="y">${fmt(totalBonuri)} RON</span>`;
-
-  const bazaCASS = totalBrut + totalBonuri;
-  const bazaCAS  = totalBrut;
-  const CASS = Math.round(bazaCASS * 0.10);
-  const CAS  = Math.round(bazaCAS  * 0.25);
-  const net  = totalBrut - CASS - CAS;
-  const bazaImpozit = Math.max(0, net + totalBonuri);
-  const impozit  = Math.round(bazaImpozit * 0.10);
-  const salarNet = net - impozit;
-  const lichidare = salarNet - avansRon - alteAvansuri;
-
-  let html = '';
-  const rows = [
-    {show:true,           col:'var(--txt)',   lbl:`Salar realizat — ${oreNormale} ore / ${normaOre} normă`,  val:salReal},
-    {show:oreSuplI>0,     col:'var(--acc)', lbl:`Ore supl. I — ${oreSuplI} ore × ${fmt(t)} × 1.75`,        val:plataSuplI},
-    {show:oreFestive>0,   col:'var(--txt)',   lbl:`Festive — ${oreFestive} ore × ${fmt(t)}`,                 val:plataFest},
-    {show:oreNoapte>0,    col:'var(--acc)', lbl:`Noapte 25% — ${oreNoapte} ore × ${fmt(t*0.25)}`,          val:plataNoapte},
-    {show:oreCapSectie>0, col:'var(--acc)', lbl:`Cap Secție 75% — ${oreCapSectie} ore × ${fmt(t*0.75)}`,   val:plataCapS},
-    {show:oreScoala>0,    col:'var(--txt)',   lbl:`Ore Școală — ${oreScoala} ore × ${fmt(t)}`,               val:plataScoala},
-    {show:oreFormator>0,  col:'var(--txt)',   lbl:`Formator — ${oreFormator} ore × ${fmt(t)}`,               val:plataForm},
-  ];
-
-  rows.filter(r=>r.show).forEach(r=>{
-    html+=`<div class="brow"><span class="lbl">${r.lbl}</span><span class="val" style="color:${r.col}">${fmtInt(r.val)} RON</span></div>`;
-  });
-  if(oreCO>0){
-    html+=`<div class="brow"><span class="lbl" style="color:var(--grn)">CO plătit — ${fmt(oreCO)} ore (${fmt(zileCO)} zile) × ${fmt(t)}</span><span class="val" style="color:var(--grn)">${fmtInt(plataCO)} RON</span></div>`;
+async function saveToCloud(){
+  if(!cloudEnabled()) return;
+  // Aduna toate datele din toti anii
+  const allData = {};
+  for(let y=YEAR_MIN; y<=YEAR_MAX; y++){
+    try{
+      const s=localStorage.getItem('cfr_'+y);
+      if(s) allData['cfr_'+y]=JSON.parse(s);
+    }catch(e){}
   }
-  html+=`<div class="brow sep"><span class="lbl">Venit BRUT (fără bonuri)</span><span class="val" style="color:var(--acc);font-size:15px;">${fmtInt(totalBrut)} RON</span></div>`;
-  if(totalBonuri>0){
-    html+=`<div class="brow"><span class="lbl" style="color:var(--grn)">+ Bonuri masă — ${nrBonuri} × ${fmt(valoareBon)} RON</span><span class="val" style="color:var(--grn)">+ ${fmtInt(totalBonuri)} RON</span></div>`;
-  }
-  html+=`<div class="brow sep2"><span class="lbl">Rețineri</span><span class="val"></span></div>`;
-  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">CASS 10% din ${fmtInt(bazaCASS)} (brut+bonuri)</span><span class="val" style="color:var(--red)">− ${fmtInt(CASS)} RON</span></div>`;
-  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">CAS 25% din ${fmtInt(bazaCAS)} (brut)</span><span class="val" style="color:var(--red)">− ${fmtInt(CAS)} RON</span></div>`;
-  html+=`<div class="brow sep"><span class="lbl">Venit net (Brut − CASS − CAS)</span><span class="val" style="color:var(--acc);font-size:14px;">${fmtInt(net)} RON</span></div>`;
-  html+=`<div class="brow"><span class="lbl" style="color:var(--org)">Baza impozit = net + bonuri = ${fmtInt(bazaImpozit)} RON</span><span class="val"></span></div>`;
-  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">Impozit 10% din ${fmtInt(bazaImpozit)}</span><span class="val" style="color:var(--red)">− ${fmtInt(impozit)} RON</span></div>`;
-  html+=`<div class="brow grand"><span class="lbl">Salar net</span><span class="val" style="color:var(--grn);font-size:16px;">${fmtInt(salarNet)} RON</span></div>`;
-
-  document.getElementById('breakdown').innerHTML = html;
-  document.getElementById('rezAvans').textContent         = fmtInt(avansRon)+' RON';
-  document.getElementById('rezLichidare').textContent     = fmtInt(lichidare)+' RON';
-  document.getElementById('rezAvansInfo').textContent     = `Avans: ${fmtInt(avansRon)} RON`;
-  document.getElementById('rezLichidareInfo').textContent = `Din salar net ${fmtInt(salarNet)} RON`;
-}
-
-// ===== PRELUARE AUTOMATĂ DIN FIȘA DE LUCRU =====
-
-document.getElementById('fisaFile').addEventListener('change', function(e){
-  const f = e.target.files[0];
-  const txt = document.getElementById('fisaFileTxt');
-  if(f){
-    txt.innerHTML = `<b>${f.name}</b>`;
-  } else {
-    txt.textContent = 'Alege fișierul cu graficul lunii...';
-  }
-});
-
-function setStatus(msg, cls){
-  const el = document.getElementById('extractStatus');
-  el.className = 'extract-status show' + (cls ? ' '+cls : '');
-  el.innerHTML = msg;
-}
-
-// "198:02" -> 198.03 (ore zecimale, minute/60)
-function hmToDec(str){
-  if(str===undefined || str===null) return 0;
-  str = String(str).trim();
-  if(str==='') return 0;
-  const m = str.match(/^(\d+):(\d{1,2})$/);
-  if(m){ return Math.round((parseInt(m[1],10) + parseInt(m[2],10)/60)*100)/100; }
-  const n = parseFloat(str.replace(',','.'));
-  return isNaN(n) ? 0 : n;
-}
-
-// scoate diacritice + lowercase, pt. căutare "Nitu ionut" -> "Nițu Ionuț"
-function normDiac(s){
-  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-}
-
-// --- extragere text din PDF, grupat pe rânduri vizuale (după poziția Y) ---
-async function pdfToLines(file){
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
-  const allLines = [];
-  for(let p=1; p<=pdf.numPages; p++){
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const items = content.items.filter(it => it.str && it.str.trim()!=='');
-    const rows = [];
-    items.forEach(it=>{
-      const y = it.transform[5];
-      let row = rows.find(r => Math.abs(r.y - y) <= 2.5);
-      if(!row){ row = {y, items:[]}; rows.push(row); }
-      row.items.push(it);
+  allData['cfr_yr'] = String(curYear);
+  try{
+    const r = await fetch('https://api.jsonbin.io/v3/b/'+cloudBinId, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':cloudApiKey},
+      body: JSON.stringify(allData)
     });
-    rows.sort((a,b)=> b.y - a.y);
-    rows.forEach(r=>{
-      r.items.sort((a,b)=> a.transform[4] - b.transform[4]);
-      allLines.push(r.items.map(i=>i.str).join(' ').replace(/\s+/g,' ').trim());
+    if(r.ok){ setSyncStatus('ok','Cloud salvat'); }
+    else{ setSyncStatus('err','Eroare cloud'); }
+  }catch(e){ setSyncStatus('err','Fără internet'); }
+}
+
+async function loadFromCloud(){
+  if(!cloudEnabled()) return false;
+  setSyncStatus('syncing','Sincronizez...');
+  try{
+    const r = await fetch('https://api.jsonbin.io/v3/b/'+cloudBinId+'/latest',{
+      headers:{'X-Master-Key':cloudApiKey}
     });
-  }
-  return allLines.filter(l=>l!=='');
-}
-
-// --- Excel -> linii "linearizate" (un rând = celulele nevide unite prin spațiu) ---
-async function excelToLines(file){
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:false});
-  const lines = [];
-  wb.SheetNames.forEach(name=>{
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, blankrows:false, defval:''});
-    rows.forEach(r=>{
-      const line = r.map(c=>String(c).trim()).filter(c=>c!=='').join(' ');
-      if(line) lines.push(line);
+    if(!r.ok){ setSyncStatus('err','Eroare cloud'); return false; }
+    const j = await r.json();
+    const allData = j.record || {};
+    // Scrie in localStorage
+    Object.entries(allData).forEach(([k,v])=>{
+      try{ localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v)); }catch(e){}
     });
-  });
-  return lines;
-}
-
-// --- Poză -> OCR (best-effort, mai puțin precis decât PDF/Excel) ---
-async function imageToLines(file, onProgress){
-  const { data } = await Tesseract.recognize(file, 'ron+eng', {
-    logger: m => { if(onProgress && m.status==='recognizing text') onProgress(m.progress); }
-  });
-  return data.text.split('\n').map(l=>l.trim()).filter(l=>l!=='');
-}
-
-// --- parsare grafic: găsește pentru fiecare angajat CO/Festive/Ore serv prestat/Noapte/CS75 ---
-function parseGrafic(lines){
-  const fullText = lines.join('\n');
-  const mNorma = fullText.match(/NORMA\s+(\d+)/i);
-  const normaGlobal = mNorma ? parseInt(mNorma[1],10) : null;
-
-  const candidates = [];
-  for(let i=0; i<lines.length-1; i++){
-    const mm = lines[i].match(/^(?:\d{1,2}\s+)?(\S+)\s+efect\s+(.*)\s+Festive\s*$/i);
-    if(!mm) continue;
-    const surname = mm[1];
-    const efectBody = mm[2];
-    const coCount = (efectBody.match(/\bCO\b/g) || []).length;
-
-    const nextLine = lines[i+1] || '';
-    const fm = nextLine.match(/^(?:\d{1,2}\s+)?(\S+)\s+.*?(\d{1,3}:\d{2})\s*$/);
-    if(!fm) continue;
-    const firstname = fm[1];
-    const festive = fm[2];
-
-    let serv=null, noapte=null, cs75=null;
-    for(let j=i+1; j<Math.min(i+8, lines.length); j++){
-      const lj = lines[j];
-      let mt;
-      if(/^Ore serv prestat/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) serv=mt[1]; }
-      else if(/^Ore de noapte/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) noapte=mt[1]; }
-      else if(/^Ore CS 75%/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) cs75=mt[1]; }
-    }
-    if(serv || noapte || cs75){
-      candidates.push({surname, firstname, coCount, festive, serv, noapte, cs75});
-    }
-  }
-  return {normaGlobal, candidates};
-}
-
-function findMatches(candidates, numeCautat){
-  const targetWords = new Set(normDiac(numeCautat).split(/\s+/).filter(Boolean));
-  return candidates.filter(c=>{
-    const fullWords = new Set(normDiac(c.surname+' '+c.firstname).split(/\s+/).filter(Boolean));
-    for(const w of targetWords){ if(!fullWords.has(w)) return false; }
+    setSyncStatus('ok','Sincronizat ☁️');
     return true;
-  });
+  }catch(e){ setSyncStatus('err','Fără internet'); return false; }
 }
 
-function aplicaCandidat(c, normaFallback){
-  const norma = c.normaGlobalUsed || normaFallback;
-  const totalServ   = hmToDec(c.serv);
-  const totalNoapte = hmToDec(c.noapte);
-  const totalCS75   = hmToDec(c.cs75);
-  const totalFest   = hmToDec(c.festive);
-  const oreCO        = c.coCount * 8;
-  const oreSupl       = Math.max(0, Math.round((totalServ - norma)*100)/100);
-
-  document.getElementById('normaOre').value      = norma;
-  document.getElementById('oreCO').value          = oreCO;
-  document.getElementById('oreSuplI').value       = oreSupl;
-  document.getElementById('oreFestive').value     = totalFest;
-  document.getElementById('oreNoapte').value      = totalNoapte;
-  document.getElementById('oreCapSectie').value   = totalCS75;
-  onChange();
-
-  setStatus(
-    `<span class="hl">✓ Preluat: ${c.surname} ${c.firstname}</span><br>`+
-    `Normă: ${norma} h &nbsp;|&nbsp; CO: ${c.coCount} zile (${oreCO} h) &nbsp;|&nbsp; Ore serv. prestat total: ${totalServ} h<br>`+
-    `Supl.: ${oreSupl} h &nbsp;|&nbsp; Festive: ${totalFest} h &nbsp;|&nbsp; Noapte: ${totalNoapte} h &nbsp;|&nbsp; CS 75%: ${totalCS75} h<br>`+
-    `Verifică valorile mai jos înainte de calcul — dacă ceva pare greșit, corectează manual câmpul respectiv.`,
-    'ok'
-  );
-}
-
-async function extrageDinFisa(){
-  const nume = document.getElementById('numeAngajat').value.trim();
-  const fileInput = document.getElementById('fisaFile');
-  const file = fileInput.files[0];
-  const btn = document.getElementById('btnExtract');
-
-  if(!nume){ setStatus('Introdu numele angajatului (nume + prenume, ex: Nitu Ionut — merge și fără diacritice).', 'err'); return; }
-  if(!file){ setStatus('Alege mai întâi fișierul cu graficul lunii (PDF, poză sau Excel).', 'err'); return; }
-
-  btn.disabled = true;
-  setStatus('⏳ Citesc fișa de lucru...', 'busy');
-
-  try {
-    let lines;
-    if(file.type === 'application/pdf' || /\.pdf$/i.test(file.name)){
-      lines = await pdfToLines(file);
-    } else if(file.type.startsWith('image/')){
-      setStatus('⏳ Citesc poza (OCR) — poate dura câteva zeci de secunde...', 'busy');
-      lines = await imageToLines(file, p => setStatus(`⏳ Citesc poza (OCR)... ${Math.round(p*100)}%`, 'busy'));
-    } else {
-      lines = await excelToLines(file);
-    }
-
-    if(!lines || lines.length===0){
-      setStatus('Nu am putut extrage text din fișier. Încearcă un PDF sau Excel (mai fiabile decât o poză).', 'err');
-      btn.disabled = false;
-      return;
-    }
-
-    const {normaGlobal, candidates} = parseGrafic(lines);
-    if(candidates.length===0){
-      setStatus('Nu am recunoscut structura graficului în fișier (rânduri "efect / Ore serv prestat / Ore de noapte / Ore CS 75%"). Verifică fișierul sau încearcă alt format.', 'err');
-      btn.disabled = false;
-      return;
-    }
-
-    const matches = findMatches(candidates, nume);
-    if(matches.length===0){
-      const gasiti = candidates.map(c=>`${c.surname} ${c.firstname}`).join(', ');
-      setStatus(`Nu am găsit "${nume}" în fișă. Nume găsite în grafic: ${gasiti}.`, 'err');
-      btn.disabled = false;
-      return;
-    }
-    if(matches.length>1){
-      const optiuni = matches.map(c=>`${c.surname} ${c.firstname}`).join(' / ');
-      setStatus(`Numele "${nume}" e ambiguu, am găsit mai mulți: ${optiuni}. Scrie numele complet (nume + prenume) pentru a alege exact persoana.`, 'err');
-      btn.disabled = false;
-      return;
-    }
-
-    const c = matches[0];
-    c.normaGlobalUsed = normaGlobal || v('normaOre');
-    aplicaCandidat(c, v('normaOre'));
-  } catch(err){
-    console.error(err);
-    setStatus('A apărut o eroare la citirea fișierului. Încearcă din nou, sau folosește un alt format (PDF/Excel sunt mai fiabile decât o poză).', 'err');
-  } finally {
-    btn.disabled = false;
+function load(){
+  loadCloudConfig();
+  try{
+    const cy=localStorage.getItem('cfr_yr');
+    if(cy)curYear=parseInt(cy)||2026;
+    const s=localStorage.getItem('cfr_'+curYear);
+    if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}
+    else{db={};TN=deepCopy(TURNUS_DEFAULT);}
+  }catch(e){db={};TN=deepCopy(TURNUS_DEFAULT);}
+  if(cloudEnabled()){
+    // Incarca din cloud si re-rendereaza
+    loadFromCloud().then(ok=>{
+      if(ok){
+        try{
+          const s=localStorage.getItem('cfr_'+curYear);
+          if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}
+        }catch(e){}
+        renderTabs(); renderTable();
+      }
+    });
+  } else {
+    setSyncStatus('local','Local');
   }
 }
 
-// Pornire
-incarca();
-calculeaza();
+// ── CLOUD SETTINGS MODAL ──
+function openCloudSettings(){
+  document.getElementById('cloudApiKeyIn').value  = cloudApiKey;
+  document.getElementById('cloudBinIdIn').value   = cloudBinId;
+  document.getElementById('cloudOverlay').classList.add('open');
+}
+function closeCloudSettings(){
+  document.getElementById('cloudOverlay').classList.remove('open');
+}
+function saveCloudSettings(){
+  cloudApiKey = document.getElementById('cloudApiKeyIn').value.trim();
+  cloudBinId  = document.getElementById('cloudBinIdIn').value.trim();
+  saveCloudConfig();
+  closeCloudSettings();
+  if(cloudEnabled()){
+    setSyncStatus('syncing','Testez conexiunea...');
+    loadFromCloud().then(ok=>{
+      if(ok){
+        try{
+          const s=localStorage.getItem('cfr_'+curYear);
+          if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}
+        }catch(e){}
+        renderTabs(); renderTable();
+      }
+    });
+  } else {
+    setSyncStatus('local','Local (fără cloud)');
+  }
+}
+async function createNewBin(){
+  const key = document.getElementById('cloudApiKeyIn').value.trim();
+  if(!key){ alert('Introdu API Key mai întâi!'); return; }
+  const btn = document.getElementById('createBinBtn');
+  btn.textContent='⏳ Creez...'; btn.disabled=true;
+  try{
+    const r = await fetch('https://api.jsonbin.io/v3/b',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'Pontaj CFR'},
+      body: JSON.stringify({init:'pontaj'})
+    });
+    if(!r.ok){ const t=await r.text(); throw new Error(t); }
+    const j = await r.json();
+    const newId = j.metadata.id;
+    document.getElementById('cloudBinIdIn').value = newId;
+    alert('✅ Bin creat! ID: '+newId+'\nSalvează setările.');
+  }catch(e){ alert('Eroare: '+e.message); }
+  finally{ btn.textContent='+ Creează Bin Nou'; btn.disabled=false; }
+}
+function gd(m,d){
+  if(!db[m])db[m]={};
+  if(!db[m][d])db[m][d]={tn:'',prez:'',iesire:'',ol:'',oo:'',on:'',of:'',note:'',overflow:false};
+  return db[m][d];
+}
+function setF(m,d,f,v){gd(m,d)[f]=v;save();updateCards();}
+function clearDay(m,d){if(db[m])db[m][d]={tn:'',prez:'',iesire:'',ol:'',oo:'',on:'',of:'',note:'',overflow:false};}
+
+// ── APPLY TURNUS ──
+function applyTurnus(num,m,d){
+  const t=TN[num];
+  if(!t||!t.segmente||t.segmente.length===0)return;
+
+  const calc=calcTurnusAuto(t.segmente);
+  const daysInM=new Date(curYear,m+1,0).getDate();
+
+  // ZI 1: primul segment
+  const dd1=gd(m,d);
+  dd1.tn=`T${num}`;
+  dd1.prez=t.segmente[0].prez||'';
+  dd1.iesire=t.segmente[0].iesire||'';
+  dd1.note=t.note||'';
+  dd1.overflow=false;
+
+  if(calc.zile===1||t.segmente.length===1){
+    // Turnus pe o singura zi
+    dd1.ol=calc.ol;
+    dd1.oo=calc.oo;
+    dd1.on=calc.on;
+    dd1.of=isFest(m,d)?calc.ol:'';
+  } else {
+    // Turnus pe 2 zile
+    // ── ZI 1: primul segment ──
+    const seg0=t.segmente[0];
+    const olZi1=diffm(seg0.prez,seg0.iesire);
+    // Ore noapte zi 1 = ore din intervalul [prez, iesire_zi1] care sunt intre 22:00-24:00
+    // (partea de noapte din prima zi, pana la miezul noptii)
+    const onZi1=nightMins(seg0.prez, seg0.iesire);
+    dd1.ol=fmtm(olZi1);
+    dd1.oo=calc.oo; // toata odihna
+    dd1.on=fmtm(onZi1);
+    dd1.of=isFest(m,d)?fmtm(olZi1):'';
+
+    // ── ZI 2: segmentele 2, 3... ──
+    let m2=m,d2=d+1;
+    if(d2>daysInM){m2=m+1;d2=1;}
+    if(m2<=11){
+      const lastSeg=t.segmente[t.segmente.length-1];
+      const dd2=gd(m2,d2);
+      dd2.tn=`T${num}`;
+      dd2.prez=lastSeg.prez||'';
+      dd2.iesire=lastSeg.iesire||'';
+      // Ore lucrate zi 2 = suma segmentelor 1..n (fara primul)
+      let olZi2=0, onZi2=0;
+      const segsZi2=t.segmente.slice(1);
+      for(const sg of segsZi2){
+        olZi2+=diffm(sg.prez,sg.iesire);
+        // Ore noapte din segmentele zilei 2 = ore intre 00:00-06:00
+        onZi2+=nightMins(sg.prez,sg.iesire);
+      }
+      dd2.ol=fmtm(olZi2);
+      dd2.oo='0:00';
+      dd2.on=fmtm(onZi2);
+      dd2.of=isFest(m2,d2)?fmtm(olZi2):'';
+      dd2.note=(t.note||'')+' (zi 2)';
+      dd2.overflow=true;
+    }
+  }
+  save();renderTabs();renderTable();
+}
+
+function deleteDay(m,d){
+  clearDay(m,d);
+  const daysInM=new Date(curYear,m+1,0).getDate();
+  let m2=m,d2=d+1;
+  if(d2>daysInM){m2=m+1;d2=1;}
+  if(m2<=11&&db[m2]&&db[m2][d2]&&db[m2][d2].overflow)clearDay(m2,d2);
+  save();renderTable();
+}
+
+function applyFromInput(val,m,d){
+  val=val.trim().toUpperCase();
+  if(val===''){deleteDay(m,d);return;}
+  const num=parseInt(val.replace(/[Tt]/g,''));
+  if(num>=1&&TN[num])applyTurnus(num,m,d);
+  else{setF(m,d,'tn',val);renderTable();}
+}
+
+// ── RENDER ──
+function init(){
+  load();
+  document.getElementById('yrBadge').textContent='📅 '+curYear;
+  renderTags();renderTabs();renderTable();
+  buildAddTnBox();
+}
+
+function renderTags(){
+  const w=document.getElementById('tagList');w.innerHTML='';
+  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+    const sp=document.createElement('span');
+    sp.className='tag'+(+k===12?' t12':'');
+    sp.textContent=`T${k}`;
+    sp.title=(TN[k].note||'')+' | segs:'+TN[k].segmente.length;
+    w.appendChild(sp);
+  });
+}
+
+function renderTabs(){
+  const w=document.getElementById('mtabs');w.innerHTML='';
+  MO.forEach((name,i)=>{
+    const b=document.createElement('button');
+    b.className='mtab'+(i===curM?' act':'');
+    b.textContent=name.substring(0,3).toUpperCase();
+    const md=db[i]||{};
+    if(Object.values(md).some(x=>x.ol||x.tn)){
+      const dot=document.createElement('span');dot.className='hd';b.appendChild(dot);
+    }
+    b.onclick=()=>{curM=i;renderTabs();renderTable();};
+    w.appendChild(b);
+  });
+}
+
+function mkInput(cls,val,ph,onChange){
+  const i=document.createElement('input');
+  i.className='ce '+cls;i.value=val||'';i.placeholder=ph;
+  i.addEventListener('change',onChange);
+  return i;
+}
+
+function renderTable(){
+  const body=document.getElementById('tbody');body.innerHTML='';
+  const m=curM;
+  const days=new Date(curYear,m+1,0).getDate();
+  const hols=buildHols(curYear);
+  let tL=0,tO=0,tN=0,tF=0,zile=0;
+
+  for(let d=1;d<=days;d++){
+    const dt=new Date(curYear,m,d);
+    const dow=dt.getDay();
+    const hk=`${m+1}-${d}`;
+    const isWk=dow===0||dow===6;
+    const isHol=!!hols[hk];
+    const isFestD=isWk||isHol;
+    const dd=gd(m,d);
+
+    // Ore noapte: foloseste valoarea salvata (setata corect de applyTurnus)
+    // Recalculeaza auto doar daca nu e setat deloc (introducere manuala)
+    let showN=dd.on;
+    if(!showN&&dd.prez&&dd.iesire){
+      const n=nightMins(dd.prez,dd.iesire);if(n>0)showN=fmtm(n);
+    }
+    // Ore festive
+    let showF=dd.of;
+    if(!showF&&isFestD&&dd.ol)showF=dd.ol;
+
+    tL+=p2m(dd.ol)<0?0:p2m(dd.ol);
+    tO+=p2m(dd.oo)<0?0:p2m(dd.oo);
+    tN+=p2m(showN)<0?0:p2m(showN);
+    tF+=p2m(showF)<0?0:p2m(showF);
+    if(dd.tn||dd.ol)zile++;
+
+    // Row class
+    let cls='';
+    if(isHol&&(dd.tn||dd.ol))cls='rHolWork';
+    else if(isWk&&(dd.tn||dd.ol))cls='rWkWork';
+    else if(isHol)cls='rHol';
+    else if(isWk)cls='rWk';
+    else if(dd.overflow)cls='rOver';
+    else if(dd.tn||dd.ol)cls='rWork';
+
+    const tr=document.createElement('tr');
+    if(cls)tr.className=cls;
+
+    // DATA
+    const tdD=document.createElement('td');
+    tdD.innerHTML=`<b>${String(d).padStart(2,'0')}.${String(m+1).padStart(2,'0')}</b>`+
+      (isHol?`<span style="font-size:.56rem;color:var(--yel);margin-left:3px">${hols[hk]}</span>`:'');
+    tr.appendChild(tdD);
+
+    // ZI
+    const tdZ=document.createElement('td');
+    tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;
+    tr.appendChild(tdZ);
+
+    // TURNUS INPUT
+    const tdTn=document.createElement('td');
+    const wrap=document.createElement('div');wrap.className='tn-inp-wrap';
+    const inp=document.createElement('input');
+    inp.value=dd.tn||'';inp.placeholder='T1…';
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();applyFromInput(this.value,m,d);}});
+    const btnOk=document.createElement('button');
+    btnOk.className='btn-ok';btnOk.textContent='✓';
+    btnOk.addEventListener('click',function(){applyFromInput(inp.value,m,d);});
+    wrap.appendChild(inp);wrap.appendChild(btnOk);
+    if(dd.tn){
+      const tnNum=parseInt(dd.tn.replace(/[Tt]/g,''))||0;
+      const bdg=document.createElement('span');
+      bdg.className='tbadge'+(tnNum===12?' t12':'');
+      bdg.textContent=dd.tn;bdg.style.marginLeft='3px';
+      wrap.appendChild(bdg);
+    }
+    if(dd.overflow){
+      const ov=document.createElement('span');ov.className='tbadge tov';ov.textContent='zi2';ov.style.marginLeft='3px';
+      wrap.appendChild(ov);
+    }
+    tdTn.appendChild(wrap);tr.appendChild(tdTn);
+
+    // DELETE
+    const tdDel=document.createElement('td');tdDel.style.width='30px';tdDel.style.padding='3px';
+    if(dd.tn&&!dd.overflow){
+      const btnDel=document.createElement('button');
+      btnDel.className='btn-del';btnDel.textContent='✕';
+      btnDel.addEventListener('click',function(){deleteDay(m,d);});
+      tdDel.appendChild(btnDel);
+    }
+    tr.appendChild(tdDel);
+
+    // CELULE INPUT
+    const fields=[
+      {v:dd.prez,c:'pr',p:'--:--',f:'prez'},
+      {v:dd.iesire,c:'ie',p:'--:--',f:'iesire'},
+      {v:dd.ol,c:'ol',p:'0:00',f:'ol'},
+      {v:dd.oo,c:'oo',p:'0:00',f:'oo'},
+      {v:showN,c:'on',p:'auto',f:'on'},
+      {v:showF,c:'of',p:isFestD?'auto':'-',f:'of'},
+    ];
+    for(const fd of fields){
+      const td=document.createElement('td');
+      const i=mkInput(fd.c,fd.v,fd.p,function(){setF(m,d,fd.f,this.value);});
+      td.appendChild(i);tr.appendChild(td);
+    }
+
+    // NOTE
+    const tdN=document.createElement('td');
+    const iN=document.createElement('input');iN.className='ne';iN.value=dd.note||'';iN.placeholder='mențiuni...';
+    iN.addEventListener('change',function(){setF(m,d,'note',this.value);});
+    tdN.appendChild(iN);tr.appendChild(tdN);
+
+    body.appendChild(tr);
+  }
+
+  // TOTAL
+  const tot=document.createElement('tr');tot.className='totrow';
+  const tc=document.createElement('td');tc.colSpan=5;tc.textContent=`TOTAL ${MO[m].toUpperCase()} ${curYear}`;
+  tot.appendChild(tc);
+  const empt=document.createElement('td');tot.appendChild(empt);
+  [{v:tL,c:'tv'},{v:tO,c:'tv o'},{v:tN,c:'tv n'},{v:tF,c:'tv f'}].forEach(x=>{
+    const td=document.createElement('td');td.innerHTML=`<span class="${x.c}">${fmtm(x.v)}</span>`;tot.appendChild(td);
+  });
+  const tdz=document.createElement('td');tdz.style.cssText='color:var(--txtd);font-size:.65rem';tdz.textContent=zile+' zile';
+  tot.appendChild(tdz);
+  body.appendChild(tot);
+  updateCards();
+}
+
+function updateCards(){
+  const m=curM;
+  const days=new Date(curYear,m+1,0).getDate();
+  const hols=buildHols(curYear);
+  let tL=0,tO=0,tN=0,tF=0,zile=0;
+
+  // Calculeaza norma: zile lucratoare (L-V, fara sarbatori) x 8h
+  let zileLucratoare=0;
+  for(let d=1;d<=days;d++){
+    const dd=gd(m,d);
+    let n=dd.on;if(!n&&dd.prez&&dd.iesire){const nm=nightMins(dd.prez,dd.iesire);if(nm>0)n=fmtm(nm);}
+    let f=dd.of;if(!f&&isFest(m,d)&&dd.ol)f=dd.ol;
+    const ol=p2m(dd.ol);const oo=p2m(dd.oo);const on=p2m(n);const of2=p2m(f);
+    tL+=ol<0?0:ol;tO+=oo<0?0:oo;tN+=on<0?0:on;tF+=of2<0?0:of2;
+    if(dd.tn||dd.ol)zile++;
+    // Zile lucratoare = L-V care nu sunt sarbatori legale
+    const dow=new Date(curYear,m,d).getDay();
+    const hk=`${m+1}-${d}`;
+    if(dow>=1&&dow<=5&&!hols[hk]) zileLucratoare++;
+  }
+
+  const normaMin = zileLucratoare * 8 * 60;
+  const suplMin  = tL - normaMin;
+
+  document.getElementById('cL').textContent=fmtm(tL);
+  document.getElementById('cO').textContent=fmtm(tO);
+  document.getElementById('cN').textContent=fmtm(tN);
+  document.getElementById('cF').textContent=fmtm(tF);
+  document.getElementById('cLz').textContent=zile+' zile cu activitate';
+
+  // Norma
+  document.getElementById('cNorma').textContent=fmtm(normaMin);
+  document.getElementById('cNormaZile').textContent=zileLucratoare+' zile lucrătoare × 8h';
+
+  // Ore suplimentare
+  const suplEl=document.getElementById('cSupl');
+  const suplNote=document.getElementById('cSuplNote');
+  const suplBar=document.getElementById('suplBar');
+  const cardSupl=document.getElementById('cardSupl');
+  if(suplMin>=0){
+    suplEl.textContent='+'+fmtm(suplMin);
+    suplEl.style.color='var(--grn)';
+    suplBar.style.background='var(--grn)';
+    cardSupl.style.borderColor='rgba(0,229,160,0.3)';
+    suplNote.textContent='surplus față de normă ✓';
+  } else {
+    suplEl.textContent='-'+fmtm(Math.abs(suplMin));
+    suplEl.style.color='var(--red)';
+    suplBar.style.background='var(--red)';
+    cardSupl.style.borderColor='rgba(255,77,109,0.3)';
+    suplNote.textContent='sub normă';
+  }
+}
+
+// ── EDITOR TURNUS ──
+function openEditor(){renderEditorList();document.getElementById('editorOverlay').classList.add('open');}
+function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');renderTags();renderTable();}
+
+function buildAddTnBox(){
+  const box=document.getElementById('addTnBox');
+  box.innerHTML=`
+  <div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
+    <div style="font-family:Rajdhani,sans-serif;font-size:.85rem;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">+ Adaugă Turnus Nou</div>
+    <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Introdu doar prezentarea și ieșirea pentru fiecare segment. Orele lucrate, odihna și orele de noapte se calculează automat. Dacă turnus-ul are dormitor între segmente, acesta se detectează automat.</p>
+    <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <div class="tn-field" style="min-width:80px"><label>Cod turnus</label><input id="nCode" placeholder="T13" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--acc);font-family:Rajdhani,sans-serif;font-weight:700;font-size:.9rem;padding:4px 7px;width:80px;text-transform:uppercase"></div>
+      <div class="tn-field" style="flex:1;min-width:200px"><label>Notă / Trenuri</label><input id="nNote" placeholder="10245→10251 etc." style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:Exo 2,sans-serif;font-size:.75rem;padding:4px 7px;width:100%"></div>
+    </div>
+    <div id="nSegsWrap"></div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-s btn-sm" onclick="addNewSeg()">+ Adaugă segment</button>
+      <button class="btn btn-g btn-sm" onclick="saveNewTN()">✓ Salvează turnus</button>
+    </div>
+    <div id="nCalcPreview" class="calc-note" style="margin-top:6px"></div>
+  </div>`;
+  // Incepe cu 2 segmente default
+  newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];
+  renderNewSegs();
+}
+
+let newSegs=[];
+function renderNewSegs(){
+  const wrap=document.getElementById('nSegsWrap');if(!wrap)return;
+  wrap.innerHTML='';
+  newSegs.forEach((seg,i)=>{
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap';
+    div.innerHTML=`<span style="font-family:Rajdhani,sans-serif;font-size:.75rem;color:var(--acc);min-width:70px">Segment ${i+1}</span>
+      <div class="tn-field"><label>Prezentare</label><input value="${seg.prez}" placeholder="08:00" onchange="newSegs[${i}].prez=this.value;previewCalc()" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txtm);font-family:Share Tech Mono,monospace;font-size:.75rem;padding:4px 6px;width:80px"></div>
+      <div class="tn-field"><label>Ieșire</label><input value="${seg.iesire}" placeholder="16:00" onchange="newSegs[${i}].iesire=this.value;previewCalc()" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txtm);font-family:Share Tech Mono,monospace;font-size:.75rem;padding:4px 6px;width:80px"></div>
+      ${i>0?`<button class="btn btn-r btn-sm" onclick="newSegs.splice(${i},1);renderNewSegs()">✕</button>`:''}`;
+    if(i>0&&i<=newSegs.length-1){
+      const prev=newSegs[i-1];
+      if(prev.iesire&&seg.prez){
+        const dormDur=diffm(prev.iesire,seg.prez);
+        const dormNight=nightMins(prev.iesire,seg.prez);
+        const dormDiv=document.createElement('div');
+        dormDiv.style.cssText='width:100%;margin:2px 0 4px 76px;font-size:.65rem;color:var(--org);font-family:Share Tech Mono,monospace';
+        dormDiv.textContent=`🌙 Dormitor: ${prev.iesire}→${seg.prez} = ${fmtm(dormDur)} (noapte: ${fmtm(dormNight)})`;
+        wrap.appendChild(dormDiv);
+      }
+    }
+    wrap.appendChild(div);
+  });
+  previewCalc();
+}
+function addNewSeg(){newSegs.push({prez:'',iesire:''});renderNewSegs();}
+function previewCalc(){
+  const prev=document.getElementById('nCalcPreview');if(!prev)return;
+  const calc=calcTurnusAuto(newSegs);
+  prev.textContent=`Ore lucrate: ${calc.ol} | Odihnă: ${calc.oo} | Ore noapte: ${calc.on} | Zile: ${calc.zile}`;
+}
+function saveNewTN(){
+  const code=document.getElementById('nCode').value.trim().toUpperCase();
+  const num=parseInt(code.replace(/[Tt]/g,''));
+  if(!num||num<1){
+    document.getElementById('nCalcPreview').style.color='var(--red)';
+    document.getElementById('nCalcPreview').textContent='❌ Cod invalid! Ex: T13';
+    return;
+  }
+  const validSegs=newSegs.filter(s=>s.prez&&s.iesire);
+  if(validSegs.length===0){
+    document.getElementById('nCalcPreview').style.color='var(--red)';
+    document.getElementById('nCalcPreview').textContent='❌ Adaugă cel puțin un segment cu prezentare și ieșire!';
+    return;
+  }
+  TN[num]={segmente:validSegs,note:document.getElementById('nNote').value};
+  save();renderEditorList();renderTags();
+  document.getElementById('nCode').value='';
+  document.getElementById('nNote').value='';
+  newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];
+  renderNewSegs();
+  // Feedback inline - fara alert
+  const prev=document.getElementById('nCalcPreview');
+  prev.style.color='var(--grn)';
+  prev.textContent=`✅ T${num} salvat! Scrie T${num} în pontaj.`;
+  setTimeout(()=>{prev.textContent='';},4000);
+}
+
+function renderEditorList(){
+  const w=document.getElementById('tnList');w.innerHTML='';
+  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+    const t=TN[k];
+    const calc=calcTurnusAuto(t.segmente||[]);
+    const div=document.createElement('div');div.className='tn-item';div.id=`tni_${k}`;
+
+    let html=`<div class="tn-item-hdr">
+      <span class="tn-num">T${k}</span>
+      <span style="font-size:.68rem;color:var(--txtm);flex:1">${t.note||''}</span>
+      <span class="calc-note" style="margin:0 8px">${calc.ol} lucrate | ${calc.oo} odihnă | ${calc.on} noapte</span>
+      <button class="btn btn-r btn-sm" onclick="delTN(${k})">✕ Șterge</button>
+    </div>`;
+
+    (t.segmente||[]).forEach((seg,i)=>{
+      // Dormitor intre segmente
+      if(i>0){
+        const prev=t.segmente[i-1];
+        const dormDur=diffm(prev.iesire,seg.prez);
+        const dormNight=nightMins(prev.iesire,seg.prez);
+        html+=`<div class="seg-block dorm">
+          <h5>🌙 Dormitor ${i}: ${prev.iesire} → ${seg.prez} = ${fmtm(dormDur)} (noapte: ${fmtm(dormNight)})</h5>
+        </div>`;
+      }
+      html+=`<div class="seg-block">
+        <h5>Segment ${i+1}</h5>
+        <div class="fields-row">
+          <div class="tn-field"><label>Prezentare</label><input value="${seg.prez||''}" placeholder="08:00" onchange="TN[${k}].segmente[${i}].prez=this.value;updateTNCalc(${k});save()"></div>
+          <div class="tn-field"><label>Ieșire</label><input value="${seg.iesire||''}" placeholder="16:00" onchange="TN[${k}].segmente[${i}].iesire=this.value;updateTNCalc(${k});save()"></div>
+        </div>
+      </div>`;
+    });
+
+    html+=`<div class="seg-actions">
+      <button class="btn btn-s btn-sm" onclick="addSegToTN(${k})">+ Segment</button>
+      <button class="btn btn-r btn-sm" onclick="removeLastSeg(${k})">- Segment</button>
+    </div>
+    <div class="tn-field wide" style="margin-top:6px"><label>Notă / Trenuri</label><input value="${t.note||''}" onchange="TN[${k}].note=this.value;save()"></div>
+    <div class="calc-note" id="calc_${k}">${calc.ol} lucrate | ${calc.oo} odihnă | ${calc.on} noapte | ${calc.zile} ${calc.zile===1?'zi':'zile'}</div>`;
+
+    div.innerHTML=html;
+    w.appendChild(div);
+  });
+}
+
+function updateTNCalc(k){
+  const calc=calcTurnusAuto(TN[k].segmente||[]);
+  const el=document.getElementById('calc_'+k);
+  if(el)el.textContent=`${calc.ol} lucrate | ${calc.oo} odihnă | ${calc.on} noapte | ${calc.zile} ${calc.zile===1?'zi':'zile'}`;
+}
+function addSegToTN(k){TN[k].segmente=TN[k].segmente||[];TN[k].segmente.push({prez:'',iesire:''});save();renderEditorList();showEditorMsg('Segment adăugat.');}
+function removeLastSeg(k){if(TN[k].segmente&&TN[k].segmente.length>1){TN[k].segmente.pop();save();renderEditorList();}}
+function delTN(k){
+  // Inline confirm in editor in loc de popup
+  const btn=document.querySelector(`#tni_${k} .btn-r`);
+  if(btn&&btn.dataset.confirm!=='1'){
+    btn.dataset.confirm='1';btn.textContent='Confirmi ✕?';btn.style.background='var(--red)';btn.style.color='#fff';
+    setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='✕ Șterge';btn.style.background='';btn.style.color='';}},3000);
+    return;
+  }
+  delete TN[k];save();renderEditorList();renderTags();showEditorMsg(`T${k} șters.`);
+}
+function resetTN(){
+  const btn=document.getElementById('resetTNBtn');
+  if(btn&&btn.dataset.confirm!=='1'){
+    btn.dataset.confirm='1';btn.textContent='Confirmi resetarea?';
+    setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='↺ Reset la valorile din poze';}},3000);
+    return;
+  }
+  TN=deepCopy(TURNUS_DEFAULT);save();renderEditorList();renderTags();showEditorMsg('Resetat la valorile originale.');
+}
+function showEditorMsg(msg,color){
+  const el=document.getElementById('editorMsg');
+  if(!el)return;
+  el.textContent=msg;el.style.color=color||'var(--grn)';el.style.display='block';
+  setTimeout(()=>{el.style.display='none';},3000);
+}
+
+// ── YEAR MODAL ──
+function openYearModal(){
+  const grid=document.getElementById('yrGrid');grid.innerHTML='';
+  let selY=curYear;
+  for(let y=YEAR_MIN;y<=YEAR_MAX;y++){
+    const b=document.createElement('button');b.className='yr-btn'+(y===curYear?' cur-yr':'');
+    b.textContent=y;
+    b.onclick=()=>{selY=y;renderHolPreview(y);document.querySelectorAll('.yr-btn').forEach(x=>x.classList.toggle('cur-yr',parseInt(x.textContent)===y));document.getElementById('yrConfirmBtn').onclick=()=>selectYear(y);};
+    grid.appendChild(b);
+  }
+  document.getElementById('yrConfirmBtn').onclick=()=>selectYear(curYear);
+  renderHolPreview(curYear);
+  document.getElementById('yearOverlay').classList.add('open');
+}
+function closeYearModal(){document.getElementById('yearOverlay').classList.remove('open');}
+function selectYear(y){
+  save();curYear=y;curM=0;
+  try{const s=localStorage.getItem('cfr_'+curYear);if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}else{db={};TN=deepCopy(TURNUS_DEFAULT);}}catch(e){db={};TN=deepCopy(TURNUS_DEFAULT);}
+  localStorage.setItem('cfr_yr',String(curYear));
+  document.getElementById('yrBadge').textContent='📅 '+curYear;
+  closeYearModal();renderTags();renderTabs();renderTable();
+}
+function renderHolPreview(y){
+  const hols=buildHols(y);const list=document.getElementById('holList');list.innerHTML='';
+  const seen=new Set();
+  Object.entries(hols).map(([k,v])=>{const[mo,da]=k.split('-').map(Number);return{mo,da,v,s:mo*100+da};})
+    .sort((a,b)=>a.s-b.s).forEach(e=>{
+      const key=`${e.mo}-${e.da}`;if(seen.has(key))return;seen.add(key);
+      const div=document.createElement('div');div.className='hol-row';
+      div.innerHTML=`<span class="hol-date">${String(e.da).padStart(2,'0')}.${String(e.mo).padStart(2,'0')}.${y}</span><span>${e.v}</span>`;
+      list.appendChild(div);
+    });
+}
+
+// ── FUNCTIE DOWNLOAD cu ZIP (merge pe orice browser/telefon) ──
+function descarca(continut, tip, numeFisier){
+  // Incearca download direct mai intai
+  try{
+    const blob=new Blob([continut],{type:tip+';charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=numeFisier; a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},2000);
+    return;
+  }catch(e){}
+  // Fallback
+  alert('Foloseste butonul ZIP pentru descărcare pe telefon.');
+}
+
+// ── DOWNLOAD ZIP (pentru telefon) ──
+function downloadZip(){
+  // Verifica daca JSZip e incarcat
+  if(typeof JSZip==='undefined'){
+    // Incarca JSZip din CDN
+    const script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    script.onload=function(){_doZip();};
+    script.onerror=function(){
+      _downloadFaraZip();
+    };
+    document.head.appendChild(script);
+  } else {
+    _doZip();
+  }
+}
+
+function _downloadFaraZip(){
+  // Fallback fara ZIP - deschide HTML intr-un tab nou
+  save();
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  try{
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    window.open(url,'_blank');
+    alert('Pagina s-a deschis intr-un tab nou.\nPe iPhone: apasa Share → Adauga la Fisiere\nPe Android: apasa meniu → Descarca pagina');
+  }catch(e){
+    alert('Eroare: '+e.message);
+  }
+}
+
+function _doZip(){
+  save();
+  const zip=new JSZip();
+  // Adauga HTML-ul aplicatiei
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  zip.file('fisa-pontaj-CFR.html', html);
+  // Adauga si CSV-ul lunii curente
+  const csvContent=_generateCsv();
+  zip.file('Pontaj_'+MO[curM]+'_'+curYear+'.csv', csvContent);
+  // Genereaza ZIP
+  zip.generateAsync({type:'blob',compression:'DEFLATE'}).then(function(blob){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='Pontaj_CFR_'+curYear+'.zip';
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
+  }).catch(function(e){
+    alert('Eroare ZIP: '+e.message);
+  });
+}
+
+function _generateCsv(){
+  const m=curM;
+  const days=new Date(curYear,m+1,0).getDate();
+  const hols=buildHols(curYear);
+  let rows=['\uFEFF'+'Data,Zi,Turnus,Prezentare,Iesire,Ore Lucrate,Odihna,Ore Noapte,Ore Festive,Nota'];
+  let tL=0,tO=0,tN=0,tF=0;
+  for(let d=1;d<=days;d++){
+    const dd=gd(m,d);
+    const dow=new Date(curYear,m,d).getDay();
+    const isFestD=dow===0||dow===6||!!hols[`${m+1}-${d}`];
+    const n=dd.on||(dd.prez&&dd.iesire?fmtm(nightMins(dd.prez,dd.iesire)):'');
+    const f=dd.of||(isFestD&&dd.ol?dd.ol:'');
+    tL+=Math.max(0,p2m(dd.ol));
+    tO+=Math.max(0,p2m(dd.oo));
+    tN+=Math.max(0,p2m(n));
+    tF+=Math.max(0,p2m(f));
+    rows.push([
+      String(d).padStart(2,'0')+'.'+String(m+1).padStart(2,'0')+'.'+curYear,
+      DZ[dow],dd.tn||'',dd.prez||'',dd.iesire||'',
+      dd.ol||'',dd.oo||'',n||'',f||'',
+      '"'+(dd.note||'').replace(/"/g,'""')+'"'
+    ].join(','));
+  }
+  rows.push(',,,,TOTAL,'+fmtm(tL)+','+fmtm(tO)+','+fmtm(tN)+','+fmtm(tF)+',');
+  return rows.join('\r\n');
+}
+
+function exportLuna(){
+  const csv=_generateCsv();
+  descarca(csv,'text/csv','Pontaj_'+MO[curM]+'_'+curYear+'.csv');
+}
+
+function downloadApp(){
+  save();
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  descarca(html,'text/html','fisa-pontaj-CFR.html');
+}
+
+// ══════════════════════════════════════════════
+// UPLOAD FIȘĂ DE LUCRU + AI
+// ══════════════════════════════════════════════
+let uploadImageB64 = null;
+
+function openUpload(){
+  document.getElementById('uploadLuna').value = curM + 1;
+  document.getElementById('uploadOverlay').classList.add('open');
+}
+function closeUpload(){
+  document.getElementById('uploadOverlay').classList.remove('open');
+}
+function onUploadDrop(e){
+  e.preventDefault();
+  document.getElementById('uploadZone').style.borderColor='var(--bord2)';
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/'))processUploadFile(f);
+}
+function onUploadFile(e){
+  const f=e.target.files[0];
+  if(f)processUploadFile(f);
+  e.target.value='';
+}
+function processUploadFile(file){
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    uploadImageB64=ev.target.result.split(',')[1];
+    const prev=document.getElementById('uploadPreview');
+    prev.src=ev.target.result; prev.style.display='block';
+    const btn=document.getElementById('uploadBtn');
+    btn.disabled=false; btn.style.opacity='1';
+    setUploadStatus('✓ Poza încărcată. Apasă "Procesează cu AI".');
+  };
+  reader.readAsDataURL(file);
+}
+function setUploadStatus(msg,color){
+  const el=document.getElementById('uploadStatus');
+  el.style.display='block';
+  el.style.color=color||'var(--grn)';
+  el.textContent=msg;
+}
+
+// Decodează numărul de tren din fișă: 27→10227, 32→10232, 201→10201, 119→10119
+function decodeTren(cod){
+  cod=String(cod).trim().replace(/\s/g,'');
+  if(!cod||cod==='-')return null;
+  // Deja format complet (5 cifre)
+  if(/^\d{5}$/.test(cod))return cod;
+  // R1024 = tren regie
+  if(/^[Rr]\d+$/.test(cod))return cod.toUpperCase();
+  // 2 cifre → 102XX
+  if(/^\d{2}$/.test(cod))return '102'+cod;
+  // 3 cifre → 10XXX
+  if(/^\d{3}$/.test(cod))return '10'+cod;
+  // 4 cifre → 1XXXX
+  if(/^\d{4}$/.test(cod))return '1'+cod;
+  return cod;
+}
+
+async function runUploadAI(){
+  if(!uploadImageB64){alert('Încarcă o poză mai întâi!');return;}
+  const nume=document.getElementById('uploadNume').value.trim();
+  const luna=parseInt(document.getElementById('uploadLuna').value);
+  if(!nume){alert('Scrie numele tău!');return;}
+  if(!luna||luna<1||luna>12){alert('Luna invalidă!');return;}
+
+  const btn=document.getElementById('uploadBtn');
+  btn.disabled=true; btn.textContent='⏳ Procesez...';
+  setUploadStatus('🤖 Trimit fișa la AI... 10-20 secunde...','var(--yel)');
+
+  // Construieste info turnusuri pentru AI
+  let tnInfo='';
+  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+    const t=TN[k];
+    const segs=(t.segmente||[]).map(s=>`${s.prez}→${s.iesire}`).join(' | ');
+    tnInfo+=`T${k}: note="${t.note||''}" | ore: ${segs}\n`;
+  });
+
+  const prompt=`Ești expert în citirea fișelor de lucru CFR România.
+
+Analizează imaginea și găsește rândul pentru angajatul: "${nume}"
+
+REGULA DECODARE TRENURI (foarte importantă):
+- 2 cifre (ex: 27, 32, 42, 50) → 102XX (ex: 10227, 10232, 10242, 10250)
+- 3 cifre (ex: 201, 202, 119, 120) → 10XXX (ex: 10201, 10202, 10119, 10120)  
+- 4 cifre (ex: 1024, 2034) → rămân ca atare sau cu prefix R (Regie)
+- "Pl vest" sau "Pl Vest" = Piața Vest (locație, nu tren)
+- "Grivita" = Grivița, "Gr Nord" = Gara Nord (locații)
+- "/" între numere = două trenuri diferite (ex: 27/32 = 10227 și 10232)
+- "co" = concediu, "L" = liber
+
+TURNUSURI DISPONIBILE:
+${tnInfo}
+
+SARCINA:
+1. Găsește rândul "${nume}" în tabel
+2. Tabelul are coloanele 1,2,3...30 reprezentând zilele lunii ${luna}
+3. Pentru fiecare zi citește ce scrie în celulă (trenuri/coduri)
+4. Identifică turnus-ul T1-T12 potrivit comparând trenurile din celulă cu trenurile din turnusuri
+5. Returnează DOAR JSON valid fără alt text:
+
+{
+  "zile": {
+    "1": "T3",
+    "2": "T1", 
+    "3": null,
+    "4": "CO",
+    "5": "T7"
+  }
+}
+
+Unde: "T1"-"T12" = turnus identificat, null = liber, "CO" = concediu, "?" = neclar
+Completează TOATE zilele 1-${new Date(curYear,luna,0).getDate()}.
+Returnează STRICT JSON, fără markdown.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:uploadImageB64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+
+    const data=await resp.json();
+    if(data.error){
+      setUploadStatus('Eroare API: '+data.error.message,'var(--red)');
+      btn.disabled=false; btn.textContent='🤖 Procesează cu AI';
+      return;
+    }
+
+    const txt=(data.content||[]).map(x=>x.text||'').join('');
+    const clean=txt.replace(/```json|```/g,'').trim();
+
+    let parsed;
+    try{
+      parsed=JSON.parse(clean);
+    }catch(e){
+      const m=clean.match(/\{[\s\S]*\}/);
+      if(m)parsed=JSON.parse(m[0]);
+      else throw new Error('JSON invalid: '+clean.substring(0,200));
+    }
+
+    // Aplica zilele in pontaj
+    const zile=parsed.zile||parsed;
+    let aplicate=0, neidentificate=[];
+    const m=luna-1; // 0-based
+
+    Object.entries(zile).forEach(([ziStr,val])=>{
+      const zi=parseInt(ziStr);
+      if(!zi||zi<1||zi>31)return;
+      if(!val||val===null||val==='null')return;
+      
+      const v=String(val).trim().toUpperCase();
+      
+      if(v==='CO'||v==='CONCEDIU'){
+        const dd=gd(m,zi);
+        dd.note='Concediu'; save(); aplicate++;
+        return;
+      }
+      if(v==='L'||v==='LIBER'){
+        return; // liber = nimic
+      }
+      if(v==='?'||v==='NECLAR'){
+        neidentificate.push(ziStr);
+        return;
+      }
+
+      // Extrage numarul turnus-ului
+      const num=parseInt(v.replace(/[Tt]/g,''));
+      if(num>=1&&TN[num]){
+        applyTurnus(num,m,zi);
+        aplicate++;
+      } else {
+        neidentificate.push(ziStr+'('+v+')');
+      }
+    });
+
+    let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
+    if(neidentificate.length>0){
+      msg+=`\n⚠️ Neidentificate (verifică manual): zilele ${neidentificate.join(', ')}`;
+    }
+    setUploadStatus(msg,'var(--grn)');
+    renderTabs(); renderTable();
+
+  }catch(err){
+    setUploadStatus('❌ Eroare: '+err.message,'var(--red)');
+    console.error(err);
+  }finally{
+    btn.disabled=false; btn.textContent='🤖 Procesează cu AI';
+  }
+}
+
+init();
 </script>
 </body>
 </html>
