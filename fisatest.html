@@ -2,989 +2,1439 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EMX</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fișă Pontaj</title>
 <style>
-  :root{
-    --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
-    --bord:#3d1414;--bord2:#5c1c1c;
-    --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
-    --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
-    --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
-    --red:#ff2d55;--red2:rgba(255,45,85,0.09);
-    --org:#ff8c42;--org2:rgba(255,140,66,0.12);
-    --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--txt);
-    font-family:'Exo 2', sans-serif;
-    min-height:100vh;
-    padding-bottom:60px;
-    position:relative;
-  }
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
-  h1,h2,h3,.display{font-family:'Rajdhani',sans-serif; letter-spacing:0.03em; text-transform:uppercase;}
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
+:root{
+  --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
+  --bord:#3d1414;--bord2:#5c1c1c;
+  --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
+  --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
+  --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
+  --red:#ff2d55;--red2:rgba(255,45,85,0.09);
+  --org:#ff8c42;--org2:rgba(255,140,66,0.12);
+  --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.018) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:14px}
 
-  .board{
-    border-bottom:1px solid var(--bord);
-    background:linear-gradient(135deg,#0a0303,#150606,#0a0303);
-    padding:22px 24px 18px;
-    position:sticky; top:0; z-index:20;
-    backdrop-filter:blur(6px);
-    overflow:hidden;
-    box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05);
-  }
-  .board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-  .board::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
-  @keyframes hdrShine{0%{left:-100%}100%{left:200%}}
-  .board-top{display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:1;}
-  .emx-logo{display:flex; align-items:center; gap:0; line-height:1;}
-  .emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(255,31,61,0.5)}
-  .emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
-  .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
-  .emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-  .board-sub{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin-top:4px;}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:linear-gradient(135deg,var(--surf),var(--surf2));border:1px solid var(--bord2);border-radius:12px;margin-bottom:12px;position:relative;overflow:hidden;flex-wrap:wrap;gap:10px}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),var(--grn),transparent)}
+.hdr h1{font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:3px;color:var(--acc);text-transform:uppercase}
+.hdr p{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--txtd);letter-spacing:2px;margin-top:2px}
+.hdr-right{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 
-  .tabs{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; justify-content:center; position:relative; z-index:1;}
-  .tab{
-    padding:10px 16px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:600;
-    font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--txtd);
-    background:var(--surf); border:1px solid var(--bord); border-radius:6px; user-select:none;
-    transition:background .15s, color .15s;
-  }
-  .tab:hover{color:var(--txt); background:var(--surf2);}
-  .tab.active{color:#050505; background:var(--acc); border-color:var(--acc);}
-  .tab.cross{border:1px solid rgba(255,107,61,.4);}
-  .tab.cross.active{background:var(--grn); color:#050505; border-color:var(--grn);}
-  .tab.team{border:1px solid rgba(255,140,66,.4);}
-  .tab.team.active{background:var(--org); color:#050505; border-color:var(--org);}
+.board{
+  border-bottom:1px solid var(--bord);
+  background:linear-gradient(135deg,#0a0303,#150606,#0a0303);
+  padding:22px 24px 18px;
+  position:sticky; top:0; z-index:20;
+  backdrop-filter:blur(6px);
+  overflow:hidden;
+  box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05);
+  margin:-14px -14px 14px;
+}
+.board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.board::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
+@keyframes hdrShine{0%{left:-100%}100%{left:200%}}
+.board-top{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1}
+.emx-logo{display:flex;align-items:center;gap:0;line-height:1}
+.emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(255,31,61,0.5)}
+.emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
+.emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
+.emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
+.emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 10px rgba(46,213,115,.85); }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.board-sub{color:var(--txtd);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-top:4px}
 
-  main{max-width:1100px; margin:0 auto; padding:24px; position:relative; z-index:1;}
+.page-nav{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+  background:var(--surf);border:1px solid var(--bord);border-radius:10px;
+  padding:12px 16px;margin-bottom:14px;position:relative;z-index:1;
+}
+.page-nav-btn{
+  display:inline-flex;align-items:center;gap:7px;padding:9px 18px;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--txtd);background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;
+  text-decoration:none;transition:background .15s,color .15s,border-color .15s;
+}
+.page-nav-btn:hover{color:var(--txt);border-color:var(--acc);}
+.page-nav-btn.active{background:var(--acc);color:#050505;border-color:var(--acc);cursor:default;}
 
-  .card{
-    background:var(--surf); border:1px solid var(--bord); border-radius:10px; padding:18px 20px; margin-bottom:18px;
-  }
-  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;}
-  label{display:block; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:10px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;}
-  input[type=text], input[type=month]{
-    background:var(--surf2); border:1px solid var(--bord2); color:var(--txt); padding:9px 10px; border-radius:6px;
-    font-family:'Share Tech Mono',monospace; font-size:13px; min-width:160px;
-  }
-  input[type=text]:focus, input[type=month]:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc2);}
-  .btn{
-    background:var(--acc); color:#050505; border:none; padding:10px 18px; border-radius:6px;
-    font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; font-size:12px;
-    cursor:pointer; transition:filter .15s;
-  }
-  .btn:hover{filter:brightness(1.1);}
-  .btn.ghost{background:transparent; border:1px solid var(--bord2); color:var(--txtd);}
-  .btn.ghost:hover{color:var(--red); border-color:var(--red);}
-  .btn.solid-green{background:var(--grn); color:#050505;}
-  .btn:disabled{opacity:.4; cursor:not-allowed;}
-  input[type=file]{
-    font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--txtd);
-    max-width:260px;
-  }
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;font-family:'Rajdhani',sans-serif;font-size:0.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;transition:all 0.18s;white-space:nowrap}
+.btn-p{background:var(--acc);color:#07090f}.btn-p:hover{background:#00e5ff}
+.btn-s{background:var(--surf3);color:var(--txt);border:1px solid var(--bord2)}.btn-s:hover{border-color:var(--acc);color:var(--acc)}
+.btn-g{background:var(--grn);color:#07090f}.btn-g:hover{background:#00ffb3}
+.btn-r{background:var(--red2);color:var(--red);border:1px solid var(--red)}.btn-r:hover{background:var(--red);color:#fff}
+.btn-o{background:var(--org2);color:var(--org);border:1px solid var(--org)}.btn-o:hover{background:var(--org);color:#07090f}
+.btn-y{background:var(--yel2);color:var(--yel);border:1px solid var(--yel)}.btn-y:hover{background:var(--yel);color:#07090f}
+.btn-sm{padding:4px 9px;font-size:0.75rem}
 
-  .hint{color:var(--txtd); font-size:11px; margin-top:8px; line-height:1.5;}
-  .status{font-family:'Share Tech Mono',monospace; font-size:12px; margin-top:10px; color:var(--acc); min-height:16px;}
+.infobox{background:var(--surf2);border:1px solid var(--bord2);border-left:3px solid var(--acc);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.78rem;color:var(--txtm);line-height:1.6}
+.infobox strong{color:var(--acc);font-family:'Rajdhani',sans-serif;letter-spacing:1px}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.tag{background:var(--surf3);border:1px solid var(--bord2);border-radius:5px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--grn);cursor:default}
+.tag.t12{color:var(--org);border-color:var(--org)}
 
-  .doc-list{display:flex; flex-direction:column; gap:8px;}
-  .doc-item{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:var(--surf); border:1px solid var(--bord); border-radius:8px; padding:12px 16px;
-    cursor:pointer; transition:border-color .15s, background .15s;
-  }
-  .doc-item:hover{border-color:var(--acc); background:var(--surf2);}
-  .doc-name{font-weight:600; font-size:13.5px; font-family:'Exo 2',sans-serif;}
-  .doc-meta{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; margin-top:3px;}
-  .doc-actions{display:flex; gap:8px; align-items:center;}
-  .empty{color:var(--txtd); font-size:13px; padding:20px 4px; text-align:center;}
+.mtabs{display:flex;gap:3px;flex-wrap:wrap;background:var(--surf);border:1px solid var(--bord);border-radius:10px;padding:5px;margin-bottom:10px}
+.mtab{padding:5px 9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:0.76rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:transparent;color:var(--txtd);border:1px solid transparent;transition:all 0.15s;position:relative}
+.mtab:hover{color:var(--txt);border-color:var(--bord2)}
+.mtab.act{background:var(--acc2);border-color:var(--acc);color:var(--acc)}
+.mtab .hd{position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:var(--grn)}
 
-  .search-bar{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
-  .search-note{font-size:11px; color:var(--txtd); margin-top:10px; line-height:1.5; border-left:3px solid var(--acc); padding-left:10px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.card{background:var(--surf);border:1px solid var(--bord);border-radius:10px;padding:10px 12px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.card.g::before{background:var(--grn)}.card.b::before{background:var(--acc)}.card.y::before{background:var(--yel)}.card.o::before{background:var(--org)}
+.card lbl{display:block;font-size:0.59rem;text-transform:uppercase;letter-spacing:2px;color:var(--txtd);margin-bottom:3px;font-family:'Rajdhani',sans-serif;font-weight:600}
+.cv{font-family:'Share Tech Mono',monospace;font-size:1.22rem;font-weight:700}
+.card.g .cv{color:var(--grn)}.card.b .cv{color:var(--acc)}.card.y .cv{color:var(--yel)}.card.o .cv{color:var(--org)}
+.card sm{font-size:0.6rem;color:var(--txtd);display:block;margin-top:1px}
 
-  .block{
-    background:var(--surf); border:1px solid var(--bord); border-radius:10px; margin-bottom:14px; overflow:hidden;
-  }
-  .block.match{border-color:var(--acc);}
-  .block-head{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:10px 16px; background:var(--surf2); border-bottom:1px solid var(--bord);
-  }
-  .block-name{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.03em; font-size:14px; color:var(--acc);}
-  .block-role{font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--grn); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
-  .block-idx{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
-  .block-body{padding:12px 16px;}
-  .day-hit{
-    display:inline-block; background:var(--surf2); border:1px solid var(--acc); color:var(--acc);
-    font-family:'Share Tech Mono',monospace; font-size:11px; padding:3px 8px; border-radius:5px; margin-bottom:8px;
-  }
-  .raw-text{
-    font-family:'Share Tech Mono',monospace; font-size:11.5px; line-height:1.7; white-space:pre-wrap; word-break:break-all; color:var(--txtm); max-height:220px; overflow:auto;
-  }
-  .raw-text mark{background:var(--acc); color:#050505; padding:0 2px; border-radius:2px;}
+.cbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:0.68rem;color:var(--txtd);align-items:center}
+.li{display:flex;align-items:center;gap:4px}
+.ld{width:8px;height:8px;border-radius:2px}
 
-  .back-link{color:var(--txtd); font-family:'Rajdhani',sans-serif; font-weight:600; letter-spacing:.05em; text-transform:uppercase; font-size:12px; cursor:pointer; margin-bottom:14px; display:inline-block;}
-  .back-link:hover{color:var(--acc);}
+.twrap{overflow-x:auto;border-radius:10px;border:1px solid var(--bord);background:var(--surf)}
+table.pt{width:100%;border-collapse:collapse;font-size:0.74rem;min-width:880px}
+table.pt thead th{background:var(--surf3);color:var(--acc);font-family:'Rajdhani',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:8px 5px;border-bottom:2px solid var(--bord2);white-space:nowrap;text-align:center}
+table.pt thead th:first-child{text-align:left;padding-left:10px}
+table.pt thead th:last-child{text-align:left}
+table.pt tbody tr{border-bottom:1px solid var(--bord)}
+table.pt tbody td{padding:4px 5px;text-align:center;vertical-align:middle;font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--txt)}
+table.pt tbody td:first-child{text-align:left;padding-left:10px;font-family:'Exo 2',sans-serif;font-weight:600;font-size:0.74rem;min-width:85px}
+table.pt tbody td:nth-child(2){min-width:36px;font-size:0.68rem;color:var(--txtm)}
+table.pt tbody td:last-child{text-align:left}
 
-  .section-title{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin:26px 0 10px;}
+tr.rWk td{background:var(--red2)!important}
+tr.rWk td:first-child{border-left:3px solid var(--red)!important}
+tr.rWk .dn{color:var(--red)!important}
+tr.rHol td{background:var(--yel2)!important}
+tr.rHol td:first-child{border-left:3px solid var(--yel)!important}
+tr.rHol .dn{color:var(--yel)!important}
+tr.rWork td{background:rgba(0,229,160,0.03)}
+tr.rOver td{background:rgba(0,229,160,0.05)}
+tr.rWkWork td{background:rgba(255,77,109,0.07)!important}
+tr.rWkWork td:first-child{border-left:3px solid var(--red)!important}
+tr.rWkWork .dn{color:var(--red)!important}
+tr.rHolWork td{background:rgba(255,201,64,0.09)!important}
+tr.rHolWork td:first-child{border-left:3px solid var(--yel)!important}
+tr.rHolWork .dn{color:var(--yel)!important}
 
-  .result-card{
-    display:flex; justify-content:space-between; align-items:center; gap:10px;
-    background:var(--surf); border:1px solid var(--bord); border-left:3px solid var(--grn);
-    border-radius:8px; padding:12px 16px; margin-bottom:8px;
-  }
-  .result-name{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; color:var(--txt);}
-  .result-meta{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:3px;}
-  .result-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-size:13px; font-weight:700;}
+.ce{background:transparent;border:1px solid transparent;border-radius:4px;color:inherit;font-family:inherit;font-size:inherit;width:100%;text-align:center;padding:2px 2px;transition:border-color 0.13s;min-width:44px}
+.ce:focus{outline:none;border-color:var(--acc);background:var(--acc2)}
+.ce.ol{color:var(--grn);font-weight:700}.ce.on{color:var(--acc)}.ce.of{color:var(--yel)}.ce.oo{color:var(--org)}.ce.pr,.ce.ie{color:var(--txtm)}
+.ne{background:transparent;border:1px solid transparent;border-radius:4px;color:var(--txtd);font-family:'Exo 2',sans-serif;font-size:0.7rem;width:100%;padding:2px 3px}
+.ne:focus{outline:none;border-color:var(--bord2)}
 
-  .person-card{
-    background:var(--surf); border:1px solid rgba(255,140,66,.35); border-radius:10px; padding:16px 18px; margin-bottom:16px;
-  }
-  .person-card .p-name{font-family:'Rajdhani',sans-serif; font-weight:800; font-size:18px; color:var(--org);}
-  .person-card .p-role{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:2px; text-transform:uppercase; letter-spacing:.06em;}
-  .train-group{background:var(--surf2); border:1px solid var(--bord); border-radius:8px; padding:10px 14px; margin-top:12px;}
-  .train-group .t-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-weight:700; font-size:13px; margin-bottom:8px; display:block;}
-  .crew-row{display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; border-top:1px dashed var(--bord);}
-  .crew-row:first-of-type{border-top:none;}
-  .crew-name{color:var(--txt);}
-  .crew-role{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
+.tbadge{display:inline-block;background:var(--acc2);border:1px solid var(--acc);border-radius:4px;padding:1px 5px;font-family:'Rajdhani',sans-serif;font-size:0.72rem;font-weight:700;color:var(--acc);white-space:nowrap;vertical-align:middle}
+.tbadge.t12{background:var(--org2);border-color:var(--org);color:var(--org)}
+.tbadge.tov{background:rgba(0,229,160,0.1);border-color:var(--grn);color:var(--grn);font-size:.6rem}
 
-  ::-webkit-scrollbar{width:8px; height:8px;}
-  ::-webkit-scrollbar-thumb{background:var(--bord2); border-radius:4px;}
+/* BUTOANE TURNUS */
+.tn-inp-wrap{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.tn-inp-wrap input{width:45px;background:var(--surf2);border:1px solid var(--bord2);border-radius:4px;color:var(--acc);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;padding:3px 4px;text-align:center}
+.tn-inp-wrap input:focus{outline:none;border-color:var(--acc)}
+.btn-ok{background:var(--grn);border:none;border-radius:4px;color:#07090f;cursor:pointer;padding:3px 7px;font-size:.8rem;font-family:'Rajdhani',sans-serif;font-weight:700}
+.btn-ok:active{opacity:.7}
+.btn-del{background:var(--red2);border:1px solid var(--red);border-radius:4px;color:var(--red);cursor:pointer;padding:3px 7px;font-size:.8rem;font-family:'Rajdhani',sans-serif;font-weight:700}
+.btn-del:active,.btn-del:hover{background:var(--red);color:#fff}
 
-  .page-nav{
-    max-width:1100px; margin:16px auto 0; padding:12px 16px;
-    background:var(--surf); border:1px solid var(--bord); border-radius:10px;
-    display:flex; gap:10px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1;
-  }
-  .page-nav-btn{
-    display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
-    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
-    text-decoration:none; transition:background .15s,color .15s,border-color .15s;
-  }
-  .page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
-  .page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
+tr.totrow td{background:var(--surf3)!important;border-top:2px solid var(--bord2)!important;font-weight:700;font-family:'Rajdhani',sans-serif;font-size:0.8rem;letter-spacing:1px;padding:9px 5px}
+tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:10px;font-size:.74rem}
+.tv{color:var(--grn)}.tv.n{color:var(--acc)}.tv.f{color:var(--yel)}.tv.o{color:var(--org)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(7,9,15,0.92);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px;backdrop-filter:blur(5px)}
+.overlay.open{display:flex}
+.modal{background:var(--surf2);border:1px solid var(--bord2);border-radius:14px;padding:20px;width:100%;max-width:700px;position:relative;margin:auto}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--org),var(--yel),transparent)}
+.modal h2{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:2px;color:var(--org);text-transform:uppercase;margin-bottom:14px}
+.mclose{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--txtd);font-size:1.2rem;cursor:pointer}
+.mclose:hover{color:var(--red)}
+
+/* EDITOR TURNUS */
+.tn-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:440px;overflow-y:auto;padding-right:3px}
+.tn-item{background:var(--surf);border:1px solid var(--bord);border-radius:9px;padding:10px 12px}
+.tn-item-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.tn-num{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--acc);min-width:32px}
+.seg-block{background:rgba(0,200,232,0.04);border:1px solid var(--bord);border-radius:7px;padding:8px;margin-bottom:6px}
+.seg-block h5{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:1.5px;color:var(--acc);text-transform:uppercase;margin-bottom:6px}
+.seg-block.dorm{background:rgba(255,140,66,0.06);border-color:rgba(255,140,66,0.2)}
+.seg-block.dorm h5{color:var(--org)}
+.fields-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
+.tn-field{display:flex;flex-direction:column;gap:2px}
+.tn-field label{font-size:0.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--txtd);font-family:'Rajdhani',sans-serif}
+.tn-field input,.tn-field select{background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:0.73rem;padding:4px 6px;width:100%}
+.tn-field input:focus,.tn-field select:focus{outline:none;border-color:var(--acc)}
+.tn-field.wide{grid-column:1/-1}
+.tn-field.wide input{font-family:'Exo 2',sans-serif;font-size:.72rem}
+.seg-actions{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.calc-note{font-size:.65rem;color:var(--grn);font-family:'Share Tech Mono',monospace;margin-top:4px}
+
+/* YEAR MODAL */
+.yr-modal::before{background:linear-gradient(90deg,transparent,var(--acc),var(--grn),transparent)}
+.yr-modal h2{color:var(--acc)}
+.yr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}
+.yr-btn{background:var(--surf);border:1px solid var(--bord2);border-radius:8px;padding:11px 5px;font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;transition:all .18s;letter-spacing:1px}
+.yr-btn:hover,.yr-btn.cur-yr{border-color:var(--acc);color:var(--acc);background:var(--acc2)}
+.yr-badge{background:var(--acc2);border:1px solid var(--acc);border-radius:6px;padding:4px 13px;font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--acc);letter-spacing:2px;cursor:pointer;transition:all .18s;border:none}
+.yr-badge:hover{background:var(--acc);color:#07090f}
+.hol-preview{background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:9px 11px;margin-top:9px;font-size:.7rem;color:var(--txtm);max-height:180px;overflow-y:auto}
+.hol-preview h4{font-family:'Rajdhani',sans-serif;font-size:.77rem;font-weight:600;letter-spacing:1.5px;color:var(--yel);text-transform:uppercase;margin-bottom:6px}
+.hol-row{display:flex;gap:10px;padding:2px 0;border-bottom:1px solid var(--bord)}
+.hol-row:last-child{border-bottom:none}
+.hol-date{color:var(--acc);font-family:'Share Tech Mono',monospace;min-width:62px}
+
+@media print{
+  body{background:white;color:black}
+  body::before,.infobox,.mtabs,.cards,.cbar,.hdr-right{display:none!important}
+  .hdr{border:2px solid #333;background:white}
+  .hdr h1,.hdr p{color:#000}
+  table.pt thead th{background:#e5e5e5!important;color:#000!important}
+  table.pt tbody td{color:#000;border:1px solid #ddd}
+  tr.rWk td,tr.rWkWork td{background:#ffe8ec!important}
+  tr.rHol td,tr.rHolWork td{background:#fff8e0!important}
+  tr.totrow td{background:#e4f8f0!important}
+  .ce,.ne{color:inherit!important}.twrap{overflow:visible;border:none}
+  .btn-ok,.btn-del{display:none!important}
+}
 </style>
 </head>
 <body>
+<div class="app">
 
 <div class="board">
   <div class="board-top">
     <div class="emx-logo">
       <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
-      <span class="emx-dot">●</span>
+      <span class="emx-dot" id="statusDot">●</span>
     </div>
-    <div class="board-sub">PROGRAM DE LUCRU</div>
-  </div>
-  <div class="tabs" id="tabs">
-    <div class="tab active" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>
-    <div class="tab" data-cat="mecanici">Mecanici</div>
-    <div class="tab cross" data-cat="cross">Cine e la trenul X?</div>
-    <div class="tab team" data-cat="team">Programul unei persoane</div>
+    <div class="board-sub">TURNUSURI ȘI PONTAJ</div>
   </div>
 </div>
 
 <div class="page-nav">
-  <span class="page-nav-btn active">📋 Fișă de lucru</span>
+  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
+  <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
-  <span class="page-nav-btn" id="gh-account-btn">🔑 Cont GitHub</span>
+  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
+  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
+  <span class="page-nav-btn active">📅 Turnusuri</span>
 </div>
 
-<div class="card" id="gh-panel" style="max-width:1100px; margin:14px auto 0; display:none;">
-  <div class="row">
-    <div style="flex:1;"><label>Token GitHub (acces scriere)</label><input type="text" id="gh-token-input" placeholder="ghp_..." style="min-width:260px; width:100%;"></div>
-    <button class="btn" id="gh-token-save">Salvează</button>
-    <button class="btn ghost" id="gh-token-clear">Șterge token</button>
+<div class="hdr">
+  <div>
+    <h1>Fișă Pontaj</h1>
+    <p>EVIDENȚĂ ORE • TURNUS 1–12+ • TOATE LUNILE</p>
   </div>
-  <div class="status" id="gh-token-status"></div>
-  <div class="hint">Tokenul e stocat doar în acest browser (localStorage) și e trimis direct către api.github.com — nu trece prin niciun server intermediar. Folosește un token dedicat, cu scope minim (ex. doar acces la repo-ul <strong>vladynitu1.github.io</strong>), nu unul cu acces total la cont. Fără token poți doar căuta (tot ce e deja încărcat rămâne vizibil), nu poți încărca sau șterge fișiere.</div>
+  <div class="hdr-right">
+    <button class="yr-badge" id="yrBadge" onclick="openYearModal()">📅 2026</button>
+    <button class="btn btn-o" onclick="openEditor()">⚙ Turnus-uri</button>
+    <button class="btn btn-g" onclick="openUpload()">📋 Încarcă Fișă</button>
+  </div>
 </div>
 
-<main id="app"></main>
 
+
+<!-- UPLOAD FISA MODAL -->
+<div class="overlay" id="uploadOverlay">
+<div class="modal" style="max-width:520px">
+  <button class="mclose" onclick="closeUpload()">✕</button>
+  <h2 style="color:var(--grn)">📋 Încarcă Fișă de Lucru</h2>
+  <p style="font-size:.8rem;color:var(--txtm);margin-bottom:12px">
+    Încarcă poza cu fișa de lucru lunară. Scrie numele tău exact cum apare în fișă și luna.
+    AI-ul va citi fișa și va completa pontajul automat.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <div class="tn-field">
+      <label>Numele tău (din fișă)</label>
+      <input id="uploadNume" placeholder="ex: Nitu Ionut" value="Nitu Ionut"
+        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.82rem;padding:6px 9px;width:100%">
+    </div>
+    <div class="tn-field">
+      <label>Luna (1-12)</label>
+      <input id="uploadLuna" type="number" min="1" max="12" placeholder="4"
+        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.82rem;padding:6px 9px;width:100%">
+    </div>
+  </div>
+
+  <!-- Drop zone -->
+  <div id="uploadZone" onclick="document.getElementById('uploadFileIn').click()"
+    style="background:var(--surf);border:2px dashed var(--bord2);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px"
+    ondragover="event.preventDefault();this.style.borderColor='var(--grn)'"
+    ondragleave="this.style.borderColor='var(--bord2)'"
+    ondrop="onUploadDrop(event)">
+    <div style="font-size:2rem;margin-bottom:8px">📸</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:600;color:var(--grn);letter-spacing:1px">CLICK SAU TRAGE POZA</div>
+    <div style="font-size:.73rem;color:var(--txtd);margin-top:4px">JPG, PNG — fișa de lucru lunară CFR</div>
+  </div>
+  <input type="file" id="uploadFileIn" accept="image/*" style="display:none" onchange="onUploadFile(event)">
+
+  <img id="uploadPreview" style="display:none;max-width:100%;max-height:150px;border-radius:8px;border:1px solid var(--bord2);margin-bottom:10px">
+
+  <!-- Status AI -->
+  <div id="uploadStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:.73rem;color:var(--grn);margin-bottom:10px;max-height:160px;overflow-y:auto;white-space:pre-wrap"></div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-g" id="uploadBtn" onclick="runUploadAI()" disabled
+      style="opacity:.4">🤖 Procesează cu AI</button>
+    <button class="btn btn-s" onclick="closeUpload()">Anulează</button>
+  </div>
+</div>
+</div>
+
+<div class="infobox">
+  <div class="tags" id="tagList"></div>
+</div>
+
+<div class="mtabs" id="mtabs"></div>
+
+<div class="cards">
+  <div class="card g"><lbl>Ore Lucrate</lbl><div class="cv" id="cL">0:00</div><sm id="cLz">0 zile</sm></div>
+  <div class="card o"><lbl>Odihnă Total</lbl><div class="cv" id="cO">0:00</div><sm>dormitor</sm></div>
+  <div class="card b"><lbl>Ore Noapte</lbl><div class="cv" id="cN">0:00</div><sm>22:00–06:00</sm></div>
+  <div class="card y"><lbl>Ore Festive</lbl><div class="cv" id="cF">0:00</div><sm>Sâm/Dum/sărbători</sm></div>
+  <div class="card" style="border-color:var(--bord2)"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--txtm)"></div><lbl>Normă Lună</lbl><div class="cv" id="cNorma" style="color:var(--txtm)">0:00</div><sm id="cNormaZile">0 zile lucrătoare × 8h</sm></div>
+  <div class="card" id="cardSupl" style="border-color:var(--bord2)"><div id="suplBar" style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--grn)"></div><lbl>Ore Suplimentare</lbl><div class="cv" id="cSupl" style="color:var(--grn)">0:00</div><sm id="cSuplNote">față de normă</sm></div>
+</div>
+
+<div class="cbar">
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:var(--red);opacity:.6"></div>Weekend</div>
+    <div class="li"><div class="ld" style="background:var(--yel);opacity:.7"></div>Zi liberă</div>
+    <div class="li"><div class="ld" style="background:var(--grn);opacity:.6"></div>Lucrat</div>
+  </div>
+</div>
+
+<div class="twrap">
+<table class="pt">
+  <thead><tr>
+    <th>Data</th><th>Zi</th><th>Turnus</th><th></th>
+    <th>Prezentare</th><th>Ieșire</th>
+    <th>Ore Lucrate</th><th>Odihnă</th>
+    <th>Ore Noapte</th><th>Ore Festive</th>
+    <th>Notă</th>
+  </tr></thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+
+<!-- YEAR MODAL -->
+<div class="overlay" id="yearOverlay">
+<div class="modal yr-modal">
+  <button class="mclose" onclick="closeYearModal()">✕</button>
+  <h2>📅 Selectează Anul</h2>
+  <div class="yr-grid" id="yrGrid"></div>
+  <div class="hol-preview"><h4>Zile libere legale</h4><div id="holList"></div></div>
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <button class="btn btn-g" id="yrConfirmBtn">✓ Selectează</button>
+    <button class="btn btn-s" onclick="closeYearModal()">Anulează</button>
+  </div>
+</div>
+</div>
+
+<!-- EDITOR MODAL -->
+<div class="overlay" id="editorOverlay">
+<div class="modal">
+  <button class="mclose" onclick="closeEditor()">✕</button>
+  <h2>⚙ Editor Turnus-uri</h2>
+  <div id="addTnBox"></div>
+  <div class="tn-list" id="tnList"></div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">
+    <button class="btn btn-s" onclick="closeEditor()">✕ Închide</button>
+    <button class="btn btn-s btn-sm" id="resetTNBtn" onclick="resetTN()">↺ Reset la valorile din poze</button>
+  </div>
+  <div id="editorMsg" style="display:none;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--grn)"></div>
+</div>
+</div>
+
+</div>
 <script>
-const CATS = {
-  conductori: "Șefi Tren / Vânzători Bilete",
-  mecanici: "Mecanici"
-};
-let state = {
-  category: 'conductori',
-  view: 'list',
-  openDocId: null,
-  docsMeta: { conductori: [], mecanici: [] },
-  query: '',
-  dayQuery: '',
-  crossDay: '',
-  crossCode: '',
-  teamName: '',
-  teamDay: ''
-};
+// ═══════════════════════════════════════════
+// STRUCTURA TURNUS
+// segmente: array de {prez, iesire} — max 3
+// dormitoare: array de {start, end} — max 2 (calculate automat intre segmente)
+// ol, oo, on = calculate automat
+// ═══════════════════════════════════════════
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-// ---- Persistence on GitHub: reading is public (no token needed), writing needs a token ----
-const GH_OWNER = 'vladynitu1';
-const GH_REPO = 'vladynitu1.github.io';
-const GH_BRANCH = 'main';
-const DATA_DIR = 'data';
-const TOKEN_KEY = 'emx_gh_token';
-
-function getToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
-function setTokenLS(t){ try{ localStorage.setItem(TOKEN_KEY, t); }catch(e){} }
-function clearTokenLS(){ try{ localStorage.removeItem(TOKEN_KEY); }catch(e){} }
-function hasToken(){ return !!getToken(); }
-
-function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
-function encodePath(path){ return path.split('/').map(encodeURIComponent).join('/'); }
-
-async function verifyToken(token){
-  try{
-    const res = await fetch('https://api.github.com/user', {
-      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' }
-    });
-    if(!res.ok) return { ok:false };
-    const data = await res.json();
-    return { ok:true, login: data.login };
-  }catch(e){ return { ok:false }; }
+// ── TIME UTILS ──
+function p2m(s){
+  if(!s||typeof s!=='string')return -1;
+  s=s.trim();
+  const r=s.match(/^(\d{1,3})[:\.](\d{2})$/);
+  if(r)return parseInt(r[1])*60+parseInt(r[2]);
+  return -1;
+}
+function fmtm(mins){
+  if(mins===undefined||mins===null||mins<0)return'0:00';
+  return`${Math.floor(mins/60)}:${String(mins%60).padStart(2,'0')}`;
+}
+function diffm(a,b){
+  // durata de la ora a la ora b, cross-midnight
+  const s=p2m(a),e=p2m(b);
+  if(s<0||e<0)return 0;
+  let d=e-s;if(d<0)d+=1440;
+  return d;
+}
+function nightMins(startH,endH){
+  // ore intre 22:00 si 06:00
+  const s=p2m(startH),e=p2m(endH);
+  if(s<0||e<0)return 0;
+  let total=e-s;if(total<0)total+=1440;
+  if(total===0)return 0;
+  let n=0,cur=s;
+  for(let i=0;i<total;i++){
+    const t=cur%1440;
+    if(t>=22*60||t<6*60)n++;
+    cur++;
+  }
+  return n;
 }
 
-// Public read: goes through the GitHub API first (reflects the latest commit immediately,
-// unlike the raw.githubusercontent.com CDN which can lag a few minutes behind a write).
-// Falls back to the CDN copy only if the API call fails (e.g. rate limit) so search stays usable.
-async function ghFetchRaw(path){
-  const token = getToken();
-  const apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH;
-  try{
-    const headers = { Accept: 'application/vnd.github.raw' };
-    if(token) headers.Authorization = 'Bearer ' + token;
-    const res = await fetch(apiUrl, { cache: 'no-store', headers });
-    if(res.status === 404) return null;
-    if(res.ok){
-      const text = await res.text();
-      try{ return JSON.parse(text); }catch(e){ return null; }
+// ── CALCUL AUTO TURNUS ──
+// Din array de segmente [{prez,iesire}] calculeaza:
+// - ore lucrate = suma durate segmente
+// - dormitoare = intervalele intre segmente (iesire[i] -> prez[i+1])
+// - ore odihna = suma dormitoare
+// - ore noapte = ore 22-06 din TOATE segmentele (nu din dormitoare)
+// - zi1prez, zi1iesire, zi2prez, zi2iesire (pt afisare)
+function calcTurnusAuto(segmente){
+  if(!segmente||segmente.length===0)return{ol:'0:00',oo:'0:00',on:'0:00',dormitoare:[]};
+
+  let olTotal=0, ooTotal=0, onTotal=0;
+  const dormitoare=[];
+
+  // Ore lucrate = suma durate segmente, ore noapte DOAR din segmente lucrate
+  for(const seg of segmente){
+    if(seg.prez&&seg.iesire){
+      const dur=diffm(seg.prez,seg.iesire);
+      olTotal+=dur;
+      onTotal+=nightMins(seg.prez,seg.iesire); // DOAR din ore lucrate
     }
-  }catch(e){ /* fall through to CDN fallback below */ }
+  }
 
+  // Dormitoare = intre segmente consecutive (iesire[i] -> prez[i+1])
+  // Orele de noapte din dormitor NU se adauga
+  for(let i=0;i<segmente.length-1;i++){
+    const ie=segmente[i].iesire;
+    const pr=segmente[i+1].prez;
+    if(ie&&pr){
+      const dur=diffm(ie,pr);
+      ooTotal+=dur;
+      // NU adaugam nightMins din dormitor
+      dormitoare.push({start:ie,end:pr,durata:fmtm(dur)});
+    }
+  }
+
+  return{
+    ol:fmtm(olTotal),
+    oo:fmtm(ooTotal),
+    on:fmtm(onTotal),
+    dormitoare,
+    // zi1 = primul segment, zi2 = ultimul daca e altul
+    zi1prez:segmente[0].prez,
+    zi1iesire:segmente[0].iesire,
+    zi2prez:segmente.length>1?segmente[segmente.length-1].prez:'',
+    zi2iesire:segmente.length>1?segmente[segmente.length-1].iesire:'',
+    // turnus pe 2 zile daca prima iesire < prima prezentare (trece miezul noptii)
+    // sau daca exista dormitor care trece de miezul noptii
+    zile:detectZile(segmente)
+  };
+}
+
+function detectZile(segmente){
+  if(!segmente||segmente.length===0)return 1;
+  if(segmente.length===1){
+    // Verifica daca trece miezul noptii (iesire < prez)
+    const s=p2m(segmente[0].prez),e=p2m(segmente[0].iesire);
+    if(s>0&&e>0&&e<s)return 2; // trece miezul noptii
+    return 1;
+  }
+  return 2; // mai multe segmente = 2 zile
+}
+
+// ══════════════════════════════════════════
+// TURNUS DEFAULT (din poze)
+// segmente: [{prez,iesire}, {prez,iesire}, ...]
+// ══════════════════════════════════════════
+const TURNUS_DEFAULT = {
+  1:{segmente:[{prez:'11:45',iesire:'19:45'},{prez:'03:26',iesire:'10:25'}],note:'10245→10251 / 10240→10250'},
+  2:{segmente:[{prez:'12:46',iesire:'20:55'},{prez:'04:02',iesire:'12:26'}],note:'10247→10253 / 10242→10230'},
+  3:{segmente:[{prez:'15:25',iesire:'21:46'},{prez:'05:19',iesire:'13:05'}],note:'10249→10255 / 10246→10252'},
+  4:{segmente:[{prez:'11:58',iesire:'15:00'},{prez:'19:30',iesire:'00:30'},{prez:'08:00',iesire:'16:15'}],note:'10065 / 10119→10122 / 10067'},
+  5:{segmente:[{prez:'11:06',iesire:'15:35'},{prez:'20:51',iesire:'23:29'},{prez:'06:05',iesire:'13:25'}],note:'10227→10232 / 10257 / 10248→10202'},
+  6:{segmente:[{prez:'13:25',iesire:'21:37'}],note:'10229→10238'},
+  7:{segmente:[{prez:'',iesire:''}],note:'completează manual'},
+  8:{segmente:[{prez:'11:15',iesire:'19:00'}],note:'10022 Pl.Vest → 10024 Pl.Vest'},
+  9:{segmente:[{prez:'18:15',iesire:'23:30'},{prez:'05:30',iesire:'12:00'}],note:'10024→10122 / 10021→10022 Pl.Vest'},
+  10:{segmente:[{prez:'18:15',iesire:'23:30'},{prez:'19:15',iesire:'22:40'},{prez:'04:10',iesire:'08:47'}],note:'10109→10116 / 10079 / 10064→10108'},
+  11:{segmente:[{prez:'22:00',iesire:'06:00'}],note:'10123 Gr.Nord → 10106 Grivita'},
+  12:{segmente:[{prez:'18:45',iesire:'19:45'},{prez:'22:00',iesire:'06:00'},{prez:'06:00',iesire:'07:35'}],note:'REGIE: 10024 / Dormitor / 10123 Gr.Nord→10106 / 10021'}
+};
+
+// ── STATE ──
+const YEAR_MIN=2024,YEAR_MAX=2035;
+let curYear=2026,curM=3;
+let db={},TN={};
+
+const MO=['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+const DZ=['Dum','Lun','Mar','Mie','Joi','Vin','Sâm'];
+const FH={'1-1':'Anul Nou','1-2':'Anul Nou','1-24':'Ziua Unirii','5-1':'1 Mai','6-1':'Ziua Copilului','8-15':'Sf. Maria','11-30':'Sf. Andrei','12-1':'Ziua Națională','12-25':'Crăciun','12-26':'Crăciun'};
+
+function buildHols(y){
+  const h={...FH};
+  const a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7;
+  const em=Math.floor((d+e+114)/31),ed=((d+e+114)%31)+1;
+  const easter=new Date(y,em-1,ed+13);
+  const k=x=>`${x.getMonth()+1}-${x.getDate()}`;
+  const vm=new Date(easter);vm.setDate(vm.getDate()-2);h[k(vm)]='Vinerea Mare';
+  h[k(easter)]='Paști';
+  const em2=new Date(easter);em2.setDate(em2.getDate()+1);h[k(em2)]='Paști';
+  const r1=new Date(easter);r1.setDate(r1.getDate()+49);h[k(r1)]='Rusalii';
+  const r2=new Date(easter);r2.setDate(r2.getDate()+50);h[k(r2)]='Rusalii';
+  return h;
+}
+function isFest(m,d){
+  const dow=new Date(curYear,m,d).getDay();
+  return dow===0||dow===6||!!buildHols(curYear)[`${m+1}-${d}`];
+}
+function deepCopy(o){return JSON.parse(JSON.stringify(o))}
+
+// ── GITHUB SYNC (sau local, dacă nu ai token conectat din index.html) ──
+const GH_USER='vladynitu1';
+const GH_REPO='Vlad';
+const GH_FILE='turnusuri.json';
+let ghToken = localStorage.getItem('emx_gh_token') || '';
+let syncTimeout = null;
+
+function ghHeaders(){
+  return {'Authorization':'token '+ghToken,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'};
+}
+function b64EncodeUtf8(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64DecodeUtf8(str){
+  const raw=atob(str.replace(/\s/g,''));
+  const bytes=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function setSyncStatus(st, msg){
+  // Statusul e afișat doar prin punctul verde/roșu de lângă logo (updateStatusDot), nu mai există etichetă text.
+}
+
+function updateStatusDot(){
+  const dot = document.getElementById('statusDot');
+  if(dot) dot.classList.toggle('status-connected', !!ghToken);
+  const navBani = document.getElementById('navBani');
+  if(navBani && !ghToken) navBani.remove();
+}
+
+// Salveaza local imediat; daca ai token, trimite si pe GitHub cu debounce 2s
+function save(){
   try{
-    const cdnUrl = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + path + '?t=' + Date.now();
-    const res2 = await fetch(cdnUrl, { cache: 'no-store' });
-    if(res2.status === 404) return null;
-    if(!res2.ok) return null;
-    return await res2.json();
-  }catch(e2){
-    console.error('ghFetchRaw failed', path, e2);
-    return null;
+    localStorage.setItem('cfr_'+curYear, JSON.stringify({db,TN}));
+    localStorage.setItem('cfr_yr', String(curYear));
+  }catch(e){}
+  if(ghToken){
+    setSyncStatus('syncing','Se salvează...');
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(saveToGithub, 2000);
+  } else {
+    setSyncStatus('local','Local');
   }
 }
 
-async function ghGetSha(path, token){
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH, {
-    headers: token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : { Accept: 'application/vnd.github+json' }
-  });
-  if(res.status === 404) return null;
-  if(!res.ok) throw new Error('Nu am putut verifica fișierul existent pe GitHub (' + res.status + ')');
-  const data = await res.json();
-  return data.sha;
-}
-
-// Write: requires a token with write access to the repo.
-async function ghPutFile(path, obj, message){
-  const token = getToken();
-  if(!token) throw new Error('Lipsește tokenul GitHub — introdu-l din butonul „Cont GitHub”.');
-  const sha = await ghGetSha(path, token).catch(()=>null);
-  const body = { message, content: b64EncodeUnicode(JSON.stringify(obj, null, 2)), branch: GH_BRANCH };
-  if(sha) body.sha = sha;
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
-    method: 'PUT',
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if(!res.ok){
-    const errText = await res.text().catch(()=>'');
-    throw new Error('Eroare la salvarea pe GitHub (' + res.status + '): ' + errText);
+async function saveToGithub(){
+  if(!ghToken) return;
+  const allData = {};
+  for(let y=YEAR_MIN; y<=YEAR_MAX; y++){
+    try{
+      const s=localStorage.getItem('cfr_'+y);
+      if(s) allData['cfr_'+y]=JSON.parse(s);
+    }catch(e){}
   }
-  return await res.json();
+  allData['cfr_yr'] = String(curYear);
+  try{
+    let sha='';
+    const check=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?_=${Date.now()}`,{headers:ghHeaders()});
+    if(check.ok){ const j=await check.json(); sha=j.sha||''; }
+    else if(check.status!==404){ setSyncStatus('err','Eroare GitHub'); return; }
+
+    const body={ message:'EMX Turnusuri '+new Date().toISOString().slice(0,16).replace('T',' '), content:b64EncodeUtf8(JSON.stringify(allData)) };
+    if(sha)body.sha=sha;
+
+    const r=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}`,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
+    if(r.ok){ setSyncStatus('ok','Salvat pe GitHub'); }
+    else if(r.status===409||r.status===422){ setSyncStatus('syncing','Reîncerc...'); setTimeout(saveToGithub,1500); }
+    else{ setSyncStatus('err','Eroare GitHub'); }
+  }catch(e){ setSyncStatus('err','Fără internet'); }
 }
 
-async function ghDeleteFile(path, message){
-  const token = getToken();
-  if(!token) throw new Error('Lipsește tokenul GitHub — introdu-l din butonul „Cont GitHub”.');
-  const sha = await ghGetSha(path, token);
-  if(!sha) return null;
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
-    method: 'DELETE',
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, sha, branch: GH_BRANCH })
-  });
-  if(!res.ok){
-    const errText = await res.text().catch(()=>'');
-    throw new Error('Eroare la ștergerea de pe GitHub (' + res.status + '): ' + errText);
+async function loadFromGithub(){
+  if(!ghToken) return false;
+  setSyncStatus('syncing','Se încarcă...');
+  try{
+    const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?t=${Date.now()}`,{headers:ghHeaders(),cache:'no-store'});
+    if(!r.ok){ setSyncStatus(r.status===404?'local':'err', r.status===404?'Local':'Eroare GitHub'); return false; }
+    const j = await r.json();
+    const allData = JSON.parse(b64DecodeUtf8(j.content));
+    Object.entries(allData).forEach(([k,v])=>{
+      try{ localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v)); }catch(e){}
+    });
+    setSyncStatus('ok','Sincronizat cu GitHub');
+    return true;
+  }catch(e){ setSyncStatus('err','Fără internet'); return false; }
+}
+
+function load(){
+  try{
+    const cy=localStorage.getItem('cfr_yr');
+    if(cy)curYear=parseInt(cy)||2026;
+    const s=localStorage.getItem('cfr_'+curYear);
+    if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}
+    else{db={};TN=deepCopy(TURNUS_DEFAULT);}
+  }catch(e){db={};TN=deepCopy(TURNUS_DEFAULT);}
+  updateStatusDot();
+  if(ghToken){
+    loadFromGithub().then(ok=>{
+      if(ok){
+        try{
+          const s=localStorage.getItem('cfr_'+curYear);
+          if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}
+        }catch(e){}
+        renderTabs(); renderTable();
+      }
+    });
+  } else {
+    setSyncStatus('local','Local');
   }
-  return await res.json();
 }
 
-
-function uid(){ return 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
-
-async function loadMeta(cat){
-  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/index.json');
-  state.docsMeta[cat] = Array.isArray(data) ? data : [];
+// Preia conectarea/deconectarea făcută din index.html în alt tab
+window.addEventListener('storage', function(e){
+  if(e.key === 'emx_gh_token'){ location.reload(); }
+});
+function gd(m,d){
+  if(!db[m])db[m]={};
+  if(!db[m][d])db[m][d]={tn:'',prez:'',iesire:'',ol:'',oo:'',on:'',of:'',note:'',overflow:false};
+  return db[m][d];
 }
-async function saveMeta(cat){
-  await ghPutFile(DATA_DIR + '/' + cat + '/index.json', state.docsMeta[cat], 'update index ' + cat);
+function setF(m,d,f,v){gd(m,d)[f]=v;save();updateCards();}
+function clearDay(m,d){if(db[m])db[m][d]={tn:'',prez:'',iesire:'',ol:'',oo:'',on:'',of:'',note:'',overflow:false};}
+
+// ── APPLY TURNUS ──
+function applyTurnus(num,m,d){
+  const t=TN[num];
+  if(!t||!t.segmente||t.segmente.length===0)return;
+
+  const calc=calcTurnusAuto(t.segmente);
+  const daysInM=new Date(curYear,m+1,0).getDate();
+
+  // ZI 1: primul segment
+  const dd1=gd(m,d);
+  dd1.tn=`T${num}`;
+  dd1.prez=t.segmente[0].prez||'';
+  dd1.iesire=t.segmente[0].iesire||'';
+  dd1.note=t.note||'';
+  dd1.overflow=false;
+
+  if(calc.zile===1||t.segmente.length===1){
+    // Turnus pe o singura zi
+    dd1.ol=calc.ol;
+    dd1.oo=calc.oo;
+    dd1.on=calc.on;
+    dd1.of=isFest(m,d)?calc.ol:'';
+  } else {
+    // Turnus pe 2 zile
+    // ── ZI 1: primul segment ──
+    const seg0=t.segmente[0];
+    const olZi1=diffm(seg0.prez,seg0.iesire);
+    // Ore noapte zi 1 = ore din intervalul [prez, iesire_zi1] care sunt intre 22:00-24:00
+    // (partea de noapte din prima zi, pana la miezul noptii)
+    const onZi1=nightMins(seg0.prez, seg0.iesire);
+    dd1.ol=fmtm(olZi1);
+    dd1.oo=calc.oo; // toata odihna
+    dd1.on=fmtm(onZi1);
+    dd1.of=isFest(m,d)?fmtm(olZi1):'';
+
+    // ── ZI 2: segmentele 2, 3... ──
+    let m2=m,d2=d+1;
+    if(d2>daysInM){m2=m+1;d2=1;}
+    if(m2<=11){
+      const lastSeg=t.segmente[t.segmente.length-1];
+      const dd2=gd(m2,d2);
+      dd2.tn=`T${num}`;
+      dd2.prez=lastSeg.prez||'';
+      dd2.iesire=lastSeg.iesire||'';
+      // Ore lucrate zi 2 = suma segmentelor 1..n (fara primul)
+      let olZi2=0, onZi2=0;
+      const segsZi2=t.segmente.slice(1);
+      for(const sg of segsZi2){
+        olZi2+=diffm(sg.prez,sg.iesire);
+        // Ore noapte din segmentele zilei 2 = ore intre 00:00-06:00
+        onZi2+=nightMins(sg.prez,sg.iesire);
+      }
+      dd2.ol=fmtm(olZi2);
+      dd2.oo='0:00';
+      dd2.on=fmtm(onZi2);
+      dd2.of=isFest(m2,d2)?fmtm(olZi2):'';
+      dd2.note=(t.note||'')+' (zi 2)';
+      dd2.overflow=true;
+    }
+  }
+  save();renderTabs();renderTable();
 }
-async function loadAllMeta(){
-  await loadMeta('conductori');
-  await loadMeta('mecanici');
+
+function deleteDay(m,d){
+  clearDay(m,d);
+  const daysInM=new Date(curYear,m+1,0).getDate();
+  let m2=m,d2=d+1;
+  if(d2>daysInM){m2=m+1;d2=1;}
+  if(m2<=11&&db[m2]&&db[m2][d2]&&db[m2][d2].overflow)clearDay(m2,d2);
+  save();renderTable();
+}
+
+function applyFromInput(val,m,d){
+  val=val.trim().toUpperCase();
+  if(val===''){deleteDay(m,d);return;}
+  const num=parseInt(val.replace(/[Tt]/g,''));
+  if(num>=1&&TN[num])applyTurnus(num,m,d);
+  else{setF(m,d,'tn',val);renderTable();}
+}
+
+// ── RENDER ──
+function init(){
+  load();
+  document.getElementById('yrBadge').textContent='📅 '+curYear;
+  renderTags();renderTabs();renderTable();
+  buildAddTnBox();
+}
+
+function renderTags(){
+  const w=document.getElementById('tagList');w.innerHTML='';
+  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+    const sp=document.createElement('span');
+    sp.className='tag'+(+k===12?' t12':'');
+    sp.textContent=`T${k}`;
+    sp.title=(TN[k].note||'')+' | segs:'+TN[k].segmente.length;
+    w.appendChild(sp);
+  });
 }
 
 function renderTabs(){
-  const tabsEl = document.getElementById('tabs');
-  const authed = hasToken();
-  let html = '';
-  if(authed){
-    html += '<div class="tab' + (state.category==='conductori' && state.view==='list' || (state.view==='detail'&&state.category==='conductori') ? ' active':'') + '" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>';
-    html += '<div class="tab' + (state.category==='mecanici' && (state.view==='list'||state.view==='detail') ? ' active':'') + '" data-cat="mecanici">Mecanici</div>';
-  }
-  html += '<div class="tab cross' + (state.view==='cross' ? ' active':'') + '" data-cat="cross">Cine e la trenul X?</div>';
-  html += '<div class="tab team' + (state.view==='team' ? ' active':'') + '" data-cat="team">Programul unei persoane</div>';
-  tabsEl.innerHTML = html;
-  setTabHandlers();
-}
-
-function setTabHandlers(){
-  document.querySelectorAll('.tab').forEach(t=>{
-    t.onclick = ()=>{
-      if(t.dataset.cat === 'cross'){
-        state.view = 'cross';
-        renderTabs();
-        render();
-        return;
-      }
-      if(t.dataset.cat === 'team'){
-        state.view = 'team';
-        renderTabs();
-        render();
-        return;
-      }
-      if((t.dataset.cat === 'conductori' || t.dataset.cat === 'mecanici') && !hasToken()){
-        return; // guarded: shouldn't be reachable without a token, but double-check
-      }
-      state.category = t.dataset.cat;
-      state.view='list'; state.openDocId=null; state.query=''; state.dayQuery='';
-      renderTabs();
-      render();
-    };
+  const w=document.getElementById('mtabs');w.innerHTML='';
+  MO.forEach((name,i)=>{
+    const b=document.createElement('button');
+    b.className='mtab'+(i===curM?' act':'');
+    b.textContent=name.substring(0,3).toUpperCase();
+    const md=db[i]||{};
+    if(Object.values(md).some(x=>x.ol||x.tn)){
+      const dot=document.createElement('span');dot.className='hd';b.appendChild(dot);
+    }
+    b.onclick=()=>{curM=i;renderTabs();renderTable();};
+    w.appendChild(b);
   });
 }
 
-// ---- Positioned PDF extraction: keeps x per token so day-columns can be reconstructed ----
-async function extractPdfRows(file){
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
-  const allRows = [];
-  const ROW_TOLERANCE = 2;
-  for(let p=1;p<=pdf.numPages;p++){
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const items = content.items
-      .map(item => ({ x: item.transform[4], y: item.transform[5], w: item.width || 0, str: item.str.trim() }))
-      .filter(i => i.str.length > 0);
-    items.sort((a,b) => b.y - a.y || a.x - b.x);
-    let clusters = [];
-    let current = null;
-    items.forEach(it=>{
-      if(current && Math.abs(it.y - current.refY) <= ROW_TOLERANCE){
-        current.items.push(it);
-      } else {
-        if(current) clusters.push(current);
-        current = { refY: it.y, items: [it] };
-      }
-    });
-    if(current) clusters.push(current);
-    clusters.forEach(c=>{
-      const sorted = c.items.slice().sort((a,b)=>a.x-b.x);
-      allRows.push({ y: c.refY, items: sorted.map(i=>({x:i.x, w:i.w, str:i.str})) });
-    });
-  }
-  return allRows;
+function mkInput(cls,val,ph,onChange){
+  const i=document.createElement('input');
+  i.className='ce '+cls;i.value=val||'';i.placeholder=ph;
+  i.addEventListener('change',onChange);
+  return i;
 }
 
-function rowsToText(rows){
-  return rows.map(r => r.items.map(i=>i.str).join(' ')).join('\n');
-}
+function renderTable(){
+  const body=document.getElementById('tbody');body.innerHTML='';
+  const m=curM;
+  const days=new Date(curYear,m+1,0).getDate();
+  const hols=buildHols(curYear);
+  let tL=0,tO=0,tN=0,tF=0,zile=0;
 
-// ---- Split positioned rows into per-employee blocks, with a day->codes map ----
-function splitBlocksStructured(rows){
-  const blocks = [];
-  let current = null;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(curYear,m,d);
+    const dow=dt.getDay();
+    const hk=`${m+1}-${d}`;
+    const isWk=dow===0||dow===6;
+    const isHol=!!hols[hk];
+    const isFestD=isWk||isHol;
+    const dd=gd(m,d);
 
-  function isHeaderRow(items){
-    const strs = items.map(i=>i.str);
-    return strs.includes('Data') && strs.filter(s=>/^\d{1,2}$/.test(s)).length >= 15;
-  }
-  function isTimeRow(items){
-    const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
-    return items.length > 0 && (timeLike / items.length) > 0.5;
-  }
-  function isCoStartRow(items){
-    return items.some(i=>i.str === 'inceput') && items.some(i=>i.str === 'luna');
-  }
-
-  rows.forEach(row=>{
-    if(isHeaderRow(row.items)){
-      if(current) blocks.push(current);
-      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str))
-        .map(i=>({ x: i.x, w: i.w, str: i.str, day: parseInt(i.str, 10) }))
-        .filter(i=>i.day >= 1 && i.day <= 31);
-      current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
-    } else if(current){
-      current.allRows.push(row);
-      if(!isTimeRow(row.items) && !isCoStartRow(row.items)){
-        current.codeRows.push(row);
-      }
+    // Ore noapte: foloseste valoarea salvata (setata corect de applyTurnus)
+    // Recalculeaza auto doar daca nu e setat deloc (introducere manuala)
+    let showN=dd.on;
+    if(!showN&&dd.prez&&dd.iesire){
+      const n=nightMins(dd.prez,dd.iesire);if(n>0)showN=fmtm(n);
     }
+    // Ore festive
+    let showF=dd.of;
+    if(!showF&&isFestD&&dd.ol)showF=dd.ol;
+
+    tL+=p2m(dd.ol)<0?0:p2m(dd.ol);
+    tO+=p2m(dd.oo)<0?0:p2m(dd.oo);
+    tN+=p2m(showN)<0?0:p2m(showN);
+    tF+=p2m(showF)<0?0:p2m(showF);
+    if(dd.tn||dd.ol)zile++;
+
+    // Row class
+    let cls='';
+    if(isHol&&(dd.tn||dd.ol))cls='rHolWork';
+    else if(isWk&&(dd.tn||dd.ol))cls='rWkWork';
+    else if(isHol)cls='rHol';
+    else if(isWk)cls='rWk';
+    else if(dd.overflow)cls='rOver';
+    else if(dd.tn||dd.ol)cls='rWork';
+
+    const tr=document.createElement('tr');
+    if(cls)tr.className=cls;
+
+    // DATA
+    const tdD=document.createElement('td');
+    tdD.innerHTML=`<b>${String(d).padStart(2,'0')}.${String(m+1).padStart(2,'0')}</b>`+
+      (isHol?`<span style="font-size:.56rem;color:var(--yel);margin-left:3px">${hols[hk]}</span>`:'');
+    tr.appendChild(tdD);
+
+    // ZI
+    const tdZ=document.createElement('td');
+    tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;
+    tr.appendChild(tdZ);
+
+    // TURNUS INPUT
+    const tdTn=document.createElement('td');
+    const wrap=document.createElement('div');wrap.className='tn-inp-wrap';
+    const inp=document.createElement('input');
+    inp.value=dd.tn||'';inp.placeholder='T1…';
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur();applyFromInput(this.value,m,d);}});
+    inp.addEventListener('blur',function(){applyFromInput(this.value,m,d);});
+    wrap.appendChild(inp);
+    if(dd.tn){
+      const tnNum=parseInt(dd.tn.replace(/[Tt]/g,''))||0;
+      const bdg=document.createElement('span');
+      bdg.className='tbadge'+(tnNum===12?' t12':'');
+      bdg.textContent=dd.tn;bdg.style.marginLeft='3px';
+      wrap.appendChild(bdg);
+    }
+    if(dd.overflow){
+      const ov=document.createElement('span');ov.className='tbadge tov';ov.textContent='zi2';ov.style.marginLeft='3px';
+      wrap.appendChild(ov);
+    }
+    tdTn.appendChild(wrap);tr.appendChild(tdTn);
+
+    // DELETE
+    const tdDel=document.createElement('td');tdDel.style.width='30px';tdDel.style.padding='3px';
+    if(dd.tn&&!dd.overflow){
+      const btnDel=document.createElement('button');
+      btnDel.className='btn-del';btnDel.textContent='✕';
+      btnDel.addEventListener('click',function(){deleteDay(m,d);});
+      tdDel.appendChild(btnDel);
+    }
+    tr.appendChild(tdDel);
+
+    // CELULE INPUT
+    const fields=[
+      {v:dd.prez,c:'pr',p:'--:--',f:'prez'},
+      {v:dd.iesire,c:'ie',p:'--:--',f:'iesire'},
+      {v:dd.ol,c:'ol',p:'0:00',f:'ol'},
+      {v:dd.oo,c:'oo',p:'0:00',f:'oo'},
+      {v:showN,c:'on',p:'auto',f:'on'},
+      {v:showF,c:'of',p:isFestD?'auto':'-',f:'of'},
+    ];
+    for(const fd of fields){
+      const td=document.createElement('td');
+      const i=mkInput(fd.c,fd.v,fd.p,function(){setF(m,d,fd.f,this.value);});
+      td.appendChild(i);tr.appendChild(td);
+    }
+
+    // NOTE
+    const tdN=document.createElement('td');
+    const iN=document.createElement('input');iN.className='ne';iN.value=dd.note||'';iN.placeholder='mențiuni...';
+    iN.addEventListener('change',function(){setF(m,d,'note',this.value);});
+    tdN.appendChild(iN);tr.appendChild(tdN);
+
+    body.appendChild(tr);
+  }
+
+  // TOTAL
+  const tot=document.createElement('tr');tot.className='totrow';
+  const tc=document.createElement('td');tc.colSpan=5;tc.textContent=`TOTAL ${MO[m].toUpperCase()} ${curYear}`;
+  tot.appendChild(tc);
+  const empt=document.createElement('td');tot.appendChild(empt);
+  [{v:tL,c:'tv'},{v:tO,c:'tv o'},{v:tN,c:'tv n'},{v:tF,c:'tv f'}].forEach(x=>{
+    const td=document.createElement('td');td.innerHTML=`<span class="${x.c}">${fmtm(x.v)}</span>`;tot.appendChild(td);
   });
-  if(current) blocks.push(current);
-
-  return blocks.map((b, idx)=>{
-    const colX = b.dayTokens.map(t=>t.x + (t.w||0)/2);
-    const colDay = b.dayTokens.map(t=>t.day);
-    const n = colX.length;
-    let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
-
-    const dayCodes = {};
-    for(let d=1; d<=31; d++) dayCodes[d] = [];
-
-    const allText = rowsToText(b.allRows);
-    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU']);
-    function isLabelToken(t){
-      if(NON_NAME.has(t)) return true;
-      const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w));
-    }
-    function firstNameToken(tokens){
-      for(const t of tokens){
-        if(/\d/.test(t)) continue;
-        if(isLabelToken(t)) continue;
-        if(t.length < 2) continue;
-        return t;
-      }
-      return '';
-    }
-    let surname = '', firstname = '';
-    for(let i=0;i<b.allRows.length;i++){
-      const tokens = b.allRows[i].items.map(it=>it.str);
-      if(tokens.includes('Festive')){
-        let sIdx = -1;
-        for(let k=0;k<tokens.length;k++){
-          const t = tokens[k];
-          if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
-          sIdx = k; break;
-        }
-        surname = sIdx >= 0 ? tokens[sIdx] : '';
-
-        const candidateRows = [];
-        candidateRows.push(sIdx >= 0 ? tokens.slice(sIdx+1) : tokens);
-        if(b.allRows[i+1]) candidateRows.push(b.allRows[i+1].items.map(it=>it.str));
-        if(b.allRows[i+2]) candidateRows.push(b.allRows[i+2].items.map(it=>it.str));
-
-        for(const rowTokens of candidateRows){
-          const isRoleRow = rowTokens.includes('Sef') || rowTokens.includes('Mecanic') ||
-            (rowTokens.includes('V') && rowTokens.some(t => t.indexOf('bilete') === 0));
-          if(isRoleRow) break;
-          const f = firstNameToken(rowTokens);
-          if(f){ firstname = f; break; }
-        }
-        break;
-      }
-    }
-    const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
-
-    let role = 'Necunoscut';
-    if(/Sef\s*tren/i.test(allText)) role = 'Șef tren';
-    else if(/V\s*bilete\s*II/i.test(allText)) role = 'Vânzător bilete II';
-    else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
-    else if(/Mecanic/i.test(allText)) role = 'Mecanic';
-
-    const excludeTokens = new Set([surname, firstname, 'Festive'].filter(Boolean));
-
-    if(n > 1){
-      const maxGapAllowed = gap * 0.75;
-      b.codeRows.forEach(row=>{
-        row.items.forEach(item=>{
-          if(excludeTokens.has(item.str)) return;
-          const x = item.x + (item.w||0)/2;
-          let bestDay = -1, bestDist = Infinity;
-          for(let k=0;k<n;k++){
-            const dist = Math.abs(x - colX[k]);
-            if(dist < bestDist){ bestDist = dist; bestDay = colDay[k]; }
-          }
-          if(bestDay === -1 || bestDist > maxGapAllowed) return;
-          dayCodes[bestDay].push(item.str);
-        });
-      });
-    }
-
-    return { id: idx, name, role, dayCodes, text: allText };
-  }).filter(b => b.text.trim().length > 0);
+  const tdz=document.createElement('td');tdz.style.cssText='color:var(--txtd);font-size:.65rem';tdz.textContent=zile+' zile';
+  tot.appendChild(tdz);
+  body.appendChild(tot);
+  updateCards();
 }
 
-async function handleUpload(cat, file, month){
-  const statusEl = document.getElementById('upload-status');
-  if(!hasToken()){ statusEl.textContent = 'Ai nevoie de un token GitHub pentru a încărca fișiere.'; return; }
-  if(!file){ statusEl.textContent = 'Alege un fișier PDF.'; return; }
-  statusEl.textContent = 'Se extrage textul din PDF...';
-  try{
-    const rows = await extractPdfRows(file);
-    const id = uid();
-    statusEl.textContent = 'Se urcă pe GitHub...';
-    await ghPutFile(DATA_DIR + '/' + cat + '/' + id + '.json', { rows }, 'add doc ' + file.name);
-    const meta = { id, filename: file.name, month: month || '', uploadedAt: new Date().toISOString() };
-    state.docsMeta[cat].unshift(meta);
-    await saveMeta(cat);
-    statusEl.textContent = 'Salvat pe GitHub: ' + file.name;
-    render();
-  }catch(e){
-    console.error(e);
-    statusEl.textContent = 'Eroare: ' + e.message;
-  }
-}
+function updateCards(){
+  const m=curM;
+  const days=new Date(curYear,m+1,0).getDate();
+  const hols=buildHols(curYear);
+  let tL=0,tO=0,tN=0,tF=0,zile=0;
 
-async function deleteDoc(cat, id){
-  if(!hasToken()){ alert('Ai nevoie de un token GitHub pentru a șterge fișiere.'); return; }
-  if(!confirm('Ștergi definitiv acest program?')) return;
-  const statusEl = document.getElementById('upload-status');
-  if(statusEl) statusEl.textContent = 'Se șterge de pe GitHub...';
-  try{
-    await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.json', 'delete doc ' + id);
-    state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
-    await saveMeta(cat);
-    delete _blocksCache[cat + ':' + id];
-    if(state.openDocId===id){ state.view='list'; state.openDocId=null; }
-    if(statusEl) statusEl.textContent = 'Șters.';
-    render();
-  }catch(e){
-    console.error(e);
-    alert('Eroare la ștergere: ' + e.message);
-    if(statusEl) statusEl.textContent = 'Eroare la ștergere.';
-  }
-}
-
-function normalize(s){
-  return (s||'').toLowerCase()
-    .replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/ș/g,'s').replace(/ț/g,'t');
-}
-
-function trainCodesForDay(block, day){
-  return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
-}
-
-function escapeHtml(s){
-  return s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-}
-function highlight(text, query){
-  if(!query) return escapeHtml(text);
-  const esc = escapeHtml(text);
-  const safeQ = query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return esc.replace(new RegExp('('+safeQ+')','gi'), '<mark>$1</mark>');
-}
-
-const _blocksCache = {};
-async function getBlocksForDoc(cat, id){
-  const cacheKey = cat + ':' + id;
-  if(_blocksCache[cacheKey]) return _blocksCache[cacheKey];
-  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/' + id + '.json');
-  const rows = data && Array.isArray(data.rows) ? data.rows : [];
-  if(!rows.length) return [];
-  const blocks = splitBlocksStructured(rows);
-  _blocksCache[cacheKey] = blocks;
-  return blocks;
-}
-
-async function renderDetail(cat, doc){
-  const container = document.getElementById('app');
-  container.innerHTML = '<span class="back-link" id="back-btn">&larr; înapoi la listă</span>' +
-    '<h2 style="margin:4px 0 2px;">' + escapeHtml(doc.filename) + '</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">' + CATS[cat] + (doc.month ? ' · ' + escapeHtml(doc.month) : '') + ' · încărcat ' + new Date(doc.uploadedAt).toLocaleDateString('ro-RO') + '</div>' +
-    '<div class="card">' +
-      '<div class="search-bar">' +
-        '<div><label>Cod (ex. 16565)</label><input type="text" id="q-code" placeholder="cod / nume" value="' + escapeHtml(state.query) + '"></div>' +
-        '<div><label>Zi (1-31, opțional)</label><input type="text" id="q-day" placeholder="ex. 15" value="' + escapeHtml(state.dayQuery) + '" style="min-width:80px;"></div>' +
-        '<button class="btn" id="search-btn">Caută</button>' +
-        '<button class="btn ghost" id="clear-btn">Șterge filtrul</button>' +
-      '</div>' +
-      '<div class="search-note">Dacă pui și ziua, verificăm exact codul din ziua respectivă (poziția e reconstruită din PDF); fără zi, căutăm codul oriunde în program.</div>' +
-    '</div>' +
-    '<div id="blocks-container"><div class="empty">Se procesează...</div></div>';
-
-  document.getElementById('back-btn').onclick = ()=>{ state.view='list'; state.openDocId=null; render(); };
-
-  const blocks = await getBlocksForDoc(cat, doc.id);
-
-  document.getElementById('search-btn').onclick = ()=>{
-    state.query = document.getElementById('q-code').value.trim();
-    state.dayQuery = document.getElementById('q-day').value.trim();
-    renderBlocks(blocks);
-  };
-  document.getElementById('clear-btn').onclick = ()=>{
-    state.query=''; state.dayQuery='';
-    document.getElementById('q-code').value='';
-    document.getElementById('q-day').value='';
-    renderBlocks(blocks);
-  };
-  ['q-code','q-day'].forEach(id=>{
-    document.getElementById(id).addEventListener('keydown', e=>{
-      if(e.key==='Enter') document.getElementById('search-btn').click();
-    });
-  });
-
-  renderBlocks(blocks);
-}
-
-function renderBlocks(blocks){
-  const holder = document.getElementById('blocks-container');
-  const q = state.query.trim();
-  const day = parseInt(state.dayQuery.trim(), 10);
-  const hasDay = !isNaN(day) && day >= 1 && day <= 31;
-
-  let list = blocks;
-  let dayHitMap = {};
-
-  if(hasDay && q){
-    list = blocks.filter(b => (b.dayCodes[day]||[]).some(c => c.toLowerCase() === q.toLowerCase() || c.toLowerCase().includes(q.toLowerCase())));
-    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
-  } else if(q){
-    list = blocks.filter(b => b.text.toLowerCase().includes(q.toLowerCase()) || b.name.toLowerCase().includes(q.toLowerCase()));
-  } else if(hasDay){
-    list = blocks.filter(b => (b.dayCodes[day]||[]).length > 0);
-    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
+  // Calculeaza norma: zile lucratoare (L-V, fara sarbatori) x 8h
+  let zileLucratoare=0;
+  for(let d=1;d<=days;d++){
+    const dd=gd(m,d);
+    let n=dd.on;if(!n&&dd.prez&&dd.iesire){const nm=nightMins(dd.prez,dd.iesire);if(nm>0)n=fmtm(nm);}
+    let f=dd.of;if(!f&&isFest(m,d)&&dd.ol)f=dd.ol;
+    const ol=p2m(dd.ol);const oo=p2m(dd.oo);const on=p2m(n);const of2=p2m(f);
+    tL+=ol<0?0:ol;tO+=oo<0?0:oo;tN+=on<0?0:on;tF+=of2<0?0:of2;
+    if(dd.tn||dd.ol)zile++;
+    // Zile lucratoare = L-V care nu sunt sarbatori legale
+    const dow=new Date(curYear,m,d).getDay();
+    const hk=`${m+1}-${d}`;
+    if(dow>=1&&dow<=5&&!hols[hk]) zileLucratoare++;
   }
 
-  if(list.length === 0){
-    holder.innerHTML = '<div class="empty">Niciun rezultat.</div>';
-    return;
-  }
+  const normaMin = zileLucratoare * 8 * 60;
+  const suplMin  = tL - normaMin;
 
-  holder.innerHTML = '<div class="section-title">' + list.length + ' rezultat(e)</div>' +
-    list.map((b, i) => {
-      const dayHit = dayHitMap[b.id] ? '<div class="day-hit">Ziua ' + day + ': ' + escapeHtml(dayHitMap[b.id]) + '</div>' : '';
-      return '<div class="block ' + (q||hasDay ? 'match':'') + '">' +
-        '<div class="block-head"><div><div class="block-name">' + escapeHtml(b.name) + '</div><div class="block-role">' + escapeHtml(b.role) + '</div></div><div class="block-idx">#' + (i+1) + '</div></div>' +
-        '<div class="block-body">' + dayHit + '<div class="raw-text">' + highlight(b.text, q) + '</div></div>' +
-      '</div>';
-    }).join('');
-}
+  document.getElementById('cL').textContent=fmtm(tL);
+  document.getElementById('cO').textContent=fmtm(tO);
+  document.getElementById('cN').textContent=fmtm(tN);
+  document.getElementById('cF').textContent=fmtm(tF);
+  document.getElementById('cLz').textContent=zile+' zile cu activitate';
 
-function renderList(){
-  const container = document.getElementById('app');
-  const cat = state.category;
-  const docs = state.docsMeta[cat] || [];
+  // Norma
+  document.getElementById('cNorma').textContent=fmtm(normaMin);
+  document.getElementById('cNormaZile').textContent=zileLucratoare+' zile lucrătoare × 8h';
 
-  container.innerHTML =
-    '<h2 style="margin:0 0 4px;">' + CATS[cat] + '</h2>' +
-    '<div class="card">' +
-      '<div class="row">' +
-        '<div><label>Fișier PDF</label><input type="file" id="file-input" accept="application/pdf"></div>' +
-        '<div><label>Lună / an (etichetă)</label><input type="text" id="month-input" placeholder="ex. Iulie 2026"></div>' +
-        '<button class="btn" id="upload-btn">Încarcă</button>' +
-      '</div>' +
-      '<div class="hint">Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile, apoi se urcă pe GitHub (repo public) — nu se mai salvează local.</div>' +
-      '<div class="status" id="upload-status"></div>' +
-    '</div>' +
-    '<div class="section-title">Programe salvate</div>' +
-    '<div class="doc-list" id="doc-list">' +
-      (docs.length === 0 ? '<div class="empty">Niciun program încărcat încă pentru această categorie.</div>' :
-        docs.map(d =>
-          '<div class="doc-item" data-id="' + d.id + '">' +
-            '<div><div class="doc-name">' + escapeHtml(d.filename) + '</div>' +
-            '<div class="doc-meta">' + (d.month ? escapeHtml(d.month) + ' · ' : '') + 'încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</div></div>' +
-            '<div class="doc-actions"><button class="btn ghost" data-del="' + d.id + '">Șterge</button></div>' +
-          '</div>'
-        ).join('')
-      ) +
-    '</div>';
-
-  document.getElementById('upload-btn').onclick = ()=>{
-    const file = document.getElementById('file-input').files[0];
-    const month = document.getElementById('month-input').value.trim();
-    handleUpload(cat, file, month);
-  };
-  document.querySelectorAll('.doc-item').forEach(el=>{
-    el.addEventListener('click', (e)=>{
-      if(e.target.closest('[data-del]')) return;
-      state.view='detail';
-      state.openDocId = el.dataset.id;
-      state.query=''; state.dayQuery='';
-      render();
-    });
-  });
-  document.querySelectorAll('[data-del]').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      deleteDoc(cat, btn.dataset.del);
-    });
-  });
-}
-
-async function renderCross(){
-  const container = document.getElementById('app');
-  container.innerHTML =
-    '<h2 style="margin:0 0 4px;">Cine e la trenul X?</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">Caută o zi și un cod de tren — primești toți oamenii (mecanic, șef tren, vânzător bilete) găsiți în ziua respectivă cu codul respectiv, din toate fișierele salvate.</div>' +
-    '<div class="card">' +
-      '<div class="search-bar">' +
-        '<div><label>Zi (1-31)</label><input type="text" id="cross-day" placeholder="ex. 15" value="' + escapeHtml(state.crossDay) + '" style="min-width:80px;"></div>' +
-        '<div><label>Cod tren</label><input type="text" id="cross-code" placeholder="ex. 16565" value="' + escapeHtml(state.crossCode) + '"></div>' +
-        '<button class="btn solid-green" id="cross-btn">Caută trenul</button>' +
-      '</div>' +
-      '<div class="search-note">Se caută în toate fișierele din ambele categorii, folosind poziția reconstruită a coloanelor de zile din fiecare PDF.</div>' +
-    '</div>' +
-    '<div id="cross-results"><div class="empty">Introdu ziua și codul, apoi apasă Caută trenul.</div></div>';
-
-  document.getElementById('cross-btn').onclick = async ()=>{
-    state.crossDay = document.getElementById('cross-day').value.trim();
-    state.crossCode = document.getElementById('cross-code').value.trim();
-    await runCrossSearch();
-  };
-  ['cross-day','cross-code'].forEach(id=>{
-    document.getElementById(id).addEventListener('keydown', e=>{
-      if(e.key==='Enter') document.getElementById('cross-btn').click();
-    });
-  });
-}
-
-async function runCrossSearch(){
-  const holder = document.getElementById('cross-results');
-  const day = parseInt(state.crossDay, 10);
-  const code = state.crossCode.toLowerCase();
-  if(isNaN(day) || day < 1 || day > 31 || !code){
-    holder.innerHTML = '<div class="empty">Completează ziua (1-31) și codul.</div>';
-    return;
-  }
-  holder.innerHTML = '<div class="empty">Se caută în toate fișierele...</div>';
-
-  const results = [];
-  for(const cat of Object.keys(CATS)){
-    const docs = state.docsMeta[cat] || [];
-    for(const d of docs){
-      const blocks = await getBlocksForDoc(cat, d.id);
-      blocks.forEach(b=>{
-        const codes = b.dayCodes[day] || [];
-        const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
-        if(hit){
-          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit });
-        }
-      });
-    }
-  }
-
-  if(results.length === 0){
-    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu codul „' + escapeHtml(state.crossCode) + '” în ziua ' + day + '.</div>';
-    return;
-  }
-
-  holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + '</div>' +
-    results.map(r =>
-      '<div class="result-card">' +
-        '<div><div class="result-name">' + escapeHtml(r.name) + '</div>' +
-        '<div class="result-meta">' + escapeHtml(r.role) + ' · ' + escapeHtml(r.category) + ' · ' + escapeHtml(r.file) + '</div></div>' +
-        '<div class="result-code">' + escapeHtml(r.code) + '</div>' +
-      '</div>'
-    ).join('');
-}
-
-async function getAllTaggedBlocks(){
-  const out = [];
-  for(const cat of Object.keys(CATS)){
-    const docs = state.docsMeta[cat] || [];
-    for(const d of docs){
-      const blocks = await getBlocksForDoc(cat, d.id);
-      blocks.forEach(b => out.push({ block: b, cat, doc: d }));
-    }
-  }
-  return out;
-}
-
-async function renderTeam(){
-  const container = document.getElementById('app');
-  container.innerHTML =
-    '<h2 style="margin:0 0 4px;">Programul unei persoane</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">Pui numele (mecanic, șef tren sau vânzător bilete) — cu zi vezi doar acea zi, fără zi vezi tot programul pe lună.</div>' +
-    '<div class="card">' +
-      '<div class="search-bar">' +
-        '<div><label>Nume</label><input type="text" id="team-name" placeholder="ex. Nitu Ionut" value="' + escapeHtml(state.teamName) + '"></div>' +
-        '<div><label>Zi (1-31, opțional)</label><input type="text" id="team-day" placeholder="ex. 15 (gol = toată luna)" value="' + escapeHtml(state.teamDay) + '" style="min-width:80px;"></div>' +
-        '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
-      '</div>' +
-      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna.</div>' +
-    '</div>' +
-    '<div id="team-results"><div class="empty">Introdu numele, apoi apasă Arată programul.</div></div>';
-
-  document.getElementById('team-btn').onclick = async ()=>{
-    state.teamName = document.getElementById('team-name').value.trim();
-    state.teamDay = document.getElementById('team-day').value.trim();
-    await runTeamSearch();
-  };
-  ['team-name','team-day'].forEach(id=>{
-    document.getElementById(id).addEventListener('keydown', e=>{
-      if(e.key==='Enter') document.getElementById('team-btn').click();
-    });
-  });
-}
-
-async function runTeamSearch(){
-  const holder = document.getElementById('team-results');
-  const nameQ = normalize(state.teamName);
-  const dayStr = state.teamDay.trim();
-  const hasDay = dayStr !== '';
-  const day = parseInt(dayStr, 10);
-  if(!nameQ || (hasDay && (isNaN(day) || day < 1 || day > 31))){
-    holder.innerHTML = '<div class="empty">Completează numele (ziua e opțională, 1-31).</div>';
-    return;
-  }
-  holder.innerHTML = '<div class="empty">Se caută...</div>';
-
-  const all = await getAllTaggedBlocks();
-  const matches = all.filter(t => normalize(t.block.name).includes(nameQ));
-
-  if(matches.length === 0){
-    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu numele „' + escapeHtml(state.teamName) + '”.</div>';
-    return;
-  }
-
-  function crewFor(m, d, code){
-    const seen = new Set();
-    const crew = all.filter(o => o !== m && o.block.role !== m.block.role && (o.block.dayCodes[d]||[]).includes(code))
-      .map(o => ({ name:o.block.name, role:o.block.role }))
-      .filter(c=>{
-        const key = c.name + '|' + c.role;
-        if(seen.has(key)) return false;
-        seen.add(key); return true;
-      });
-    return crew.length
-      ? crew.map(c=>'<div class="crew-row"><span class="crew-name">' + escapeHtml(c.name) + '</span><span class="crew-role">' + escapeHtml(c.role) + '</span></div>').join('')
-      : '<div class="crew-row"><span class="crew-name">— niciun coleg găsit —</span></div>';
-  }
-
-  if(hasDay){
-    holder.innerHTML = matches.map(m=>{
-      const codes = trainCodesForDay(m.block, day);
-      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
-        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
-
-      if(codes.length === 0){
-        return '<div class="person-card">' + header +
-          '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
-      }
-
-      const groupsHtml = codes.map(code=>
-        '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, day, code) + '</div>'
-      ).join('');
-
-      return '<div class="person-card">' + header + groupsHtml + '</div>';
-    }).join('');
+  // Ore suplimentare
+  const suplEl=document.getElementById('cSupl');
+  const suplNote=document.getElementById('cSuplNote');
+  const suplBar=document.getElementById('suplBar');
+  const cardSupl=document.getElementById('cardSupl');
+  if(suplMin>=0){
+    suplEl.textContent='+'+fmtm(suplMin);
+    suplEl.style.color='var(--grn)';
+    suplBar.style.background='var(--grn)';
+    cardSupl.style.borderColor='rgba(0,229,160,0.3)';
+    suplNote.textContent='surplus față de normă ✓';
   } else {
-    holder.innerHTML = matches.map(m=>{
-      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
-        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
+    suplEl.textContent='-'+fmtm(Math.abs(suplMin));
+    suplEl.style.color='var(--red)';
+    suplBar.style.background='var(--red)';
+    cardSupl.style.borderColor='rgba(255,77,109,0.3)';
+    suplNote.textContent='sub normă';
+  }
+}
 
-      let dayGroups = '';
-      for(let d=1; d<=31; d++){
-        const codes = trainCodesForDay(m.block, d);
-        if(codes.length === 0) continue;
-        const codesHtml = codes.map(code=>
-          '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, d, code) + '</div>'
-        ).join('');
-        dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
+// ── EDITOR TURNUS ──
+function openEditor(){renderEditorList();document.getElementById('editorOverlay').classList.add('open');}
+function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');renderTags();renderTable();}
+
+function buildAddTnBox(){
+  const box=document.getElementById('addTnBox');
+  box.innerHTML=`
+  <div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
+    <div style="font-family:Rajdhani,sans-serif;font-size:.85rem;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">+ Adaugă Turnus Nou</div>
+    <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Introdu doar prezentarea și ieșirea pentru fiecare segment. Orele lucrate, odihna și orele de noapte se calculează automat. Dacă turnus-ul are dormitor între segmente, acesta se detectează automat.</p>
+    <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <div class="tn-field" style="min-width:80px"><label>Cod turnus</label><input id="nCode" placeholder="T13" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--acc);font-family:Rajdhani,sans-serif;font-weight:700;font-size:.9rem;padding:4px 7px;width:80px;text-transform:uppercase"></div>
+      <div class="tn-field" style="flex:1;min-width:200px"><label>Notă / Trenuri</label><input id="nNote" placeholder="10245→10251 etc." style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:Exo 2,sans-serif;font-size:.75rem;padding:4px 7px;width:100%"></div>
+    </div>
+    <div id="nSegsWrap"></div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-s btn-sm" onclick="addNewSeg()">+ Adaugă segment</button>
+      <button class="btn btn-g btn-sm" onclick="saveNewTN()">✓ Salvează turnus</button>
+    </div>
+    <div id="nCalcPreview" class="calc-note" style="margin-top:6px"></div>
+  </div>`;
+  // Incepe cu 2 segmente default
+  newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];
+  renderNewSegs();
+}
+
+let newSegs=[];
+function renderNewSegs(){
+  const wrap=document.getElementById('nSegsWrap');if(!wrap)return;
+  wrap.innerHTML='';
+  newSegs.forEach((seg,i)=>{
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap';
+    div.innerHTML=`<span style="font-family:Rajdhani,sans-serif;font-size:.75rem;color:var(--acc);min-width:70px">Segment ${i+1}</span>
+      <div class="tn-field"><label>Prezentare</label><input value="${seg.prez}" placeholder="08:00" onchange="newSegs[${i}].prez=this.value;previewCalc()" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txtm);font-family:Share Tech Mono,monospace;font-size:.75rem;padding:4px 6px;width:80px"></div>
+      <div class="tn-field"><label>Ieșire</label><input value="${seg.iesire}" placeholder="16:00" onchange="newSegs[${i}].iesire=this.value;previewCalc()" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txtm);font-family:Share Tech Mono,monospace;font-size:.75rem;padding:4px 6px;width:80px"></div>
+      ${i>0?`<button class="btn btn-r btn-sm" onclick="newSegs.splice(${i},1);renderNewSegs()">✕</button>`:''}`;
+    if(i>0&&i<=newSegs.length-1){
+      const prev=newSegs[i-1];
+      if(prev.iesire&&seg.prez){
+        const dormDur=diffm(prev.iesire,seg.prez);
+        const dormNight=nightMins(prev.iesire,seg.prez);
+        const dormDiv=document.createElement('div');
+        dormDiv.style.cssText='width:100%;margin:2px 0 4px 76px;font-size:.65rem;color:var(--org);font-family:Share Tech Mono,monospace';
+        dormDiv.textContent=`🌙 Dormitor: ${prev.iesire}→${seg.prez} = ${fmtm(dormDur)} (noapte: ${fmtm(dormNight)})`;
+        wrap.appendChild(dormDiv);
       }
+    }
+    wrap.appendChild(div);
+  });
+  previewCalc();
+}
+function addNewSeg(){newSegs.push({prez:'',iesire:''});renderNewSegs();}
+function previewCalc(){
+  const prev=document.getElementById('nCalcPreview');if(!prev)return;
+  const calc=calcTurnusAuto(newSegs);
+  prev.textContent=`Ore lucrate: ${calc.ol} | Odihnă: ${calc.oo} | Ore noapte: ${calc.on} | Zile: ${calc.zile}`;
+}
+function saveNewTN(){
+  const code=document.getElementById('nCode').value.trim().toUpperCase();
+  const num=parseInt(code.replace(/[Tt]/g,''));
+  if(!num||num<1){
+    document.getElementById('nCalcPreview').style.color='var(--red)';
+    document.getElementById('nCalcPreview').textContent='❌ Cod invalid! Ex: T13';
+    return;
+  }
+  const validSegs=newSegs.filter(s=>s.prez&&s.iesire);
+  if(validSegs.length===0){
+    document.getElementById('nCalcPreview').style.color='var(--red)';
+    document.getElementById('nCalcPreview').textContent='❌ Adaugă cel puțin un segment cu prezentare și ieșire!';
+    return;
+  }
+  TN[num]={segmente:validSegs,note:document.getElementById('nNote').value};
+  save();renderEditorList();renderTags();
+  document.getElementById('nCode').value='';
+  document.getElementById('nNote').value='';
+  newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];
+  renderNewSegs();
+  // Feedback inline - fara alert
+  const prev=document.getElementById('nCalcPreview');
+  prev.style.color='var(--grn)';
+  prev.textContent=`✅ T${num} salvat! Scrie T${num} în pontaj.`;
+  setTimeout(()=>{prev.textContent='';},4000);
+}
 
-      if(!dayGroups){
-        dayGroups = '<div class="hint" style="margin-top:10px;">Niciun cod de tren găsit în această lună.</div>';
+function renderEditorList(){
+  const w=document.getElementById('tnList');w.innerHTML='';
+  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+    const t=TN[k];
+    const calc=calcTurnusAuto(t.segmente||[]);
+    const div=document.createElement('div');div.className='tn-item';div.id=`tni_${k}`;
+
+    let html=`<div class="tn-item-hdr">
+      <span class="tn-num">T${k}</span>
+      <span style="font-size:.68rem;color:var(--txtm);flex:1">${t.note||''}</span>
+      <span class="calc-note" style="margin:0 8px">${calc.ol} lucrate | ${calc.oo} odihnă | ${calc.on} noapte</span>
+      <button class="btn btn-r btn-sm" onclick="delTN(${k})">✕ Șterge</button>
+    </div>`;
+
+    (t.segmente||[]).forEach((seg,i)=>{
+      // Dormitor intre segmente
+      if(i>0){
+        const prev=t.segmente[i-1];
+        const dormDur=diffm(prev.iesire,seg.prez);
+        const dormNight=nightMins(prev.iesire,seg.prez);
+        html+=`<div class="seg-block dorm">
+          <h5>🌙 Dormitor ${i}: ${prev.iesire} → ${seg.prez} = ${fmtm(dormDur)} (noapte: ${fmtm(dormNight)})</h5>
+        </div>`;
       }
+      html+=`<div class="seg-block">
+        <h5>Segment ${i+1}</h5>
+        <div class="fields-row">
+          <div class="tn-field"><label>Prezentare</label><input value="${seg.prez||''}" placeholder="08:00" onchange="TN[${k}].segmente[${i}].prez=this.value;updateTNCalc(${k});save()"></div>
+          <div class="tn-field"><label>Ieșire</label><input value="${seg.iesire||''}" placeholder="16:00" onchange="TN[${k}].segmente[${i}].iesire=this.value;updateTNCalc(${k});save()"></div>
+        </div>
+      </div>`;
+    });
 
-      return '<div class="person-card">' + header + dayGroups + '</div>';
-    }).join('');
+    html+=`<div class="seg-actions">
+      <button class="btn btn-s btn-sm" onclick="addSegToTN(${k})">+ Segment</button>
+      <button class="btn btn-r btn-sm" onclick="removeLastSeg(${k})">- Segment</button>
+    </div>
+    <div class="tn-field wide" style="margin-top:6px"><label>Notă / Trenuri</label><input value="${t.note||''}" onchange="TN[${k}].note=this.value;save()"></div>
+    <div class="calc-note" id="calc_${k}">${calc.ol} lucrate | ${calc.oo} odihnă | ${calc.on} noapte | ${calc.zile} ${calc.zile===1?'zi':'zile'}</div>`;
+
+    div.innerHTML=html;
+    w.appendChild(div);
+  });
+}
+
+function updateTNCalc(k){
+  const calc=calcTurnusAuto(TN[k].segmente||[]);
+  const el=document.getElementById('calc_'+k);
+  if(el)el.textContent=`${calc.ol} lucrate | ${calc.oo} odihnă | ${calc.on} noapte | ${calc.zile} ${calc.zile===1?'zi':'zile'}`;
+}
+function addSegToTN(k){TN[k].segmente=TN[k].segmente||[];TN[k].segmente.push({prez:'',iesire:''});save();renderEditorList();showEditorMsg('Segment adăugat.');}
+function removeLastSeg(k){if(TN[k].segmente&&TN[k].segmente.length>1){TN[k].segmente.pop();save();renderEditorList();}}
+function delTN(k){
+  // Inline confirm in editor in loc de popup
+  const btn=document.querySelector(`#tni_${k} .btn-r`);
+  if(btn&&btn.dataset.confirm!=='1'){
+    btn.dataset.confirm='1';btn.textContent='Confirmi ✕?';btn.style.background='var(--red)';btn.style.color='#fff';
+    setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='✕ Șterge';btn.style.background='';btn.style.color='';}},3000);
+    return;
+  }
+  delete TN[k];save();renderEditorList();renderTags();showEditorMsg(`T${k} șters.`);
+}
+function resetTN(){
+  const btn=document.getElementById('resetTNBtn');
+  if(btn&&btn.dataset.confirm!=='1'){
+    btn.dataset.confirm='1';btn.textContent='Confirmi resetarea?';
+    setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='↺ Reset la valorile din poze';}},3000);
+    return;
+  }
+  TN=deepCopy(TURNUS_DEFAULT);save();renderEditorList();renderTags();showEditorMsg('Resetat la valorile originale.');
+}
+function showEditorMsg(msg,color){
+  const el=document.getElementById('editorMsg');
+  if(!el)return;
+  el.textContent=msg;el.style.color=color||'var(--grn)';el.style.display='block';
+  setTimeout(()=>{el.style.display='none';},3000);
+}
+
+// ── YEAR MODAL ──
+function openYearModal(){
+  const grid=document.getElementById('yrGrid');grid.innerHTML='';
+  let selY=curYear;
+  for(let y=YEAR_MIN;y<=YEAR_MAX;y++){
+    const b=document.createElement('button');b.className='yr-btn'+(y===curYear?' cur-yr':'');
+    b.textContent=y;
+    b.onclick=()=>{selY=y;renderHolPreview(y);document.querySelectorAll('.yr-btn').forEach(x=>x.classList.toggle('cur-yr',parseInt(x.textContent)===y));document.getElementById('yrConfirmBtn').onclick=()=>selectYear(y);};
+    grid.appendChild(b);
+  }
+  document.getElementById('yrConfirmBtn').onclick=()=>selectYear(curYear);
+  renderHolPreview(curYear);
+  document.getElementById('yearOverlay').classList.add('open');
+}
+function closeYearModal(){document.getElementById('yearOverlay').classList.remove('open');}
+function selectYear(y){
+  save();curYear=y;curM=0;
+  try{const s=localStorage.getItem('cfr_'+curYear);if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}else{db={};TN=deepCopy(TURNUS_DEFAULT);}}catch(e){db={};TN=deepCopy(TURNUS_DEFAULT);}
+  localStorage.setItem('cfr_yr',String(curYear));
+  document.getElementById('yrBadge').textContent='📅 '+curYear;
+  closeYearModal();renderTags();renderTabs();renderTable();
+}
+function renderHolPreview(y){
+  const hols=buildHols(y);const list=document.getElementById('holList');list.innerHTML='';
+  const seen=new Set();
+  Object.entries(hols).map(([k,v])=>{const[mo,da]=k.split('-').map(Number);return{mo,da,v,s:mo*100+da};})
+    .sort((a,b)=>a.s-b.s).forEach(e=>{
+      const key=`${e.mo}-${e.da}`;if(seen.has(key))return;seen.add(key);
+      const div=document.createElement('div');div.className='hol-row';
+      div.innerHTML=`<span class="hol-date">${String(e.da).padStart(2,'0')}.${String(e.mo).padStart(2,'0')}.${y}</span><span>${e.v}</span>`;
+      list.appendChild(div);
+    });
+}
+
+// ── FUNCTIE DOWNLOAD cu ZIP (merge pe orice browser/telefon) ──
+function descarca(continut, tip, numeFisier){
+  // Incearca download direct mai intai
+  try{
+    const blob=new Blob([continut],{type:tip+';charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=numeFisier; a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},2000);
+    return;
+  }catch(e){}
+  // Fallback
+  alert('Foloseste butonul ZIP pentru descărcare pe telefon.');
+}
+
+// ── DOWNLOAD ZIP (pentru telefon) ──
+function downloadZip(){
+  // Verifica daca JSZip e incarcat
+  if(typeof JSZip==='undefined'){
+    // Incarca JSZip din CDN
+    const script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    script.onload=function(){_doZip();};
+    script.onerror=function(){
+      _downloadFaraZip();
+    };
+    document.head.appendChild(script);
+  } else {
+    _doZip();
   }
 }
 
-async function render(){
-  if((state.view==='list' || state.view==='detail') && !hasToken() && (state.category==='conductori' || state.category==='mecanici')){
-    state.view = 'cross'; state.openDocId = null;
-    renderTabs();
+function _downloadFaraZip(){
+  // Fallback fara ZIP - deschide HTML intr-un tab nou
+  save();
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  try{
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    window.open(url,'_blank');
+    alert('Pagina s-a deschis intr-un tab nou.\nPe iPhone: apasa Share → Adauga la Fisiere\nPe Android: apasa meniu → Descarca pagina');
+  }catch(e){
+    alert('Eroare: '+e.message);
   }
-  if(state.view === 'team'){ await renderTeam(); return; }
-  if(state.view === 'cross'){ await renderCross(); return; }
-  if(state.view==='detail' && state.openDocId){
-    const doc = (state.docsMeta[state.category]||[]).find(d=>d.id===state.openDocId);
-    if(doc){ await renderDetail(state.category, doc); return; }
-    state.view='list';
+}
+
+function _doZip(){
+  save();
+  const zip=new JSZip();
+  // Adauga HTML-ul aplicatiei
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  zip.file('fisa-pontaj-CFR.html', html);
+  // Adauga si CSV-ul lunii curente
+  const csvContent=_generateCsv();
+  zip.file('Pontaj_'+MO[curM]+'_'+curYear+'.csv', csvContent);
+  // Genereaza ZIP
+  zip.generateAsync({type:'blob',compression:'DEFLATE'}).then(function(blob){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='Pontaj_CFR_'+curYear+'.zip';
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
+  }).catch(function(e){
+    alert('Eroare ZIP: '+e.message);
+  });
+}
+
+function _generateCsv(){
+  const m=curM;
+  const days=new Date(curYear,m+1,0).getDate();
+  const hols=buildHols(curYear);
+  let rows=['\uFEFF'+'Data,Zi,Turnus,Prezentare,Iesire,Ore Lucrate,Odihna,Ore Noapte,Ore Festive,Nota'];
+  let tL=0,tO=0,tN=0,tF=0;
+  for(let d=1;d<=days;d++){
+    const dd=gd(m,d);
+    const dow=new Date(curYear,m,d).getDay();
+    const isFestD=dow===0||dow===6||!!hols[`${m+1}-${d}`];
+    const n=dd.on||(dd.prez&&dd.iesire?fmtm(nightMins(dd.prez,dd.iesire)):'');
+    const f=dd.of||(isFestD&&dd.ol?dd.ol:'');
+    tL+=Math.max(0,p2m(dd.ol));
+    tO+=Math.max(0,p2m(dd.oo));
+    tN+=Math.max(0,p2m(n));
+    tF+=Math.max(0,p2m(f));
+    rows.push([
+      String(d).padStart(2,'0')+'.'+String(m+1).padStart(2,'0')+'.'+curYear,
+      DZ[dow],dd.tn||'',dd.prez||'',dd.iesire||'',
+      dd.ol||'',dd.oo||'',n||'',f||'',
+      '"'+(dd.note||'').replace(/"/g,'""')+'"'
+    ].join(','));
   }
-  renderList();
+  rows.push(',,,,TOTAL,'+fmtm(tL)+','+fmtm(tO)+','+fmtm(tN)+','+fmtm(tF)+',');
+  return rows.join('\r\n');
 }
 
-function updateGhAccountBtn(){
-  const btn = document.getElementById('gh-account-btn');
-  btn.textContent = hasToken() ? '🔑 Autentificat' : '🔑 Cont GitHub';
+function exportLuna(){
+  const csv=_generateCsv();
+  descarca(csv,'text/csv','Pontaj_'+MO[curM]+'_'+curYear+'.csv');
 }
 
-function toggleGhPanel(forceOpen){
-  const panel = document.getElementById('gh-panel');
-  const open = forceOpen !== undefined ? forceOpen : panel.style.display === 'none';
-  panel.style.display = open ? 'block' : 'none';
+function downloadApp(){
+  save();
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  descarca(html,'text/html','fisa-pontaj-CFR.html');
 }
 
-function setupGhPanel(){
-  const statusEl = document.getElementById('gh-token-status');
-  const input = document.getElementById('gh-token-input');
-  input.value = getToken();
-  updateGhAccountBtn();
+// ══════════════════════════════════════════════
+// UPLOAD FIȘĂ DE LUCRU + AI
+// ══════════════════════════════════════════════
+let uploadImageB64 = null;
 
-  document.getElementById('gh-account-btn').onclick = ()=> toggleGhPanel();
+function openUpload(){
+  document.getElementById('uploadLuna').value = curM + 1;
+  document.getElementById('uploadOverlay').classList.add('open');
+}
+function closeUpload(){
+  document.getElementById('uploadOverlay').classList.remove('open');
+}
+function onUploadDrop(e){
+  e.preventDefault();
+  document.getElementById('uploadZone').style.borderColor='var(--bord2)';
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/'))processUploadFile(f);
+}
+function onUploadFile(e){
+  const f=e.target.files[0];
+  if(f)processUploadFile(f);
+  e.target.value='';
+}
+function processUploadFile(file){
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    uploadImageB64=ev.target.result.split(',')[1];
+    const prev=document.getElementById('uploadPreview');
+    prev.src=ev.target.result; prev.style.display='block';
+    const btn=document.getElementById('uploadBtn');
+    btn.disabled=false; btn.style.opacity='1';
+    setUploadStatus('✓ Poza încărcată. Apasă "Procesează cu AI".');
+  };
+  reader.readAsDataURL(file);
+}
+function setUploadStatus(msg,color){
+  const el=document.getElementById('uploadStatus');
+  el.style.display='block';
+  el.style.color=color||'var(--grn)';
+  el.textContent=msg;
+}
 
-  document.getElementById('gh-token-save').onclick = async ()=>{
-    const t = input.value.trim();
-    if(!t){ statusEl.textContent = 'Introdu un token.'; return; }
-    statusEl.textContent = 'Se verifică tokenul...';
-    const r = await verifyToken(t);
-    if(!r.ok){
-      statusEl.textContent = 'Token invalid sau fără acces. Verifică-l și încearcă din nou.';
+// Decodează numărul de tren din fișă: 27→10227, 32→10232, 201→10201, 119→10119
+function decodeTren(cod){
+  cod=String(cod).trim().replace(/\s/g,'');
+  if(!cod||cod==='-')return null;
+  // Deja format complet (5 cifre)
+  if(/^\d{5}$/.test(cod))return cod;
+  // R1024 = tren regie
+  if(/^[Rr]\d+$/.test(cod))return cod.toUpperCase();
+  // 2 cifre → 102XX
+  if(/^\d{2}$/.test(cod))return '102'+cod;
+  // 3 cifre → 10XXX
+  if(/^\d{3}$/.test(cod))return '10'+cod;
+  // 4 cifre → 1XXXX
+  if(/^\d{4}$/.test(cod))return '1'+cod;
+  return cod;
+}
+
+async function runUploadAI(){
+  if(!uploadImageB64){alert('Încarcă o poză mai întâi!');return;}
+  const nume=document.getElementById('uploadNume').value.trim();
+  const luna=parseInt(document.getElementById('uploadLuna').value);
+  if(!nume){alert('Scrie numele tău!');return;}
+  if(!luna||luna<1||luna>12){alert('Luna invalidă!');return;}
+
+  const btn=document.getElementById('uploadBtn');
+  btn.disabled=true; btn.textContent='⏳ Procesez...';
+  setUploadStatus('🤖 Trimit fișa la AI... 10-20 secunde...','var(--yel)');
+
+  // Construieste info turnusuri pentru AI
+  let tnInfo='';
+  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+    const t=TN[k];
+    const segs=(t.segmente||[]).map(s=>`${s.prez}→${s.iesire}`).join(' | ');
+    tnInfo+=`T${k}: note="${t.note||''}" | ore: ${segs}\n`;
+  });
+
+  const prompt=`Ești expert în citirea fișelor de lucru CFR România.
+
+Analizează imaginea și găsește rândul pentru angajatul: "${nume}"
+
+REGULA DECODARE TRENURI (foarte importantă):
+- 2 cifre (ex: 27, 32, 42, 50) → 102XX (ex: 10227, 10232, 10242, 10250)
+- 3 cifre (ex: 201, 202, 119, 120) → 10XXX (ex: 10201, 10202, 10119, 10120)  
+- 4 cifre (ex: 1024, 2034) → rămân ca atare sau cu prefix R (Regie)
+- "Pl vest" sau "Pl Vest" = Piața Vest (locație, nu tren)
+- "Grivita" = Grivița, "Gr Nord" = Gara Nord (locații)
+- "/" între numere = două trenuri diferite (ex: 27/32 = 10227 și 10232)
+- "co" = concediu, "L" = liber
+
+TURNUSURI DISPONIBILE:
+${tnInfo}
+
+SARCINA:
+1. Găsește rândul "${nume}" în tabel
+2. Tabelul are coloanele 1,2,3...30 reprezentând zilele lunii ${luna}
+3. Pentru fiecare zi citește ce scrie în celulă (trenuri/coduri)
+4. Identifică turnus-ul T1-T12 potrivit comparând trenurile din celulă cu trenurile din turnusuri
+5. Returnează DOAR JSON valid fără alt text:
+
+{
+  "zile": {
+    "1": "T3",
+    "2": "T1", 
+    "3": null,
+    "4": "CO",
+    "5": "T7"
+  }
+}
+
+Unde: "T1"-"T12" = turnus identificat, null = liber, "CO" = concediu, "?" = neclar
+Completează TOATE zilele 1-${new Date(curYear,luna,0).getDate()}.
+Returnează STRICT JSON, fără markdown.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:uploadImageB64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+
+    const data=await resp.json();
+    if(data.error){
+      setUploadStatus('Eroare API: '+data.error.message,'var(--red)');
+      btn.disabled=false; btn.textContent='🤖 Procesează cu AI';
       return;
     }
-    setTokenLS(t);
-    statusEl.textContent = 'Autentificat ca ' + r.login + '. Ai acces la Mecanici și Șefi Tren / Vânzători Bilete.';
-    updateGhAccountBtn();
-    renderTabs();
-    render();
-  };
 
-  document.getElementById('gh-token-clear').onclick = ()=>{
-    clearTokenLS();
-    input.value = '';
-    statusEl.textContent = 'Token șters. Ai acces doar la căutare.';
-    updateGhAccountBtn();
-    renderTabs();
-    render();
-  };
+    const txt=(data.content||[]).map(x=>x.text||'').join('');
+    const clean=txt.replace(/```json|```/g,'').trim();
+
+    let parsed;
+    try{
+      parsed=JSON.parse(clean);
+    }catch(e){
+      const m=clean.match(/\{[\s\S]*\}/);
+      if(m)parsed=JSON.parse(m[0]);
+      else throw new Error('JSON invalid: '+clean.substring(0,200));
+    }
+
+    // Aplica zilele in pontaj
+    const zile=parsed.zile||parsed;
+    let aplicate=0, neidentificate=[];
+    const m=luna-1; // 0-based
+
+    Object.entries(zile).forEach(([ziStr,val])=>{
+      const zi=parseInt(ziStr);
+      if(!zi||zi<1||zi>31)return;
+      if(!val||val===null||val==='null')return;
+      
+      const v=String(val).trim().toUpperCase();
+      
+      if(v==='CO'||v==='CONCEDIU'){
+        const dd=gd(m,zi);
+        dd.note='Concediu'; save(); aplicate++;
+        return;
+      }
+      if(v==='L'||v==='LIBER'){
+        return; // liber = nimic
+      }
+      if(v==='?'||v==='NECLAR'){
+        neidentificate.push(ziStr);
+        return;
+      }
+
+      // Extrage numarul turnus-ului
+      const num=parseInt(v.replace(/[Tt]/g,''));
+      if(num>=1&&TN[num]){
+        applyTurnus(num,m,zi);
+        aplicate++;
+      } else {
+        neidentificate.push(ziStr+'('+v+')');
+      }
+    });
+
+    let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
+    if(neidentificate.length>0){
+      msg+=`\n⚠️ Neidentificate (verifică manual): zilele ${neidentificate.join(', ')}`;
+    }
+    setUploadStatus(msg,'var(--grn)');
+    renderTabs(); renderTable();
+
+  }catch(err){
+    setUploadStatus('❌ Eroare: '+err.message,'var(--red)');
+    console.error(err);
+  }finally{
+    btn.disabled=false; btn.textContent='🤖 Procesează cu AI';
+  }
 }
 
-(async function init(){
-  if(!hasToken()){ state.view = 'cross'; }
-  setupGhPanel();
-  renderTabs();
-  await loadAllMeta();
-  render();
-})();
+init();
 </script>
 </body>
 </html>
