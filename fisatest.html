@@ -224,7 +224,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
   <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
   <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
   <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
-  <span class="page-nav-btn active">📅 Turnusuri</span>
+  <span class="page-nav-btn active">📅 Pontaj</span>
 </div>
 
 <div class="hdr">
@@ -348,7 +348,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
   <div class="tn-list" id="tnList"></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">
     <button class="btn btn-s" onclick="closeEditor()">✕ Închide</button>
-    <button class="btn btn-s btn-sm" id="resetTNBtn" onclick="resetTN()">↺ Reset la valorile din poze</button>
+    <button class="btn btn-s btn-sm" id="resetTNBtn" onclick="resetTN()">↺ Golește toate turnusurile</button>
   </div>
   <div id="editorMsg" style="display:none;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--grn)"></div>
 </div>
@@ -460,23 +460,10 @@ function detectZile(segmente){
 }
 
 // ══════════════════════════════════════════
-// TURNUS DEFAULT (din poze)
+// TURNUS DEFAULT — gol; le adaugi tu din Editor Turnus-uri
 // segmente: [{prez,iesire}, {prez,iesire}, ...]
 // ══════════════════════════════════════════
-const TURNUS_DEFAULT = {
-  1:{segmente:[{prez:'11:45',iesire:'19:45'},{prez:'03:26',iesire:'10:25'}],note:'10245→10251 / 10240→10250'},
-  2:{segmente:[{prez:'12:46',iesire:'20:55'},{prez:'04:02',iesire:'12:26'}],note:'10247→10253 / 10242→10230'},
-  3:{segmente:[{prez:'15:25',iesire:'21:46'},{prez:'05:19',iesire:'13:05'}],note:'10249→10255 / 10246→10252'},
-  4:{segmente:[{prez:'11:58',iesire:'15:00'},{prez:'19:30',iesire:'00:30'},{prez:'08:00',iesire:'16:15'}],note:'10065 / 10119→10122 / 10067'},
-  5:{segmente:[{prez:'11:06',iesire:'15:35'},{prez:'20:51',iesire:'23:29'},{prez:'06:05',iesire:'13:25'}],note:'10227→10232 / 10257 / 10248→10202'},
-  6:{segmente:[{prez:'13:25',iesire:'21:37'}],note:'10229→10238'},
-  7:{segmente:[{prez:'',iesire:''}],note:'completează manual'},
-  8:{segmente:[{prez:'11:15',iesire:'19:00'}],note:'10022 Pl.Vest → 10024 Pl.Vest'},
-  9:{segmente:[{prez:'18:15',iesire:'23:30'},{prez:'05:30',iesire:'12:00'}],note:'10024→10122 / 10021→10022 Pl.Vest'},
-  10:{segmente:[{prez:'18:15',iesire:'23:30'},{prez:'19:15',iesire:'22:40'},{prez:'04:10',iesire:'08:47'}],note:'10109→10116 / 10079 / 10064→10108'},
-  11:{segmente:[{prez:'22:00',iesire:'06:00'}],note:'10123 Gr.Nord → 10106 Grivita'},
-  12:{segmente:[{prez:'18:45',iesire:'19:45'},{prez:'22:00',iesire:'06:00'},{prez:'06:00',iesire:'07:35'}],note:'REGIE: 10024 / Dormitor / 10123 Gr.Nord→10106 / 10021'}
-};
+const TURNUS_DEFAULT = {};
 
 // ── STATE ──
 const YEAR_MIN=2024,YEAR_MAX=2035;
@@ -721,8 +708,9 @@ function renderTags(){
   Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
     const sp=document.createElement('span');
     sp.className='tag'+(+k===12?' t12':'');
-    sp.textContent=`T${k}`;
-    sp.title=(TN[k].note||'')+' | segs:'+TN[k].segmente.length;
+    const note=(TN[k].note||'').trim();
+    sp.textContent=`T${k}`+(note?` (${note})`:'');
+    sp.title=note+' | segs:'+TN[k].segmente.length;
     w.appendChild(sp);
   });
 }
@@ -1078,10 +1066,10 @@ function resetTN(){
   const btn=document.getElementById('resetTNBtn');
   if(btn&&btn.dataset.confirm!=='1'){
     btn.dataset.confirm='1';btn.textContent='Confirmi resetarea?';
-    setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='↺ Reset la valorile din poze';}},3000);
+    setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='↺ Golește toate turnusurile';}},3000);
     return;
   }
-  TN=deepCopy(TURNUS_DEFAULT);save();renderEditorList();renderTags();showEditorMsg('Resetat la valorile originale.');
+  TN=deepCopy(TURNUS_DEFAULT);save();renderEditorList();renderTags();showEditorMsg('Toate turnusurile au fost golite.');
 }
 function showEditorMsg(msg,color){
   const el=document.getElementById('editorMsg');
