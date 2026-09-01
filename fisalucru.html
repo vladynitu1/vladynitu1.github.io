@@ -451,14 +451,18 @@ function splitBlocksStructured(rows){
     for(let d=1; d<=31; d++) dayCodes[d] = [];
 
     const allText = rowsToText(b.allRows);
-    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU']);
+    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU','TL','CM','VPP','SMM']);
     function isAllCapsCode(t){
-      // Codurile din grafic (TL, VPP, SSM, CO, L, etc.) sunt mereu scrise doar cu MAJUSCULE.
-      // Numele (Catalin, Gelu, Marius...) sunt mereu scrise cu prima literă mare, restul mici.
-      // Dacă tokenul nu are nicio literă mică, e aproape sigur un cod, nu un nume — indiferent
-      // dacă apare deja în NON_NAME sau e un cod nou apărut într-un grafic viitor.
+      // Codurile SCURTE din grafic (TL, CO, L, CM, R etc.) sunt scrise doar cu MAJUSCULE și au
+      // cel mult 2 litere. Codurile mai lungi, tot cu majuscule (SSM, VPP, ASC, ITS, SMM...), sunt
+      // cunoscute și adăugate explicit în NON_NAME mai sus, nu mai sunt „ghicite" după lungime.
+      // NU mai tratăm orice token 100% majuscul ca fiind cod, indiferent de lungime, pentru că în
+      // unele fișiere (ex. Brasov-Bucuresti, Cluj) și NUMELE angajaților sunt scrise integral cu
+      // MAJUSCULE (ex. "RADU", "NELUTA", "CHIFOR", "SUCEAVA", "POPA", "TUDORACHE") — un prag de
+      // lungime le desparte corect de coduri, pentru că niciun nume real din aceste fișiere nu are
+      // 1-2 litere.
       const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      return letters.length > 0 && letters === letters.toUpperCase();
+      return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
     }
     function isLabelToken(t){
       if(NON_NAME.has(t)) return true;
