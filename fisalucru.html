@@ -452,10 +452,19 @@ function splitBlocksStructured(rows){
 
     const allText = rowsToText(b.allRows);
     const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU']);
+    function isAllCapsCode(t){
+      // Codurile din grafic (TL, VPP, SSM, CO, L, etc.) sunt mereu scrise doar cu MAJUSCULE.
+      // Numele (Catalin, Gelu, Marius...) sunt mereu scrise cu prima literă mare, restul mici.
+      // Dacă tokenul nu are nicio literă mică, e aproape sigur un cod, nu un nume — indiferent
+      // dacă apare deja în NON_NAME sau e un cod nou apărut într-un grafic viitor.
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length > 0 && letters === letters.toUpperCase();
+    }
     function isLabelToken(t){
       if(NON_NAME.has(t)) return true;
+      if(isAllCapsCode(t)) return true;
       const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w));
+      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
     }
     function firstNameToken(tokens){
       for(const t of tokens){
