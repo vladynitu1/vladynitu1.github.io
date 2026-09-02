@@ -39,6 +39,11 @@
           "id": 218,
           "amount": 400,
           "reason": "Imprumut"
+        },
+        {
+          "id": 219,
+          "amount": 4500,
+          "reason": "Masina"
         }
       ]
     },
@@ -66,5 +71,5 @@
     }
   ],
   "nextPersonId": 107,
-  "nextEntryId": 219
+  "nextEntryId": 220
 }
