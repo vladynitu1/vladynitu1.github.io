@@ -55,10 +55,15 @@
           "id": 217,
           "amount": 100,
           "reason": "G"
+        },
+        {
+          "id": 220,
+          "amount": -50,
+          "reason": "Tuns"
         }
       ]
     }
   ],
   "nextPersonId": 107,
-  "nextEntryId": 220
+  "nextEntryId": 221
 }
