@@ -1,17 +1,6 @@
 {
   "people": [
     {
-      "id": 102,
-      "name": "Gena",
-      "entries": [
-        {
-          "id": 202,
-          "amount": 300,
-          "reason": "Temu"
-        }
-      ]
-    },
-    {
       "id": 103,
       "name": "Cristi",
       "entries": [
