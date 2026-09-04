@@ -587,6 +587,18 @@ function trainCodesForDay(block, day){
   return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
 }
 
+// Trenurile de noapte apar uneori cu același cod atât în ziua X cât și în ziua X+1 (pleacă
+// seara, ajunge după miezul nopții). Aici detectăm asta ca să putem afișa "ziua 3/4" în loc
+// de o singură zi, care ar fi înșelătoare pentru un tren de noapte.
+function dayRangeLabel(block, day, code){
+  const norm = c => (c||'').toLowerCase();
+  const hasNext = (block.dayCodes[day+1] || []).some(c => norm(c) === norm(code));
+  const hasPrev = (block.dayCodes[day-1] || []).some(c => norm(c) === norm(code));
+  if(hasNext) return day + '/' + (day+1);
+  if(hasPrev) return (day-1) + '/' + day;
+  return String(day);
+}
+
 function escapeHtml(s){
   return s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
@@ -780,7 +792,7 @@ async function runCrossSearch(){
         const codes = b.dayCodes[day] || [];
         const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
         if(hit){
-          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit });
+          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit, dayLabel: dayRangeLabel(b, day, hit) });
         }
       });
     }
@@ -792,13 +804,16 @@ async function runCrossSearch(){
   }
 
   holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + '</div>' +
-    results.map(r =>
-      '<div class="result-card">' +
-        '<div><div class="result-name">' + escapeHtml(r.name) + '</div>' +
+    results.map(r => {
+      const span = r.dayLabel && r.dayLabel.indexOf('/') !== -1
+        ? ' <span style="color:var(--grn); font-weight:600;">(ziua ' + escapeHtml(r.dayLabel) + ')</span>'
+        : '';
+      return '<div class="result-card">' +
+        '<div><div class="result-name">' + escapeHtml(r.name) + span + '</div>' +
         '<div class="result-meta">' + escapeHtml(r.role) + ' · ' + escapeHtml(r.category) + ' · ' + escapeHtml(r.file) + '</div></div>' +
         '<div class="result-code">' + escapeHtml(r.code) + '</div>' +
-      '</div>'
-    ).join('');
+      '</div>';
+    }).join('');
 }
 
 async function getAllTaggedBlocks(){
@@ -885,9 +900,11 @@ async function runTeamSearch(){
           '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
       }
 
-      const groupsHtml = codes.map(code=>
-        '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, day, code) + '</div>'
-      ).join('');
+      const groupsHtml = codes.map(code=>{
+        const label = dayRangeLabel(m.block, day, code);
+        const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
+        return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + '</span>' + crewFor(m, day, code) + '</div>';
+      }).join('');
 
       return '<div class="person-card">' + header + groupsHtml + '</div>';
     }).join('');
@@ -897,12 +914,19 @@ async function runTeamSearch(){
         '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
 
       let dayGroups = '';
+      const consumedDayCode = new Set();
       for(let d=1; d<=31; d++){
         const codes = trainCodesForDay(m.block, d);
         if(codes.length === 0) continue;
-        const codesHtml = codes.map(code=>
-          '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, d, code) + '</div>'
-        ).join('');
+        const codesHtml = codes.map(code=>{
+          const key = d + ':' + code.toLowerCase();
+          if(consumedDayCode.has(key)) return ''; // deja afișat ca parte din perechea zilei precedente
+          const label = dayRangeLabel(m.block, d, code);
+          if(label.indexOf('/') !== -1) consumedDayCode.add((d+1) + ':' + code.toLowerCase());
+          const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
+          return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + '</span>' + crewFor(m, d, code) + '</div>';
+        }).join('');
+        if(!codesHtml.trim()) continue;
         dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
       }
 
