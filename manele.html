@@ -491,6 +491,18 @@ function splitBlocksStructured(rows){
         }
         surname = sIdx >= 0 ? tokens[sIdx] : '';
 
+        // Uneori numele de familie stă singur pe un rând anterior celui cu "Festive" (ex. la
+        // tabelele "Șefi tren" unde rândul cu Festive conține doar coduri, fără nume). Dacă n-am
+        // găsit nimic pe rândul cu Festive, căutăm înapoi cel mai apropiat rând din același bloc
+        // care conține un cuvânt valid de nume.
+        if(!surname){
+          for(let back=i-1; back>=0; back--){
+            const backTokens = b.allRows[back].items.map(it=>it.str);
+            const cand = firstNameToken(backTokens);
+            if(cand){ surname = cand; break; }
+          }
+        }
+
         const candidateRows = [];
         candidateRows.push(sIdx >= 0 ? tokens.slice(sIdx+1) : tokens);
         if(b.allRows[i+1]) candidateRows.push(b.allRows[i+1].items.map(it=>it.str));
@@ -501,7 +513,7 @@ function splitBlocksStructured(rows){
             (rowTokens.includes('V') && rowTokens.some(t => t.indexOf('bilete') === 0));
           if(isRoleRow) break;
           const f = firstNameToken(rowTokens);
-          if(f){ firstname = f; break; }
+          if(f && f !== surname){ firstname = f; break; }
         }
         break;
       }
