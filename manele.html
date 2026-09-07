@@ -490,7 +490,7 @@ function splitBlocksStructured(rows){
       if(!item) return false;
       if(/\d/.test(item.str)) return false;
       const letters = item.str.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      if(!letters || letters.length > 4) return false;
+      if(!letters || letters.length > 12) return false;
       if(letters !== letters.toUpperCase()) return false;
       if(NON_NAME.has(item.str)) return false;
       if(colX.length > 0 && item.x >= colX[0] - 5) return false;
@@ -501,6 +501,13 @@ function splitBlocksStructured(rows){
       if(!nextRow || !nextRow.items || !nextRow.items.length) return name;
       const firstItem = nextRow.items[0];
       if(isNameWrapFragment(firstItem)) return name + firstItem.str;
+      return name;
+    }
+    function prependWrapFragment(name, rowIdx){
+      const prevRow = b.allRows[rowIdx - 1];
+      if(!prevRow || !prevRow.items || !prevRow.items.length) return name;
+      const lastItem = prevRow.items[prevRow.items.length - 1];
+      if(isNameWrapFragment(lastItem)) return lastItem.str + name;
       return name;
     }
 
@@ -528,6 +535,7 @@ function splitBlocksStructured(rows){
           }
         }
         if(surnameRowIdx >= 0){
+          surname = prependWrapFragment(surname, surnameRowIdx);
           surname = appendWrapFragment(surname, surnameRowIdx);
         }
 
@@ -544,6 +552,7 @@ function splitBlocksStructured(rows){
           if(f && f !== surname){ firstname = f; firstnameRowIdx = row.idx; break; }
         }
         if(firstnameRowIdx >= 0){
+          firstname = prependWrapFragment(firstname, firstnameRowIdx);
           firstname = appendWrapFragment(firstname, firstnameRowIdx);
         }
         break;
@@ -628,6 +637,19 @@ function normalize(s){
 
 function trainCodesForDay(block, day){
   return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
+}
+
+// Dacă același cod de tren apare și în ziua următoare (sau precedentă) pentru aceeași
+// persoană, afișăm "ziua X/Y". Nu e o detecție perfectă (uneori e doar aceeași rută repetată
+// normal 2 zile la rând, nu neapărat un tren de noapte real), dar e cel mai apropiat semnal
+// disponibil în datele din PDF.
+function dayRangeLabel(block, day, code){
+  const norm = c => (c||'').toLowerCase();
+  const hasNext = (block.dayCodes[day+1] || []).some(c => norm(c) === norm(code));
+  const hasPrev = (block.dayCodes[day-1] || []).some(c => norm(c) === norm(code));
+  if(hasNext) return day + '/' + (day+1);
+  if(hasPrev) return (day-1) + '/' + day;
+  return String(day);
 }
 
 function escapeHtml(s){
