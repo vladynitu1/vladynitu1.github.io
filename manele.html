@@ -556,9 +556,13 @@ function parseGrafic(lines){
 
   const candidates = [];
   for(let i=0; i<lines.length-1; i++){
-    const mm = lines[i].match(/^(?:\d{1,2}\s+)?(\S+)\s+efect\s+(.*)\s+Festive\s*$/i);
+    // Linia cu "Festive": la Mecanici are cuvântul "efect" ("CHIFOR efect 16537 ... Festive"),
+    // la Șefi Tren / Vânzători bilete NU are "efect" deloc ("STEFAN CO CO 216511 ... Festive").
+    // Îl facem opțional ca să prindem ambele formate.
+    const mm = lines[i].match(/^(?:\d{1,2}\s+)?(\S+)\s+(?:efect\s+)?(.*)\s+Festive\s*$/i);
     if(!mm) continue;
     const surname = mm[1];
+    if(/^(Nume|Prenume|Data|Nr|crt)$/i.test(surname)) continue; // linii de antet, nu angajat
     const efectBody = mm[2];
     const coCount = (efectBody.match(/\bCO\b/g) || []).length;
 
@@ -568,14 +572,36 @@ function parseGrafic(lines){
     const firstname = fm[1];
     const festive = fm[2];
 
+    // Găsim linia cu rolul (Sef tren / Mecanic / V bilete) ca reper de poziție.
+    let roleIdx = -1;
+    for(let j=i+1; j<Math.min(i+6, lines.length); j++){
+      if(/^(Sef\s*tren|Mecanic|V\s*bilete)/i.test(lines[j])){ roleIdx = j; break; }
+    }
+
     let serv=null, noapte=null, cs75=null;
-    for(let j=i+1; j<Math.min(i+8, lines.length); j++){
+    // 1) Format Mecanici: etichetele apar direct pe linie, cu totalul la final.
+    for(let j=i+1; j<Math.min(i+10, lines.length); j++){
       const lj = lines[j];
       let mt;
       if(/^Ore serv prestat/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) serv=mt[1]; }
       else if(/^Ore de noapte/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) noapte=mt[1]; }
       else if(/^Ore CS 75%/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) cs75=mt[1]; }
     }
+    // 2) Format Șefi Tren / Vânzători bilete: fără etichete pe linie — luăm primele 3 linii
+    //    numerice (doar cifre/două puncte) de după linia cu rolul, în ordine: serv, noapte, cs75.
+    if((!serv || !noapte || !cs75) && roleIdx !== -1){
+      const numericTotals = [];
+      for(let j=roleIdx+1; j<Math.min(roleIdx+5, lines.length) && numericTotals.length<3; j++){
+        const lj = lines[j];
+        if(/^CO\s+inceput/i.test(lj)) break;
+        const mt = lj.match(/^[\d:.\/ ]+(\d{1,3}:\d{2})\s*$/);
+        if(mt) numericTotals.push(mt[1]);
+      }
+      if(!serv && numericTotals[0])   serv   = numericTotals[0];
+      if(!noapte && numericTotals[1]) noapte = numericTotals[1];
+      if(!cs75 && numericTotals[2])   cs75   = numericTotals[2];
+    }
+
     if(serv || noapte || cs75){
       candidates.push({surname, firstname, coCount, festive, serv, noapte, cs75});
     }
