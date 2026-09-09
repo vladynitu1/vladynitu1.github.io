@@ -114,12 +114,6 @@ input[readonly]:focus{border-color:rgba(255,107,61,.4);box-shadow:none}
 .formula-note .y{color:var(--acc)}
 
 .upload-row{display:flex;flex-direction:column;gap:10px}
-.file-drop{position:relative;border:1px dashed var(--bord2);border-radius:9px;background:var(--surf2);padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,background .2s}
-.file-drop:hover{border-color:var(--acc)}
-.file-drop input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.file-drop .fi-icon{font-size:1.3rem;flex-shrink:0}
-.file-drop .fi-txt{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--txtm);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-drop .fi-txt b{color:var(--txt)}
 input[type="text"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.9rem;padding:9px 11px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s}
 input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
 .btn-extract{width:100%;padding:11px;background:linear-gradient(135deg,var(--acc),#c4102a);border:none;border-radius:8px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s}
@@ -178,14 +172,6 @@ input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2
       <div class="field">
         <label>Nume angajat (nume + prenume, ca în grafic)</label>
         <input type="text" id="numeAngajat" placeholder="ex: Nițu Ionuț">
-      </div>
-      <div class="field">
-        <label>Fișă de lucru <span class="badge bg">PDF / poză / Excel</span></label>
-        <div class="file-drop" id="fileDrop">
-          <input type="file" id="fisaFile" accept="application/pdf,image/*,.xlsx,.xls">
-          <span class="fi-icon">📎</span>
-          <span class="fi-txt" id="fisaFileTxt">Alege fișierul cu graficul lunii...</span>
-        </div>
       </div>
       <button class="btn-extract" id="btnExtract" onclick="extrageDinFisa()">⚡ Preia orele automat</button>
       <div class="extract-status" id="extractStatus"></div>
@@ -344,14 +330,6 @@ input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
-<script>
-if (window.pdfjsLib) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}
-</script>
 <script>
 const FIELDS = [
   'salariuBaza','normaOre','oreCO','oreSuplI',
@@ -497,17 +475,56 @@ function calculeaza() {
   document.getElementById('rezLichidareInfo').textContent = `Din salar net ${fmtInt(salarNet)} RON`;
 }
 
-// ===== PRELUARE AUTOMATĂ DIN FIȘA DE LUCRU =====
+// ===== PRELUARE AUTOMATĂ DIN FIȘELE DE LUCRU SALVATE PE GITHUB =====
 
-document.getElementById('fisaFile').addEventListener('change', function(e){
-  const f = e.target.files[0];
-  const txt = document.getElementById('fisaFileTxt');
-  if(f){
-    txt.innerHTML = `<b>${f.name}</b>`;
-  } else {
-    txt.textContent = 'Alege fișierul cu graficul lunii...';
+const GH_OWNER = 'vladynitu1';
+const GH_REPO = 'vladynitu1.github.io';
+const GH_BRANCH = 'main';
+const DATA_DIR = 'data';
+const CATS_LIST = ['conductori', 'mecanici'];
+
+function encodePath(path){ return path.split('/').map(encodeURIComponent).join('/'); }
+
+// Citire publică (nu are nevoie de token) — aceleași fișiere salvate din pagina "Fișă de lucru".
+async function ghFetchRaw(path){
+  const apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH;
+  try{
+    const res = await fetch(apiUrl, { cache: 'no-store', headers: { Accept: 'application/vnd.github.raw' } });
+    if(res.status === 404) return null;
+    if(res.ok){
+      const text = await res.text();
+      try{ return JSON.parse(text); }catch(e){ return null; }
+    }
+  }catch(e){ /* fall through la CDN mai jos */ }
+
+  try{
+    const cdnUrl = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + path + '?t=' + Date.now();
+    const res2 = await fetch(cdnUrl, { cache: 'no-store' });
+    if(res2.status === 404) return null;
+    if(!res2.ok) return null;
+    return await res2.json();
+  }catch(e2){
+    console.error('ghFetchRaw failed', path, e2);
+    return null;
   }
-});
+}
+
+async function loadAllDocsMeta(){
+  const metaByCat = {};
+  for(const cat of CATS_LIST){
+    const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/index.json');
+    metaByCat[cat] = Array.isArray(data) ? data : [];
+  }
+  return metaByCat;
+}
+
+// Rândurile poziționate salvate (aceleași ca în "Fișă de lucru") -> linii de text simple,
+// exact formatul pe care parseGrafic() îl așteaptă.
+function rowsToLines(rows){
+  return rows
+    .map(r => r.items.map(i=>i.str).join(' ').replace(/\s+/g,' ').trim())
+    .filter(l => l !== '');
+}
 
 function setStatus(msg, cls){
   const el = document.getElementById('extractStatus');
@@ -529,54 +546,6 @@ function hmToDec(str){
 // scoate diacritice + lowercase, pt. căutare "Nitu ionut" -> "Nițu Ionuț"
 function normDiac(s){
   return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-}
-
-// --- extragere text din PDF, grupat pe rânduri vizuale (după poziția Y) ---
-async function pdfToLines(file){
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
-  const allLines = [];
-  for(let p=1; p<=pdf.numPages; p++){
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const items = content.items.filter(it => it.str && it.str.trim()!=='');
-    const rows = [];
-    items.forEach(it=>{
-      const y = it.transform[5];
-      let row = rows.find(r => Math.abs(r.y - y) <= 2.5);
-      if(!row){ row = {y, items:[]}; rows.push(row); }
-      row.items.push(it);
-    });
-    rows.sort((a,b)=> b.y - a.y);
-    rows.forEach(r=>{
-      r.items.sort((a,b)=> a.transform[4] - b.transform[4]);
-      allLines.push(r.items.map(i=>i.str).join(' ').replace(/\s+/g,' ').trim());
-    });
-  }
-  return allLines.filter(l=>l!=='');
-}
-
-// --- Excel -> linii "linearizate" (un rând = celulele nevide unite prin spațiu) ---
-async function excelToLines(file){
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:false});
-  const lines = [];
-  wb.SheetNames.forEach(name=>{
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, blankrows:false, defval:''});
-    rows.forEach(r=>{
-      const line = r.map(c=>String(c).trim()).filter(c=>c!=='').join(' ');
-      if(line) lines.push(line);
-    });
-  });
-  return lines;
-}
-
-// --- Poză -> OCR (best-effort, mai puțin precis decât PDF/Excel) ---
-async function imageToLines(file, onProgress){
-  const { data } = await Tesseract.recognize(file, 'ron+eng', {
-    logger: m => { if(onProgress && m.status==='recognizing text') onProgress(m.progress); }
-  });
-  return data.text.split('\n').map(l=>l.trim()).filter(l=>l!=='');
 }
 
 // --- parsare grafic: găsește pentru fiecare angajat CO/Festive/Ore serv prestat/Noapte/CS75 ---
@@ -640,8 +609,9 @@ function aplicaCandidat(c, normaFallback){
   document.getElementById('oreCapSectie').value   = totalCS75;
   onChange();
 
+  const sursa = c.sourceFile ? ` &nbsp;|&nbsp; din <span class="hl">${c.sourceFile}</span>` : '';
   setStatus(
-    `<span class="hl">✓ Preluat: ${c.surname} ${c.firstname}</span><br>`+
+    `<span class="hl">✓ Preluat: ${c.surname} ${c.firstname}</span>${sursa}<br>`+
     `Normă: ${norma} h &nbsp;|&nbsp; CO: ${c.coCount} zile (${oreCO} h) &nbsp;|&nbsp; Ore serv. prestat total: ${totalServ} h<br>`+
     `Supl.: ${oreSupl} h &nbsp;|&nbsp; Festive: ${totalFest} h &nbsp;|&nbsp; Noapte: ${totalNoapte} h &nbsp;|&nbsp; CS 75%: ${totalCS75} h<br>`+
     `Verifică valorile mai jos înainte de calcul — dacă ceva pare greșit, corectează manual câmpul respectiv.`,
@@ -651,64 +621,70 @@ function aplicaCandidat(c, normaFallback){
 
 async function extrageDinFisa(){
   const nume = document.getElementById('numeAngajat').value.trim();
-  const fileInput = document.getElementById('fisaFile');
-  const file = fileInput.files[0];
   const btn = document.getElementById('btnExtract');
 
   if(!nume){ setStatus('Introdu numele angajatului (nume + prenume, ex: Nitu Ionut — merge și fără diacritice).', 'err'); return; }
-  if(!file){ setStatus('Alege mai întâi fișierul cu graficul lunii (PDF, poză sau Excel).', 'err'); return; }
 
   btn.disabled = true;
-  setStatus('⏳ Citesc fișa de lucru...', 'busy');
+  setStatus('⏳ Caut printre fișele de lucru salvate...', 'busy');
 
   try {
-    let lines;
-    if(file.type === 'application/pdf' || /\.pdf$/i.test(file.name)){
-      lines = await pdfToLines(file);
-    } else if(file.type.startsWith('image/')){
-      setStatus('⏳ Citesc poza (OCR) — poate dura câteva zeci de secunde...', 'busy');
-      lines = await imageToLines(file, p => setStatus(`⏳ Citesc poza (OCR)... ${Math.round(p*100)}%`, 'busy'));
-    } else {
-      lines = await excelToLines(file);
-    }
+    const metaByCat = await loadAllDocsMeta();
+    const allDocs = [];
+    CATS_LIST.forEach(cat => (metaByCat[cat]||[]).forEach(d => allDocs.push({cat, doc:d})));
 
-    if(!lines || lines.length===0){
-      setStatus('Nu am putut extrage text din fișier. Încearcă un PDF sau Excel (mai fiabile decât o poză).', 'err');
+    if(allDocs.length === 0){
+      setStatus('Nu există nicio fișă de lucru salvată încă. Încarc-o mai întâi din pagina „Fișă de lucru".', 'err');
       btn.disabled = false;
       return;
     }
 
-    const {normaGlobal, candidates} = parseGrafic(lines);
-    if(candidates.length===0){
-      setStatus('Nu am recunoscut structura graficului în fișier (rânduri "efect / Ore serv prestat / Ore de noapte / Ore CS 75%"). Verifică fișierul sau încearcă alt format.', 'err');
+    let allCandidates = [];
+    for(const {cat, doc} of allDocs){
+      const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/' + doc.id + '.json');
+      const rows = data && Array.isArray(data.rows) ? data.rows : [];
+      if(!rows.length) continue;
+      const lines = rowsToLines(rows);
+      const {normaGlobal, candidates} = parseGrafic(lines);
+      candidates.forEach(c => {
+        c.normaGlobalUsed = normaGlobal;
+        c.sourceFile = doc.filename;
+        c.sourceCat = cat;
+      });
+      allCandidates = allCandidates.concat(candidates);
+    }
+
+    if(allCandidates.length===0){
+      setStatus('Nu am recunoscut structura graficului în fișele salvate (rânduri "efect / Ore serv prestat / Ore de noapte / Ore CS 75%").', 'err');
       btn.disabled = false;
       return;
     }
 
-    const matches = findMatches(candidates, nume);
+    const matches = findMatches(allCandidates, nume);
     if(matches.length===0){
-      const gasiti = candidates.map(c=>`${c.surname} ${c.firstname}`).join(', ');
-      setStatus(`Nu am găsit "${nume}" în fișă. Nume găsite în grafic: ${gasiti}.`, 'err');
+      setStatus(`Nu am găsit "${nume}" în nicio fișă salvată. Verifică ortografia sau încarcă fișa lunii respective din pagina „Fișă de lucru".`, 'err');
       btn.disabled = false;
       return;
     }
     if(matches.length>1){
-      const optiuni = matches.map(c=>`${c.surname} ${c.firstname}`).join(' / ');
+      const optiuni = matches.map(c=>`${c.surname} ${c.firstname} (${c.sourceFile})`).join(' / ');
       setStatus(`Numele "${nume}" e ambiguu, am găsit mai mulți: ${optiuni}. Scrie numele complet (nume + prenume) pentru a alege exact persoana.`, 'err');
       btn.disabled = false;
       return;
     }
 
-    const c = matches[0];
-    c.normaGlobalUsed = normaGlobal || v('normaOre');
-    aplicaCandidat(c, v('normaOre'));
+    aplicaCandidat(matches[0], v('normaOre'));
   } catch(err){
     console.error(err);
-    setStatus('A apărut o eroare la citirea fișierului. Încearcă din nou, sau folosește un alt format (PDF/Excel sunt mai fiabile decât o poză).', 'err');
+    setStatus('A apărut o eroare la citirea fișelor salvate. Încearcă din nou.', 'err');
   } finally {
     btn.disabled = false;
   }
 }
+
+document.getElementById('numeAngajat').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') extrageDinFisa();
+});
 
 // Pornire
 incarca();
