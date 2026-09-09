@@ -575,7 +575,7 @@ function parseGrafic(lines){
     // Găsim linia cu rolul (Sef tren / Mecanic / V bilete) ca reper de poziție.
     let roleIdx = -1;
     for(let j=i+1; j<Math.min(i+6, lines.length); j++){
-      if(/^(Sef\s*tren|Mecanic|V\s*bilete)/i.test(lines[j])){ roleIdx = j; break; }
+      if(/^(Sef\s*tren|Mecanic|V.*bilete)/i.test(lines[j])){ roleIdx = j; break; }
     }
 
     let serv=null, noapte=null, cs75=null;
