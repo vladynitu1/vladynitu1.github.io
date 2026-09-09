@@ -2,261 +2,500 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EMX</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EMX Fluturas</title>
 <style>
-  :root{
-    --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
-    --bord:#3d1414;--bord2:#5c1c1c;
-    --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
-    --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
-    --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
-    --red:#ff2d55;--red2:rgba(255,45,85,0.09);
-    --org:#ff8c42;--org2:rgba(255,140,66,0.12);
-    --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--txt);
-    font-family:'Exo 2', sans-serif;
-    min-height:100vh;
-    padding-bottom:60px;
-    position:relative;
-  }
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
-  h1,h2,h3,.display{font-family:'Rajdhani',sans-serif; letter-spacing:0.03em; text-transform:uppercase;}
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
+:root{
+  --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
+  --bord:#3d1414;--bord2:#5c1c1c;
+  --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
+  --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
+  --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
+  --red:#ff2d55;--red2:rgba(255,45,85,0.09);
+  --org:#ff8c42;--org2:rgba(255,140,66,0.12);
+  --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:14px 14px 60px}
 
-  .board{
-    border-bottom:1px solid var(--bord);
-    background:linear-gradient(135deg,#0a0303,#150606,#0a0303);
-    padding:22px 24px 18px;
-    position:sticky; top:0; z-index:20;
-    backdrop-filter:blur(6px);
-    overflow:hidden;
-    box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05);
-  }
-  .board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-  .board::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
-  @keyframes hdrShine{0%{left:-100%}100%{left:200%}}
-  .board-top{display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:1;}
-  .emx-logo{display:flex; align-items:center; gap:0; line-height:1;}
-  .emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(255,31,61,0.5)}
-  .emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
-  .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
-  .emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
-  .emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 10px rgba(46,213,115,.85); }
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-  .board-sub{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin-top:4px;}
+.hdr{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 24px;background:linear-gradient(135deg,#0a0303,#150606,#0a0303);border:1px solid transparent;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05)}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.hdr::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
+@keyframes hdrShine{0%{left:-100%}100%{left:200%}}
+.emx-logo{display:flex;align-items:center;gap:0;line-height:1}
+.emx-e{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--acc);letter-spacing:-2px;text-shadow:0 0 30px var(--acc),0 0 60px rgba(255,31,61,0.5)}
+.emx-m{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:#fff;letter-spacing:-2px;text-shadow:0 0 20px rgba(255,255,255,0.4)}
+.emx-x{font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:900;color:var(--grn);letter-spacing:-2px;text-shadow:0 0 30px var(--grn),0 0 60px rgba(255,107,61,0.5)}
+.emx-dot{font-size:.7rem;color:var(--acc);margin-left:8px;animation:blink 1.5s infinite;align-self:center}
+.emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 12px rgba(46,213,115,.85); }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.emx-tag{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--txtd);letter-spacing:3px;text-transform:uppercase;margin-top:6px}
+.save-row{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px}
+.save-badge{display:inline-flex;align-items:center;gap:5px;font-size:.62rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);padding:4px 12px;background:var(--surf2);border:1px solid var(--bord2);border-radius:20px;letter-spacing:1px;transition:color .3s,border-color .3s}
+.save-badge.saved{color:var(--grn);border-color:rgba(255,107,61,.3)}
+.save-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.btn-reset{padding:4px 14px;background:var(--red2);border:1px solid var(--red);border-radius:20px;color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.62rem;cursor:pointer;letter-spacing:1px;transition:background .2s,color .2s}
+.btn-reset:hover{background:var(--red);color:#fff}
 
-  .tabs{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; justify-content:center; position:relative; z-index:1;}
-  .tab{
-    padding:10px 16px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:600;
-    font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--txtd);
-    background:var(--surf); border:1px solid var(--bord); border-radius:6px; user-select:none;
-    transition:background .15s, color .15s;
-  }
-  .tab:hover{color:var(--txt); background:var(--surf2);}
-  .tab.active{color:#050505; background:var(--acc); border-color:var(--acc);}
-  .tab.cross{border:1px solid rgba(255,107,61,.4);}
-  .tab.cross.active{background:var(--grn); color:#050505; border-color:var(--grn);}
-  .tab.team{border:1px solid rgba(255,140,66,.4);}
-  .tab.team.active{background:var(--org); color:#050505; border-color:var(--org);}
+.page-nav{
+  display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+  background:var(--surf); border:1px solid var(--bord); border-radius:12px;
+  padding:12px 16px; margin-bottom:14px;
+}
+.page-nav-btn{
+  display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
+  text-decoration:none; transition:background .15s,color .15s,border-color .15s;
+}
+.page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
+.page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
 
-  main{max-width:1100px; margin:0 auto; padding:24px; position:relative; z-index:1;}
+.card{background:var(--surf);border:1px solid var(--bord);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.card-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--acc);margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:8px}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);flex-shrink:0}
+.dot-green{background:var(--grn)!important}
+.dot-red{background:var(--red)!important}
+.dot-org{background:var(--org)!important}
 
-  .card{
-    background:var(--surf); border:1px solid var(--bord); border-radius:10px; padding:18px 20px; margin-bottom:18px;
-  }
-  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;}
-  label{display:block; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:10px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;}
-  input[type=text], input[type=month]{
-    background:var(--surf2); border:1px solid var(--bord2); color:var(--txt); padding:9px 10px; border-radius:6px;
-    font-family:'Share Tech Mono',monospace; font-size:13px; min-width:160px;
-  }
-  input[type=text]:focus, input[type=month]:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc2);}
-  .btn{
-    background:var(--acc); color:#050505; border:none; padding:10px 18px; border-radius:6px;
-    font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; font-size:12px;
-    cursor:pointer; transition:filter .15s;
-  }
-  .btn:hover{filter:brightness(1.1);}
-  .btn.ghost{background:transparent; border:1px solid var(--bord2); color:var(--txtd);}
-  .btn.ghost:hover{color:var(--red); border-color:var(--red);}
-  .btn.solid-green{background:var(--grn); color:#050505;}
-  .btn:disabled{opacity:.4; cursor:not-allowed;}
-  input[type=file]{
-    font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--txtd);
-    max-width:260px;
-  }
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-family:'Rajdhani',sans-serif;font-size:.68rem;font-weight:600;color:var(--txtd);letter-spacing:1.3px;text-transform:uppercase;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.badge{font-family:'Share Tech Mono',monospace;font-size:0.6rem;padding:1px 5px;border-radius:4px;letter-spacing:.2px}
+.by{background:var(--acc2);color:var(--acc);border:1px solid rgba(255,31,61,.3)}
+.bg{background:var(--grn2);color:var(--grn);border:1px solid rgba(255,107,61,.25)}
+.br{background:var(--red2);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+.input-wrap{position:relative}
+.input-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.68rem;font-family:'Share Tech Mono',monospace;color:var(--txtd);pointer-events:none}
+input[type="number"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.95rem;padding:8px 42px 8px 11px;width:100%;outline:none;-moz-appearance:textfield;transition:border-color .2s,box-shadow .2s}
+input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
+input[readonly]{background:var(--grn2);border-color:rgba(255,107,61,.3);color:var(--grn);cursor:default}
+input[readonly]:focus{border-color:rgba(255,107,61,.4);box-shadow:none}
+.info-box{font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);margin-top:8px;padding:8px 10px;background:var(--surf2);border-radius:6px;border:1px solid var(--bord);border-left:3px solid var(--acc);line-height:1.7}
+.info-box .y{color:var(--acc);font-weight:700}
+.info-box .g{color:var(--grn);font-weight:700}
+.info-box .r{color:var(--red);font-weight:700}
 
-  .hint{color:var(--txtd); font-size:11px; margin-top:8px; line-height:1.5;}
-  .status{font-family:'Share Tech Mono',monospace; font-size:12px; margin-top:10px; color:var(--acc); min-height:16px;}
+.breakdown{display:flex;flex-direction:column}
+.brow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bord);font-family:'Share Tech Mono',monospace;font-size:.74rem;gap:8px}
+.brow:last-child{border-bottom:none}
+.brow .lbl{color:var(--txtm);flex:1;line-height:1.5;font-family:'Exo 2',sans-serif}
+.brow .val{font-weight:700;white-space:nowrap}
+.brow.sep{border-top:1px solid var(--bord2);margin-top:4px;padding-top:10px;border-bottom:none}
+.brow.sep .lbl{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:1px}
+.brow.sep2{border-top:1px solid rgba(255,77,109,.3);margin-top:4px;padding-top:10px;border-bottom:none}
+.brow.sep2 .lbl{font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px}
+.brow.grand{border-top:2px solid rgba(255,107,61,.4);margin-top:4px;padding-top:12px;border-bottom:none}
+.brow.grand .lbl{font-family:'Rajdhani',sans-serif;font-size:.8rem;font-weight:700;color:var(--grn);text-transform:uppercase;letter-spacing:1.5px}
 
-  .doc-list{display:flex; flex-direction:column; gap:8px;}
-  .doc-item{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:var(--surf); border:1px solid var(--bord); border-radius:8px; padding:12px 16px;
-    cursor:pointer; transition:border-color .15s, background .15s;
-  }
-  .doc-item:hover{border-color:var(--acc); background:var(--surf2);}
-  .doc-name{font-weight:600; font-size:13.5px; font-family:'Exo 2',sans-serif;}
-  .doc-meta{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; margin-top:3px;}
-  .doc-actions{display:flex; gap:8px; align-items:center;}
-  .empty{color:var(--txtd); font-size:13px; padding:20px 4px; text-align:center;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.result-grid{grid-template-columns:1fr}}
+.result-box{border-radius:12px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;position:relative;overflow:hidden}
+.result-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.result-box.avans{background:var(--surf);border:1px solid var(--bord2)}
+.result-box.avans::before{background:var(--red)}
+.result-box.lichidare{background:var(--surf);border:1px solid var(--bord2)}
+.result-box.lichidare::before{background:var(--grn)}
+.rb-label{font-family:'Rajdhani',sans-serif;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:2px}
+.result-box.avans .rb-label{color:var(--red)}
+.result-box.lichidare .rb-label{color:var(--grn)}
+.rb-amount{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,6vw,38px);line-height:1;letter-spacing:-1px}
+.result-box.avans .rb-amount{color:var(--red)}
+.result-box.lichidare .rb-amount{color:var(--grn)}
+.rb-sub{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--txtd);margin-top:2px;line-height:1.6}
 
-  .search-bar{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
-  .search-note{font-size:11px; color:var(--txtd); margin-top:10px; line-height:1.5; border-left:3px solid var(--acc); padding-left:10px;}
+.formula-note{font-size:.7rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);padding:10px 12px;background:var(--surf2);border:1px solid var(--bord);border-left:3px solid var(--grn);border-radius:8px;line-height:1.9}
+.formula-note .g{color:var(--grn)}
+.formula-note .y{color:var(--acc)}
 
-  .block{
-    background:var(--surf); border:1px solid var(--bord); border-radius:10px; margin-bottom:14px; overflow:hidden;
-  }
-  .block.match{border-color:var(--acc);}
-  .block-head{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:10px 16px; background:var(--surf2); border-bottom:1px solid var(--bord);
-  }
-  .block-name{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.03em; font-size:14px; color:var(--acc);}
-  .block-role{font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--grn); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
-  .block-idx{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
-  .block-body{padding:12px 16px;}
-  .day-hit{
-    display:inline-block; background:var(--surf2); border:1px solid var(--acc); color:var(--acc);
-    font-family:'Share Tech Mono',monospace; font-size:11px; padding:3px 8px; border-radius:5px; margin-bottom:8px;
-  }
-  .raw-text{
-    font-family:'Share Tech Mono',monospace; font-size:11.5px; line-height:1.7; white-space:pre-wrap; word-break:break-all; color:var(--txtm); max-height:220px; overflow:auto;
-  }
-  .raw-text mark{background:var(--acc); color:#050505; padding:0 2px; border-radius:2px;}
-
-  .back-link{color:var(--txtd); font-family:'Rajdhani',sans-serif; font-weight:600; letter-spacing:.05em; text-transform:uppercase; font-size:12px; cursor:pointer; margin-bottom:14px; display:inline-block;}
-  .back-link:hover{color:var(--acc);}
-
-  .section-title{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin:26px 0 10px;}
-
-  .result-card{
-    display:flex; justify-content:space-between; align-items:center; gap:10px;
-    background:var(--surf); border:1px solid var(--bord); border-left:3px solid var(--grn);
-    border-radius:8px; padding:12px 16px; margin-bottom:8px;
-  }
-  .result-name{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; color:var(--txt);}
-  .result-meta{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:3px;}
-  .result-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-size:13px; font-weight:700;}
-
-  .person-card{
-    background:var(--surf); border:1px solid rgba(255,140,66,.35); border-radius:10px; padding:16px 18px; margin-bottom:16px;
-  }
-  .person-card .p-name{font-family:'Rajdhani',sans-serif; font-weight:800; font-size:18px; color:var(--org);}
-  .person-card .p-role{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:2px; text-transform:uppercase; letter-spacing:.06em;}
-  .train-group{background:var(--surf2); border:1px solid var(--bord); border-radius:8px; padding:10px 14px; margin-top:12px;}
-  .train-group .t-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-weight:700; font-size:13px; margin-bottom:8px; display:block;}
-  .crew-row{display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; border-top:1px dashed var(--bord);}
-  .crew-row:first-of-type{border-top:none;}
-  .crew-name{color:var(--txt);}
-  .crew-role{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
-
-  ::-webkit-scrollbar{width:8px; height:8px;}
-  ::-webkit-scrollbar-thumb{background:var(--bord2); border-radius:4px;}
-
-  .page-nav{
-    max-width:1100px; margin:16px auto 0; padding:12px 16px;
-    background:var(--surf); border:1px solid var(--bord); border-radius:10px;
-    display:flex; gap:10px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1;
-  }
-  .page-nav-btn{
-    display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
-    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
-    text-decoration:none; transition:background .15s,color .15s,border-color .15s;
-  }
-  .page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
-  .page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
-  .page-nav-btn.auth{border-color:rgba(255,107,61,.4);}
-  .page-nav-btn.auth.connected{color:var(--grn); border-color:rgba(255,107,61,.6);}
+.upload-row{display:flex;flex-direction:column;gap:10px}
+input[type="text"]{background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.9rem;padding:9px 11px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s}
+input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
+.btn-extract{width:100%;padding:11px;background:linear-gradient(135deg,var(--acc),#c4102a);border:none;border-radius:8px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-extract:hover{opacity:.9}
+.btn-extract:active{transform:scale(.98)}
+.btn-extract:disabled{opacity:.5;cursor:default}
+.extract-status{font-size:.72rem;font-family:'Share Tech Mono',monospace;color:var(--txtm);margin-top:2px;padding:10px 12px;background:var(--surf2);border-radius:6px;border:1px solid var(--bord);border-left:3px solid var(--txtd);line-height:1.8;display:none}
+.extract-status.show{display:block}
+.extract-status.ok{border-left-color:var(--grn);color:var(--txtm)}
+.extract-status.ok .hl{color:var(--grn);font-weight:700}
+.extract-status.err{border-left-color:var(--red);color:var(--txtm)}
+.extract-status.err .hl{color:var(--red);font-weight:700}
+.extract-status.busy{border-left-color:var(--acc)}
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="board">
-  <div class="board-top">
-    <div class="emx-logo">
-      <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
-      <span class="emx-dot" id="statusDot">●</span>
-    </div>
-    <div class="board-sub">PROGRAM DE LUCRU</div>
+<div class="hdr">
+  <div class="emx-logo">
+    <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
+    <span class="emx-dot" id="statusDot">●</span>
   </div>
-  <div class="tabs" id="tabs">
-    <div class="tab active" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>
-    <div class="tab" data-cat="mecanici">Mecanici</div>
-    <div class="tab cross" data-cat="cross">Cine e la trenul X?</div>
-    <div class="tab team" data-cat="team">Programul unei persoane</div>
+  <div class="emx-tag">CALCUL SALARIU</div>
+  <div class="save-row">
+    <span class="save-badge" id="saveBadge"><span class="save-dot"></span><span id="saveText">Se încarcă...</span></span>
+    <button class="btn-reset" onclick="resetDate()">↺ RESET</button>
   </div>
 </div>
 
 <div class="page-nav">
   <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
-  <span class="page-nav-btn active">📋 Fișă de lucru</span>
-  <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
+  <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
+  <span class="page-nav-btn active">💰 Calcul salariu</span>
   <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
   <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
   <a href="fisapontaj.html" class="page-nav-btn">📅 Pontaj</a>
 </div>
 
-<main id="app"></main>
+<script>
+  (function(){
+    var connected = !!localStorage.getItem('emx_gh_token');
+    if(!connected){
+      var navBani = document.getElementById('navBani');
+      if(navBani) navBani.remove();
+    }
+    var dot = document.getElementById('statusDot');
+    if(dot) dot.classList.toggle('status-connected', connected);
+  })();
+</script>
+
+  <!-- PRELUARE DIN FISA DE LUCRU -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-org"></span> Preia din fișă de lucru (grafic)</div>
+    <div class="upload-row">
+      <div class="field">
+        <label>Nume angajat (nume + prenume, ca în grafic)</label>
+        <input type="text" id="numeAngajat" placeholder="ex: Nițu Ionuț">
+      </div>
+      <button class="btn-extract" id="btnExtract" onclick="extrageDinFisa()">⚡ Preia orele automat</button>
+      <div class="extract-status" id="extractStatus"></div>
+    </div>
+  </div>
+
+  <!-- SALARIU & NORMA -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> Salariu & Normă</div>
+    <div class="grid">
+      <div class="field">
+        <label>Salariu de încadrare</label>
+        <div class="input-wrap">
+          <input type="number" id="salariuBaza" value="6710" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Normă ore / lună</label>
+        <div class="input-wrap">
+          <input type="number" id="normaOre" value="176" min="1" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+    </div>
+    <div class="info-box" id="tarifInfo">—</div>
+  </div>
+
+  <!-- ORE LUCRATE -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-green"></span> Ore lucrate</div>
+    <div class="grid">
+      <div class="field">
+        <label>Ore normale <span class="badge bg">auto = normă − CO</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreNormale" readonly>
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>CO (concediu odihnă) <span class="badge br">1 zi = 8h</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreCO" value="0" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ore supl. I <span class="badge by">×1.75</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreSuplI" value="20" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Festive <span class="badge bg">×1.00</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreFestive" value="44" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Noapte 25% <span class="badge by">×0.25</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreNoapte" value="23" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cap Secție <span class="badge by">×0.75</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreCapSectie" value="61" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ore Școală <span class="badge bg">×1.00</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreScoala" value="6" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Formator <span class="badge bg">×1.00</span></label>
+        <div class="input-wrap">
+          <input type="number" id="oreFormator" value="0" min="0" oninput="onChange()">
+          <span class="input-unit">ore</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BONURI -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-green"></span> Bonuri de masă</div>
+    <div class="grid">
+      <div class="field">
+        <label>Nr. bonuri <span class="badge bg">auto ÷ 8</span></label>
+        <div class="input-wrap">
+          <input type="number" id="nrBonuri" readonly>
+          <span class="input-unit">buc</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Valoare / bon</label>
+        <div class="input-wrap">
+          <input type="number" id="valoareBon" value="43" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+    </div>
+    <div class="info-box" id="bonuriInfo">—</div>
+  </div>
+
+  <!-- AVANS -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-red"></span> Avans</div>
+    <div class="grid">
+      <div class="field">
+        <label>Avans (RON)</label>
+        <div class="input-wrap">
+          <input type="number" id="avansRon" value="2500" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Alte avansuri</label>
+        <div class="input-wrap">
+          <input type="number" id="alteAvansuri" value="0" min="0" oninput="onChange()">
+          <span class="input-unit">RON</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETALII -->
+  <div class="card">
+    <div class="card-title"><span class="dot dot-org"></span> Detalii calcul complet</div>
+    <div class="breakdown" id="breakdown">
+      <div class="brow"><span class="lbl">Introdu date pentru a vedea detaliile</span><span class="val">—</span></div>
+    </div>
+  </div>
+
+  <!-- REZULTATE -->
+  <div class="result-grid">
+    <div class="result-box avans">
+      <div class="rb-label">Avans</div>
+      <div class="rb-amount" id="rezAvans">0 RON</div>
+      <div class="rb-sub" id="rezAvansInfo">—</div>
+    </div>
+    <div class="result-box lichidare">
+      <div class="rb-label">Lichidare</div>
+      <div class="rb-amount" id="rezLichidare">0 RON</div>
+      <div class="rb-sub" id="rezLichidareInfo">—</div>
+    </div>
+  </div>
+
+</div>
 
 <script>
-const CATS = {
-  conductori: "Șefi Tren / Vânzători Bilete",
-  mecanici: "Mecanici"
-};
-let state = {
-  category: 'conductori',
-  view: 'list',
-  openDocId: null,
-  docsMeta: { conductori: [], mecanici: [] },
-  query: '',
-  dayQuery: '',
-  crossDay: '',
-  crossCode: '',
-  teamName: '',
-  teamDay: ''
+const FIELDS = [
+  'salariuBaza','normaOre','oreCO','oreSuplI',
+  'oreFestive','oreNoapte','oreCapSectie','oreScoala','oreFormator',
+  'valoareBon','avansRon','alteAvansuri'
+];
+const STORAGE_KEY = 'emx_fluturas_v2';
+const DEFAULTS = {
+  salariuBaza:6710, normaOre:176, oreCO:0, oreSuplI:20,
+  oreFestive:44, oreNoapte:23, oreCapSectie:61, oreScoala:6,
+  oreFormator:0, valoareBon:43,
+  avansRon:2500, alteAvansuri:0
 };
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+function salveaza() {
+  const data = {};
+  FIELDS.forEach(id => { data[id] = document.getElementById(id).value; });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const badge = document.getElementById('saveBadge');
+  badge.classList.add('saved');
+  document.getElementById('saveText').textContent = '✓ Salvat';
+  clearTimeout(window._st);
+  window._st = setTimeout(() => {
+    document.getElementById('saveText').textContent = 'Salvat local';
+  }, 1500);
+}
 
-// ---- Persistence on GitHub: reading is public (no token needed), writing needs a token ----
+function incarca() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      FIELDS.forEach(id => {
+        if (data[id] !== undefined) document.getElementById(id).value = data[id];
+      });
+      document.getElementById('saveBadge').classList.add('saved');
+      document.getElementById('saveText').textContent = 'Salvat local';
+      return;
+    } catch(e) {}
+  }
+  document.getElementById('saveText').textContent = 'Date implicite';
+}
+
+function resetDate() {
+  if (!confirm('Resetezi toate câmpurile la valorile implicite?')) return;
+  FIELDS.forEach(id => { document.getElementById(id).value = DEFAULTS[id]; });
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('saveBadge').classList.remove('saved');
+  document.getElementById('saveText').textContent = 'Resetat';
+  calculeaza();
+}
+
+function onChange() { calculeaza(); salveaza(); }
+
+function fmt(n){return n.toLocaleString('ro-RO',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtInt(n){return Math.round(n).toLocaleString('ro-RO');}
+function v(id){return parseFloat(document.getElementById(id).value)||0;}
+
+function calculeaza() {
+  const salBaza        = v('salariuBaza');
+  const normaOre       = v('normaOre')||1;
+  const oreCO          = v('oreCO');
+  const oreSuplI       = v('oreSuplI');
+  const oreFestive     = v('oreFestive');
+  const oreNoapte      = v('oreNoapte');
+  const oreCapSectie   = v('oreCapSectie');
+  const oreScoala      = v('oreScoala');
+  const oreFormator    = v('oreFormator');
+  const valoareBon     = v('valoareBon');
+  const avansRon       = v('avansRon');
+  const alteAvansuri   = v('alteAvansuri');
+
+  const oreNormale = Math.max(0, normaOre - oreCO);
+  document.getElementById('oreNormale').value = oreNormale;
+
+  const zileCO = oreCO / 8;
+
+  const nrBonuri = Math.floor(oreNormale / 8);
+  document.getElementById('nrBonuri').value = nrBonuri;
+
+  const t = Math.round(salBaza / normaOre * 100) / 100;
+  document.getElementById('tarifInfo').innerHTML =
+    `Tarif orar: <span class="y">${fmt(t)} RON/oră</span> &nbsp;(${fmt(salBaza)} RON ÷ ${normaOre} ore)`;
+
+  const salReal     = Math.round(salBaza * (oreNormale / normaOre));
+  const plataCO     = Math.round(t * oreCO * 1.00);
+  const plataSuplI  = Math.round(oreSuplI     * t * 1.75);
+  const plataFest   = Math.round(oreFestive   * t * 1.00);
+  const plataNoapte = Math.round(oreNoapte    * t * 0.25);
+  const plataCapS   = Math.round(oreCapSectie * t * 0.75);
+  const plataScoala = Math.round(oreScoala    * t * 1.00);
+  const plataForm   = Math.round(oreFormator  * t * 1.00);
+
+  const totalBrut = salReal + plataCO + plataSuplI + plataFest + plataNoapte + plataCapS + plataScoala + plataForm;
+  const totalBonuri = nrBonuri * valoareBon;
+
+  document.getElementById('bonuriInfo').innerHTML =
+    `<span class="g">${oreNormale} ore ÷ 8 = ${nrBonuri} bonuri</span> × ${fmt(valoareBon)} RON = <span class="y">${fmt(totalBonuri)} RON</span>`;
+
+  const bazaCASS = totalBrut + totalBonuri;
+  const bazaCAS  = totalBrut;
+  const CASS = Math.round(bazaCASS * 0.10);
+  const CAS  = Math.round(bazaCAS  * 0.25);
+  const net  = totalBrut - CASS - CAS;
+  const bazaImpozit = Math.max(0, net + totalBonuri);
+  const impozit  = Math.round(bazaImpozit * 0.10);
+  const salarNet = net - impozit;
+  const lichidare = salarNet - avansRon - alteAvansuri;
+
+  let html = '';
+  const rows = [
+    {show:true,           col:'var(--txt)',   lbl:`Salar realizat — ${oreNormale} ore / ${normaOre} normă`,  val:salReal},
+    {show:oreSuplI>0,     col:'var(--acc)', lbl:`Ore supl. I — ${oreSuplI} ore × ${fmt(t)} × 1.75`,        val:plataSuplI},
+    {show:oreFestive>0,   col:'var(--txt)',   lbl:`Festive — ${oreFestive} ore × ${fmt(t)}`,                 val:plataFest},
+    {show:oreNoapte>0,    col:'var(--acc)', lbl:`Noapte 25% — ${oreNoapte} ore × ${fmt(t*0.25)}`,          val:plataNoapte},
+    {show:oreCapSectie>0, col:'var(--acc)', lbl:`Cap Secție 75% — ${oreCapSectie} ore × ${fmt(t*0.75)}`,   val:plataCapS},
+    {show:oreScoala>0,    col:'var(--txt)',   lbl:`Ore Școală — ${oreScoala} ore × ${fmt(t)}`,               val:plataScoala},
+    {show:oreFormator>0,  col:'var(--txt)',   lbl:`Formator — ${oreFormator} ore × ${fmt(t)}`,               val:plataForm},
+  ];
+
+  rows.filter(r=>r.show).forEach(r=>{
+    html+=`<div class="brow"><span class="lbl">${r.lbl}</span><span class="val" style="color:${r.col}">${fmtInt(r.val)} RON</span></div>`;
+  });
+  if(oreCO>0){
+    html+=`<div class="brow"><span class="lbl" style="color:var(--grn)">CO plătit — ${fmt(oreCO)} ore (${fmt(zileCO)} zile) × ${fmt(t)}</span><span class="val" style="color:var(--grn)">${fmtInt(plataCO)} RON</span></div>`;
+  }
+  html+=`<div class="brow sep"><span class="lbl">Venit BRUT (fără bonuri)</span><span class="val" style="color:var(--acc);font-size:15px;">${fmtInt(totalBrut)} RON</span></div>`;
+  if(totalBonuri>0){
+    html+=`<div class="brow"><span class="lbl" style="color:var(--grn)">+ Bonuri masă — ${nrBonuri} × ${fmt(valoareBon)} RON</span><span class="val" style="color:var(--grn)">+ ${fmtInt(totalBonuri)} RON</span></div>`;
+  }
+  html+=`<div class="brow sep2"><span class="lbl">Rețineri</span><span class="val"></span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">CASS 10% din ${fmtInt(bazaCASS)} (brut+bonuri)</span><span class="val" style="color:var(--red)">− ${fmtInt(CASS)} RON</span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">CAS 25% din ${fmtInt(bazaCAS)} (brut)</span><span class="val" style="color:var(--red)">− ${fmtInt(CAS)} RON</span></div>`;
+  html+=`<div class="brow sep"><span class="lbl">Venit net (Brut − CASS − CAS)</span><span class="val" style="color:var(--acc);font-size:14px;">${fmtInt(net)} RON</span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--org)">Baza impozit = net + bonuri = ${fmtInt(bazaImpozit)} RON</span><span class="val"></span></div>`;
+  html+=`<div class="brow"><span class="lbl" style="color:var(--red)">Impozit 10% din ${fmtInt(bazaImpozit)}</span><span class="val" style="color:var(--red)">− ${fmtInt(impozit)} RON</span></div>`;
+  html+=`<div class="brow grand"><span class="lbl">Salar net</span><span class="val" style="color:var(--grn);font-size:16px;">${fmtInt(salarNet)} RON</span></div>`;
+
+  document.getElementById('breakdown').innerHTML = html;
+  document.getElementById('rezAvans').textContent         = fmtInt(avansRon)+' RON';
+  document.getElementById('rezLichidare').textContent     = fmtInt(lichidare)+' RON';
+  document.getElementById('rezAvansInfo').textContent     = `Avans: ${fmtInt(avansRon)} RON`;
+  document.getElementById('rezLichidareInfo').textContent = `Din salar net ${fmtInt(salarNet)} RON`;
+}
+
+// ===== PRELUARE AUTOMATĂ DIN FIȘELE DE LUCRU SALVATE PE GITHUB =====
+
 const GH_OWNER = 'vladynitu1';
 const GH_REPO = 'vladynitu1.github.io';
 const GH_BRANCH = 'main';
 const DATA_DIR = 'data';
-const TOKEN_KEY = 'emx_gh_token';
+const CATS_LIST = ['conductori', 'mecanici'];
 
-function getToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
-function hasToken(){ return !!getToken(); }
-
-function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
 function encodePath(path){ return path.split('/').map(encodeURIComponent).join('/'); }
 
-// Public read: goes through the GitHub API first (reflects the latest commit immediately,
-// unlike the raw.githubusercontent.com CDN which can lag a few minutes behind a write).
-// Falls back to the CDN copy only if the API call fails (e.g. rate limit) so search stays usable.
+// Citire publică (nu are nevoie de token) — aceleași fișiere salvate din pagina "Fișă de lucru".
 async function ghFetchRaw(path){
-  const token = getToken();
   const apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH;
   try{
-    const headers = { Accept: 'application/vnd.github.raw' };
-    if(token) headers.Authorization = 'Bearer ' + token;
-    const res = await fetch(apiUrl, { cache: 'no-store', headers });
+    const res = await fetch(apiUrl, { cache: 'no-store', headers: { Accept: 'application/vnd.github.raw' } });
     if(res.status === 404) return null;
     if(res.ok){
       const text = await res.text();
       try{ return JSON.parse(text); }catch(e){ return null; }
     }
-  }catch(e){ /* fall through to CDN fallback below */ }
+  }catch(e){ /* fall through la CDN mai jos */ }
 
   try{
     const cdnUrl = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + path + '?t=' + Date.now();
@@ -270,750 +509,186 @@ async function ghFetchRaw(path){
   }
 }
 
-async function ghGetSha(path, token){
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH, {
-    headers: token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : { Accept: 'application/vnd.github+json' }
-  });
-  if(res.status === 404) return null;
-  if(!res.ok) throw new Error('Nu am putut verifica fișierul existent pe GitHub (' + res.status + ')');
-  const data = await res.json();
-  return data.sha;
-}
-
-// Write: requires a token with write access to the repo.
-async function ghPutFile(path, obj, message){
-  const token = getToken();
-  if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
-  const sha = await ghGetSha(path, token).catch(()=>null);
-  const body = { message, content: b64EncodeUnicode(JSON.stringify(obj, null, 2)), branch: GH_BRANCH };
-  if(sha) body.sha = sha;
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
-    method: 'PUT',
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if(!res.ok){
-    const errText = await res.text().catch(()=>'');
-    throw new Error('Eroare la salvarea pe GitHub (' + res.status + '): ' + errText);
+async function loadAllDocsMeta(){
+  const metaByCat = {};
+  for(const cat of CATS_LIST){
+    const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/index.json');
+    metaByCat[cat] = Array.isArray(data) ? data : [];
   }
-  return await res.json();
+  return metaByCat;
 }
 
-async function ghDeleteFile(path, message){
-  const token = getToken();
-  if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
-  const sha = await ghGetSha(path, token);
-  if(!sha) return null;
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
-    method: 'DELETE',
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, sha, branch: GH_BRANCH })
-  });
-  if(!res.ok){
-    const errText = await res.text().catch(()=>'');
-    throw new Error('Eroare la ștergerea de pe GitHub (' + res.status + '): ' + errText);
+// Rândurile poziționate salvate (aceleași ca în "Fișă de lucru") -> linii de text simple,
+// exact formatul pe care parseGrafic() îl așteaptă.
+function rowsToLines(rows){
+  return rows
+    .map(r => r.items.map(i=>i.str).join(' ').replace(/\s+/g,' ').trim())
+    .filter(l => l !== '');
+}
+
+function setStatus(msg, cls){
+  const el = document.getElementById('extractStatus');
+  el.className = 'extract-status show' + (cls ? ' '+cls : '');
+  el.innerHTML = msg;
+}
+
+// "198:02" -> 198.03 (ore zecimale, minute/60)
+function hmToDec(str){
+  if(str===undefined || str===null) return 0;
+  str = String(str).trim();
+  if(str==='') return 0;
+  const m = str.match(/^(\d+):(\d{1,2})$/);
+  if(m){ return Math.round((parseInt(m[1],10) + parseInt(m[2],10)/60)*100)/100; }
+  const n = parseFloat(str.replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+
+// scoate diacritice + lowercase, pt. căutare "Nitu ionut" -> "Nițu Ionuț"
+function normDiac(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
+// --- parsare grafic: găsește pentru fiecare angajat CO/Festive/Ore serv prestat/Noapte/CS75 ---
+function parseGrafic(lines){
+  const fullText = lines.join('\n');
+  const mNorma = fullText.match(/NORMA\s+(\d+)/i);
+  const normaGlobal = mNorma ? parseInt(mNorma[1],10) : null;
+
+  const candidates = [];
+  for(let i=0; i<lines.length-1; i++){
+    const mm = lines[i].match(/^(?:\d{1,2}\s+)?(\S+)\s+efect\s+(.*)\s+Festive\s*$/i);
+    if(!mm) continue;
+    const surname = mm[1];
+    const efectBody = mm[2];
+    const coCount = (efectBody.match(/\bCO\b/g) || []).length;
+
+    const nextLine = lines[i+1] || '';
+    const fm = nextLine.match(/^(?:\d{1,2}\s+)?(\S+)\s+.*?(\d{1,3}:\d{2})\s*$/);
+    if(!fm) continue;
+    const firstname = fm[1];
+    const festive = fm[2];
+
+    let serv=null, noapte=null, cs75=null;
+    for(let j=i+1; j<Math.min(i+8, lines.length); j++){
+      const lj = lines[j];
+      let mt;
+      if(/^Ore serv prestat/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) serv=mt[1]; }
+      else if(/^Ore de noapte/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) noapte=mt[1]; }
+      else if(/^Ore CS 75%/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) cs75=mt[1]; }
+    }
+    if(serv || noapte || cs75){
+      candidates.push({surname, firstname, coCount, festive, serv, noapte, cs75});
+    }
   }
-  return await res.json();
+  return {normaGlobal, candidates};
 }
 
-
-function uid(){ return 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
-
-async function loadMeta(cat){
-  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/index.json');
-  state.docsMeta[cat] = Array.isArray(data) ? data : [];
-}
-async function saveMeta(cat){
-  await ghPutFile(DATA_DIR + '/' + cat + '/index.json', state.docsMeta[cat], 'update index ' + cat);
-}
-async function loadAllMeta(){
-  await loadMeta('conductori');
-  await loadMeta('mecanici');
-}
-
-function renderTabs(){
-  const tabsEl = document.getElementById('tabs');
-  const authed = hasToken();
-  let html = '';
-  if(authed){
-    html += '<div class="tab' + (state.category==='conductori' && state.view==='list' || (state.view==='detail'&&state.category==='conductori') ? ' active':'') + '" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>';
-    html += '<div class="tab' + (state.category==='mecanici' && (state.view==='list'||state.view==='detail') ? ' active':'') + '" data-cat="mecanici">Mecanici</div>';
-  }
-  html += '<div class="tab cross' + (state.view==='cross' ? ' active':'') + '" data-cat="cross">Cine e la trenul X?</div>';
-  html += '<div class="tab team' + (state.view==='team' ? ' active':'') + '" data-cat="team">Programul unei persoane</div>';
-  tabsEl.innerHTML = html;
-  setTabHandlers();
-  updateGhAccountBtn();
-}
-
-function setTabHandlers(){
-  document.querySelectorAll('.tab').forEach(t=>{
-    t.onclick = ()=>{
-      if(t.dataset.cat === 'cross'){
-        state.view = 'cross';
-        renderTabs();
-        render();
-        return;
-      }
-      if(t.dataset.cat === 'team'){
-        state.view = 'team';
-        renderTabs();
-        render();
-        return;
-      }
-      if((t.dataset.cat === 'conductori' || t.dataset.cat === 'mecanici') && !hasToken()){
-        return; // guarded: shouldn't be reachable without a token, but double-check
-      }
-      state.category = t.dataset.cat;
-      state.view='list'; state.openDocId=null; state.query=''; state.dayQuery='';
-      renderTabs();
-      render();
-    };
+function findMatches(candidates, numeCautat){
+  const targetWords = new Set(normDiac(numeCautat).split(/\s+/).filter(Boolean));
+  return candidates.filter(c=>{
+    const fullWords = new Set(normDiac(c.surname+' '+c.firstname).split(/\s+/).filter(Boolean));
+    for(const w of targetWords){ if(!fullWords.has(w)) return false; }
+    return true;
   });
 }
 
-// ---- Positioned PDF extraction: keeps x per token so day-columns can be reconstructed ----
-async function extractPdfRows(file){
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
-  const allRows = [];
-  const ROW_TOLERANCE = 2;
-  for(let p=1;p<=pdf.numPages;p++){
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const items = content.items
-      .map(item => ({ x: item.transform[4], y: item.transform[5], w: item.width || 0, str: item.str.trim() }))
-      .filter(i => i.str.length > 0);
-    items.sort((a,b) => b.y - a.y || a.x - b.x);
-    let clusters = [];
-    let current = null;
-    items.forEach(it=>{
-      if(current && Math.abs(it.y - current.refY) <= ROW_TOLERANCE){
-        current.items.push(it);
-      } else {
-        if(current) clusters.push(current);
-        current = { refY: it.y, items: [it] };
-      }
-    });
-    if(current) clusters.push(current);
-    clusters.forEach(c=>{
-      const sorted = c.items.slice().sort((a,b)=>a.x-b.x);
-      allRows.push({ y: c.refY, items: sorted.map(i=>({x:i.x, w:i.w, str:i.str})) });
-    });
-  }
-  return allRows;
+function aplicaCandidat(c, normaFallback){
+  const norma = c.normaGlobalUsed || normaFallback;
+  const totalServ   = hmToDec(c.serv);
+  const totalNoapte = hmToDec(c.noapte);
+  const totalCS75   = hmToDec(c.cs75);
+  const totalFest   = hmToDec(c.festive);
+  const oreCO        = c.coCount * 8;
+  const oreSupl       = Math.max(0, Math.round((totalServ - norma)*100)/100);
+
+  document.getElementById('normaOre').value      = norma;
+  document.getElementById('oreCO').value          = oreCO;
+  document.getElementById('oreSuplI').value       = oreSupl;
+  document.getElementById('oreFestive').value     = totalFest;
+  document.getElementById('oreNoapte').value      = totalNoapte;
+  document.getElementById('oreCapSectie').value   = totalCS75;
+  onChange();
+
+  const sursa = c.sourceFile ? ` &nbsp;|&nbsp; din <span class="hl">${c.sourceFile}</span>` : '';
+  setStatus(
+    `<span class="hl">✓ Preluat: ${c.surname} ${c.firstname}</span>${sursa}<br>`+
+    `Normă: ${norma} h &nbsp;|&nbsp; CO: ${c.coCount} zile (${oreCO} h) &nbsp;|&nbsp; Ore serv. prestat total: ${totalServ} h<br>`+
+    `Supl.: ${oreSupl} h &nbsp;|&nbsp; Festive: ${totalFest} h &nbsp;|&nbsp; Noapte: ${totalNoapte} h &nbsp;|&nbsp; CS 75%: ${totalCS75} h<br>`+
+    `Verifică valorile mai jos înainte de calcul — dacă ceva pare greșit, corectează manual câmpul respectiv.`,
+    'ok'
+  );
 }
 
-function rowsToText(rows){
-  return rows.map(r => r.items.map(i=>i.str).join(' ')).join('\n');
-}
+async function extrageDinFisa(){
+  const nume = document.getElementById('numeAngajat').value.trim();
+  const btn = document.getElementById('btnExtract');
 
-// ---- Split positioned rows into per-employee blocks, with a day->codes map ----
-function splitBlocksStructured(rows){
-  const blocks = [];
-  let current = null;
+  if(!nume){ setStatus('Introdu numele angajatului (nume + prenume, ex: Nitu Ionut — merge și fără diacritice).', 'err'); return; }
 
-  function isHeaderRow(items){
-    const strs = items.map(i=>i.str);
-    return strs.includes('Data') && strs.filter(s=>/^\d{1,2}$/.test(s)).length >= 15;
-  }
-  function isTimeRow(items){
-    const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
-    return items.length > 0 && (timeLike / items.length) > 0.5;
-  }
-  function isCoStartRow(items){
-    return items.some(i=>i.str === 'inceput') && items.some(i=>i.str === 'luna');
-  }
+  btn.disabled = true;
+  setStatus('⏳ Caut printre fișele de lucru salvate...', 'busy');
 
-  rows.forEach(row=>{
-    if(isHeaderRow(row.items)){
-      if(current) blocks.push(current);
-      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str))
-        .map(i=>({ x: i.x, w: i.w, str: i.str, day: parseInt(i.str, 10) }))
-        .filter(i=>i.day >= 1 && i.day <= 31);
-      current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
-    } else if(current){
-      current.allRows.push(row);
-      if(!isTimeRow(row.items) && !isCoStartRow(row.items)){
-        current.codeRows.push(row);
-      }
-    }
-  });
-  if(current) blocks.push(current);
+  try {
+    const metaByCat = await loadAllDocsMeta();
+    const allDocs = [];
+    CATS_LIST.forEach(cat => (metaByCat[cat]||[]).forEach(d => allDocs.push({cat, doc:d})));
 
-  return blocks.map((b, idx)=>{
-    const colX = b.dayTokens.map(t=>t.x + (t.w||0)/2);
-    const colDay = b.dayTokens.map(t=>t.day);
-    const n = colX.length;
-    let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
-
-    const dayCodes = {};
-    for(let d=1; d<=31; d++) dayCodes[d] = [];
-
-    const allText = rowsToText(b.allRows);
-    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU','TL','CM','VPP','SMM']);
-    function isAllCapsCode(t){
-      // Codurile SCURTE din grafic (TL, CO, L, CM, R etc.) sunt scrise doar cu MAJUSCULE și au
-      // cel mult 2 litere. Codurile mai lungi, tot cu majuscule (SSM, VPP, ASC, ITS, SMM...), sunt
-      // cunoscute și adăugate explicit în NON_NAME mai sus, nu mai sunt „ghicite" după lungime.
-      // NU mai tratăm orice token 100% majuscul ca fiind cod, indiferent de lungime, pentru că în
-      // unele fișiere (ex. Brasov-Bucuresti, Cluj) și NUMELE angajaților sunt scrise integral cu
-      // MAJUSCULE (ex. "RADU", "NELUTA", "CHIFOR", "SUCEAVA", "POPA", "TUDORACHE") — un prag de
-      // lungime le desparte corect de coduri, pentru că niciun nume real din aceste fișiere nu are
-      // 1-2 litere.
-      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
-    }
-    function isLabelToken(t){
-      if(NON_NAME.has(t)) return true;
-      if(isAllCapsCode(t)) return true;
-      const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
-    }
-    function firstNameToken(tokens){
-      for(const t of tokens){
-        if(/\d/.test(t)) continue;
-        if(isLabelToken(t)) continue;
-        if(t.length < 2) continue;
-        return t;
-      }
-      return '';
-    }
-    let surname = '', firstname = '';
-    let surnameRowIdx = -1, firstnameRowIdx = -1;
-
-    // Nume lungi (SPIRIDON, CRISTIAN...) se rup uneori la capăt de rând în PDF: "SPIRID" pe un
-    // rând, apoi "ON" lipit de codurile rândului următor. Recunoaștem bucata de continuare
-    // uitându-ne la poziția ei x: dacă e cel mai din stânga token de pe rândul următor și stă
-    // înaintea coloanei zilei 1 (deci nu e cod de zi), o lipim de nume.
-    function isNameWrapFragment(item){
-      if(!item) return false;
-      if(/\d/.test(item.str)) return false;
-      const letters = item.str.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      if(!letters || letters.length > 12) return false;
-      if(letters !== letters.toUpperCase()) return false;
-      if(NON_NAME.has(item.str)) return false;
-      if(colX.length > 0 && item.x >= colX[0] - 5) return false;
-      return true;
-    }
-    function appendWrapFragment(name, rowIdx){
-      const nextRow = b.allRows[rowIdx + 1];
-      if(!nextRow || !nextRow.items || !nextRow.items.length) return name;
-      const firstItem = nextRow.items[0];
-      if(isNameWrapFragment(firstItem)) return name + firstItem.str;
-      return name;
-    }
-    function prependWrapFragment(name, rowIdx){
-      const prevRow = b.allRows[rowIdx - 1];
-      if(!prevRow || !prevRow.items || !prevRow.items.length) return name;
-      const lastItem = prevRow.items[prevRow.items.length - 1];
-      if(isNameWrapFragment(lastItem)) return lastItem.str + name;
-      return name;
+    if(allDocs.length === 0){
+      setStatus('Nu există nicio fișă de lucru salvată încă. Încarc-o mai întâi din pagina „Fișă de lucru".', 'err');
+      btn.disabled = false;
+      return;
     }
 
-    for(let i=0;i<b.allRows.length;i++){
-      const tokens = b.allRows[i].items.map(it=>it.str);
-      if(tokens.includes('Festive')){
-        let sIdx = -1;
-        for(let k=0;k<tokens.length;k++){
-          const t = tokens[k];
-          if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
-          sIdx = k; break;
-        }
-        surname = sIdx >= 0 ? tokens[sIdx] : '';
-        surnameRowIdx = sIdx >= 0 ? i : -1;
-
-        // Uneori numele de familie stă singur pe un rând anterior celui cu "Festive" (ex. la
-        // tabelele "Șefi tren" unde rândul cu Festive conține doar coduri, fără nume). Dacă n-am
-        // găsit nimic pe rândul cu Festive, căutăm înapoi cel mai apropiat rând din același bloc
-        // care conține un cuvânt valid de nume.
-        if(!surname){
-          for(let back=i-1; back>=0; back--){
-            const backTokens = b.allRows[back].items.map(it=>it.str);
-            const cand = firstNameToken(backTokens);
-            if(cand){ surname = cand; surnameRowIdx = back; break; }
-          }
-        }
-        if(surnameRowIdx >= 0){
-          surname = prependWrapFragment(surname, surnameRowIdx);
-          surname = appendWrapFragment(surname, surnameRowIdx);
-        }
-
-        const candidateRows = [];
-        candidateRows.push({ idx: i, tokens: sIdx >= 0 ? tokens.slice(sIdx+1) : tokens });
-        if(b.allRows[i+1]) candidateRows.push({ idx: i+1, tokens: b.allRows[i+1].items.map(it=>it.str) });
-        if(b.allRows[i+2]) candidateRows.push({ idx: i+2, tokens: b.allRows[i+2].items.map(it=>it.str) });
-
-        for(const row of candidateRows){
-          const isRoleRow = row.tokens.includes('Sef') || row.tokens.includes('Mecanic') ||
-            (row.tokens.includes('V') && row.tokens.some(t => t.indexOf('bilete') === 0));
-          if(isRoleRow) break;
-          const f = firstNameToken(row.tokens);
-          if(f && f !== surname){ firstname = f; firstnameRowIdx = row.idx; break; }
-        }
-        if(firstnameRowIdx >= 0){
-          firstname = prependWrapFragment(firstname, firstnameRowIdx);
-          firstname = appendWrapFragment(firstname, firstnameRowIdx);
-        }
-        break;
-      }
-    }
-    const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
-
-    let role = 'Necunoscut';
-    if(/Sef\s*tren/i.test(allText)) role = 'Șef tren';
-    else if(/V\s*bilete\s*II/i.test(allText)) role = 'Vânzător bilete II';
-    else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
-    else if(/Mecanic/i.test(allText)) role = 'Mecanic';
-
-    const excludeTokens = new Set([surname, firstname, 'Festive'].filter(Boolean));
-
-    if(n > 1){
-      const maxGapAllowed = gap * 0.75;
-      b.codeRows.forEach(row=>{
-        row.items.forEach(item=>{
-          if(excludeTokens.has(item.str)) return;
-          const x = item.x + (item.w||0)/2;
-          let bestDay = -1, bestDist = Infinity;
-          for(let k=0;k<n;k++){
-            const dist = Math.abs(x - colX[k]);
-            if(dist < bestDist){ bestDist = dist; bestDay = colDay[k]; }
-          }
-          if(bestDay === -1 || bestDist > maxGapAllowed) return;
-          dayCodes[bestDay].push(item.str);
-        });
+    let allCandidates = [];
+    for(const {cat, doc} of allDocs){
+      const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/' + doc.id + '.json');
+      const rows = data && Array.isArray(data.rows) ? data.rows : [];
+      if(!rows.length) continue;
+      const lines = rowsToLines(rows);
+      const {normaGlobal, candidates} = parseGrafic(lines);
+      candidates.forEach(c => {
+        c.normaGlobalUsed = normaGlobal;
+        c.sourceFile = doc.filename;
+        c.sourceCat = cat;
       });
+      allCandidates = allCandidates.concat(candidates);
     }
 
-    return { id: idx, name, role, dayCodes, text: allText };
-  }).filter(b => b.text.trim().length > 0);
-}
-
-async function handleUpload(cat, file, month){
-  const statusEl = document.getElementById('upload-status');
-  if(!hasToken()){ statusEl.textContent = 'Ai nevoie de un token GitHub pentru a încărca fișiere.'; return; }
-  if(!file){ statusEl.textContent = 'Alege un fișier PDF.'; return; }
-  statusEl.textContent = 'Se extrage textul din PDF...';
-  try{
-    const rows = await extractPdfRows(file);
-    const id = uid();
-    statusEl.textContent = 'Se urcă pe GitHub...';
-    await ghPutFile(DATA_DIR + '/' + cat + '/' + id + '.json', { rows }, 'add doc ' + file.name);
-    const meta = { id, filename: file.name, month: month || '', uploadedAt: new Date().toISOString() };
-    state.docsMeta[cat].unshift(meta);
-    await saveMeta(cat);
-    statusEl.textContent = 'Salvat pe GitHub: ' + file.name;
-    render();
-  }catch(e){
-    console.error(e);
-    statusEl.textContent = 'Eroare: ' + e.message;
-  }
-}
-
-async function deleteDoc(cat, id){
-  if(!hasToken()){ alert('Ai nevoie de un token GitHub pentru a șterge fișiere.'); return; }
-  if(!confirm('Ștergi definitiv acest program?')) return;
-  const statusEl = document.getElementById('upload-status');
-  if(statusEl) statusEl.textContent = 'Se șterge de pe GitHub...';
-  try{
-    await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.json', 'delete doc ' + id);
-    state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
-    await saveMeta(cat);
-    delete _blocksCache[cat + ':' + id];
-    if(state.openDocId===id){ state.view='list'; state.openDocId=null; }
-    if(statusEl) statusEl.textContent = 'Șters.';
-    render();
-  }catch(e){
-    console.error(e);
-    alert('Eroare la ștergere: ' + e.message);
-    if(statusEl) statusEl.textContent = 'Eroare la ștergere.';
-  }
-}
-
-function normalize(s){
-  return (s||'').toLowerCase()
-    .replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/ș/g,'s').replace(/ț/g,'t');
-}
-
-function trainCodesForDay(block, day){
-  return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
-}
-
-// Dacă același cod de tren apare și în ziua următoare (sau precedentă) pentru aceeași
-// persoană, afișăm "ziua X/Y". Nu e o detecție perfectă (uneori e doar aceeași rută repetată
-// normal 2 zile la rând, nu neapărat un tren de noapte real), dar e cel mai apropiat semnal
-// disponibil în datele din PDF.
-function dayRangeLabel(block, day, code){
-  const norm = c => (c||'').toLowerCase();
-  const hasNext = (block.dayCodes[day+1] || []).some(c => norm(c) === norm(code));
-  const hasPrev = (block.dayCodes[day-1] || []).some(c => norm(c) === norm(code));
-  if(hasNext) return day + '/' + (day+1);
-  if(hasPrev) return (day-1) + '/' + day;
-  return String(day);
-}
-
-function escapeHtml(s){
-  return s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-}
-function highlight(text, query){
-  if(!query) return escapeHtml(text);
-  const esc = escapeHtml(text);
-  const safeQ = query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return esc.replace(new RegExp('('+safeQ+')','gi'), '<mark>$1</mark>');
-}
-
-const _blocksCache = {};
-async function getBlocksForDoc(cat, id){
-  const cacheKey = cat + ':' + id;
-  if(_blocksCache[cacheKey]) return _blocksCache[cacheKey];
-  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/' + id + '.json');
-  const rows = data && Array.isArray(data.rows) ? data.rows : [];
-  if(!rows.length) return [];
-  const blocks = splitBlocksStructured(rows);
-  _blocksCache[cacheKey] = blocks;
-  return blocks;
-}
-
-async function renderDetail(cat, doc){
-  const container = document.getElementById('app');
-  container.innerHTML = '<span class="back-link" id="back-btn">&larr; înapoi la listă</span>' +
-    '<h2 style="margin:4px 0 2px;">' + escapeHtml(doc.filename) + '</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">' + CATS[cat] + (doc.month ? ' · ' + escapeHtml(doc.month) : '') + ' · încărcat ' + new Date(doc.uploadedAt).toLocaleDateString('ro-RO') + '</div>' +
-    '<div class="card">' +
-      '<div class="search-bar">' +
-        '<div><label>Cod (ex. 16565)</label><input type="text" id="q-code" placeholder="cod / nume" value="' + escapeHtml(state.query) + '"></div>' +
-        '<div><label>Zi (1-31, opțional)</label><input type="text" id="q-day" placeholder="ex. 15" value="' + escapeHtml(state.dayQuery) + '" style="min-width:80px;"></div>' +
-        '<button class="btn" id="search-btn">Caută</button>' +
-        '<button class="btn ghost" id="clear-btn">Șterge filtrul</button>' +
-      '</div>' +
-      '<div class="search-note">Dacă pui și ziua, verificăm exact codul din ziua respectivă (poziția e reconstruită din PDF); fără zi, căutăm codul oriunde în program.</div>' +
-    '</div>' +
-    '<div id="blocks-container"><div class="empty">Se procesează...</div></div>';
-
-  document.getElementById('back-btn').onclick = ()=>{ state.view='list'; state.openDocId=null; render(); };
-
-  const blocks = await getBlocksForDoc(cat, doc.id);
-
-  document.getElementById('search-btn').onclick = ()=>{
-    state.query = document.getElementById('q-code').value.trim();
-    state.dayQuery = document.getElementById('q-day').value.trim();
-    renderBlocks(blocks);
-  };
-  document.getElementById('clear-btn').onclick = ()=>{
-    state.query=''; state.dayQuery='';
-    document.getElementById('q-code').value='';
-    document.getElementById('q-day').value='';
-    renderBlocks(blocks);
-  };
-  ['q-code','q-day'].forEach(id=>{
-    document.getElementById(id).addEventListener('keydown', e=>{
-      if(e.key==='Enter') document.getElementById('search-btn').click();
-    });
-  });
-
-  renderBlocks(blocks);
-}
-
-function renderBlocks(blocks){
-  const holder = document.getElementById('blocks-container');
-  const q = state.query.trim();
-  const day = parseInt(state.dayQuery.trim(), 10);
-  const hasDay = !isNaN(day) && day >= 1 && day <= 31;
-
-  let list = blocks;
-  let dayHitMap = {};
-
-  if(hasDay && q){
-    list = blocks.filter(b => (b.dayCodes[day]||[]).some(c => c.toLowerCase() === q.toLowerCase() || c.toLowerCase().includes(q.toLowerCase())));
-    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
-  } else if(q){
-    list = blocks.filter(b => b.text.toLowerCase().includes(q.toLowerCase()) || b.name.toLowerCase().includes(q.toLowerCase()));
-  } else if(hasDay){
-    list = blocks.filter(b => (b.dayCodes[day]||[]).length > 0);
-    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
-  }
-
-  if(list.length === 0){
-    holder.innerHTML = '<div class="empty">Niciun rezultat.</div>';
-    return;
-  }
-
-  holder.innerHTML = '<div class="section-title">' + list.length + ' rezultat(e)</div>' +
-    list.map((b, i) => {
-      const dayHit = dayHitMap[b.id] ? '<div class="day-hit">Ziua ' + day + ': ' + escapeHtml(dayHitMap[b.id]) + '</div>' : '';
-      return '<div class="block ' + (q||hasDay ? 'match':'') + '">' +
-        '<div class="block-head"><div><div class="block-name">' + escapeHtml(b.name) + '</div><div class="block-role">' + escapeHtml(b.role) + '</div></div><div class="block-idx">#' + (i+1) + '</div></div>' +
-        '<div class="block-body">' + dayHit + '<div class="raw-text">' + highlight(b.text, q) + '</div></div>' +
-      '</div>';
-    }).join('');
-}
-
-function renderList(){
-  const container = document.getElementById('app');
-  const cat = state.category;
-  const docs = state.docsMeta[cat] || [];
-
-  container.innerHTML =
-    '<h2 style="margin:0 0 4px;">' + CATS[cat] + '</h2>' +
-    '<div class="card">' +
-      '<div class="row">' +
-        '<div><label>Fișier PDF</label><input type="file" id="file-input" accept="application/pdf"></div>' +
-        '<div><label>Lună / an (etichetă)</label><input type="text" id="month-input" placeholder="ex. Iulie 2026"></div>' +
-        '<button class="btn" id="upload-btn">Încarcă</button>' +
-      '</div>' +
-      '<div class="hint">Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile, apoi se urcă pe GitHub (repo public) — nu se mai salvează local.</div>' +
-      '<div class="status" id="upload-status"></div>' +
-    '</div>' +
-    '<div class="section-title">Programe salvate</div>' +
-    '<div class="doc-list" id="doc-list">' +
-      (docs.length === 0 ? '<div class="empty">Niciun program încărcat încă pentru această categorie.</div>' :
-        docs.map(d =>
-          '<div class="doc-item" data-id="' + d.id + '">' +
-            '<div><div class="doc-name">' + escapeHtml(d.filename) + '</div>' +
-            '<div class="doc-meta">' + (d.month ? escapeHtml(d.month) + ' · ' : '') + 'încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</div></div>' +
-            '<div class="doc-actions"><button class="btn ghost" data-del="' + d.id + '">Șterge</button></div>' +
-          '</div>'
-        ).join('')
-      ) +
-    '</div>';
-
-  document.getElementById('upload-btn').onclick = ()=>{
-    const file = document.getElementById('file-input').files[0];
-    const month = document.getElementById('month-input').value.trim();
-    handleUpload(cat, file, month);
-  };
-  document.querySelectorAll('.doc-item').forEach(el=>{
-    el.addEventListener('click', (e)=>{
-      if(e.target.closest('[data-del]')) return;
-      state.view='detail';
-      state.openDocId = el.dataset.id;
-      state.query=''; state.dayQuery='';
-      render();
-    });
-  });
-  document.querySelectorAll('[data-del]').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      deleteDoc(cat, btn.dataset.del);
-    });
-  });
-}
-
-async function renderCross(){
-  const container = document.getElementById('app');
-  container.innerHTML =
-    '<h2 style="margin:0 0 4px;">Cine e la trenul X?</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">Caută o zi și un cod de tren — primești toți oamenii (mecanic, șef tren, vânzător bilete) găsiți în ziua respectivă cu codul respectiv, din toate fișierele salvate.</div>' +
-    '<div class="card">' +
-      '<div class="search-bar">' +
-        '<div><label>Zi (1-31)</label><input type="text" id="cross-day" placeholder="ex. 15" value="' + escapeHtml(state.crossDay) + '" style="min-width:80px;"></div>' +
-        '<div><label>Cod tren</label><input type="text" id="cross-code" placeholder="ex. 16565" value="' + escapeHtml(state.crossCode) + '"></div>' +
-        '<button class="btn solid-green" id="cross-btn">Caută trenul</button>' +
-      '</div>' +
-      '<div class="search-note">Se caută în toate fișierele din ambele categorii, folosind poziția reconstruită a coloanelor de zile din fiecare PDF.</div>' +
-    '</div>' +
-    '<div id="cross-results"><div class="empty">Introdu ziua și codul, apoi apasă Caută trenul.</div></div>';
-
-  document.getElementById('cross-btn').onclick = async ()=>{
-    state.crossDay = document.getElementById('cross-day').value.trim();
-    state.crossCode = document.getElementById('cross-code').value.trim();
-    await runCrossSearch();
-  };
-  ['cross-day','cross-code'].forEach(id=>{
-    document.getElementById(id).addEventListener('keydown', e=>{
-      if(e.key==='Enter') document.getElementById('cross-btn').click();
-    });
-  });
-}
-
-async function runCrossSearch(){
-  const holder = document.getElementById('cross-results');
-  const day = parseInt(state.crossDay, 10);
-  const code = state.crossCode.toLowerCase();
-  if(isNaN(day) || day < 1 || day > 31 || !code){
-    holder.innerHTML = '<div class="empty">Completează ziua (1-31) și codul.</div>';
-    return;
-  }
-  holder.innerHTML = '<div class="empty">Se caută în toate fișierele...</div>';
-
-  const results = [];
-  for(const cat of Object.keys(CATS)){
-    const docs = state.docsMeta[cat] || [];
-    for(const d of docs){
-      const blocks = await getBlocksForDoc(cat, d.id);
-      blocks.forEach(b=>{
-        const codes = b.dayCodes[day] || [];
-        const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
-        if(hit){
-          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit });
-        }
-      });
+    if(allCandidates.length===0){
+      setStatus('Nu am recunoscut structura graficului în fișele salvate (rânduri "efect / Ore serv prestat / Ore de noapte / Ore CS 75%").', 'err');
+      btn.disabled = false;
+      return;
     }
-  }
 
-  if(results.length === 0){
-    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu codul „' + escapeHtml(state.crossCode) + '” în ziua ' + day + '.</div>';
-    return;
-  }
-
-  holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + '</div>' +
-    results.map(r =>
-      '<div class="result-card">' +
-        '<div><div class="result-name">' + escapeHtml(r.name) + '</div>' +
-        '<div class="result-meta">' + escapeHtml(r.role) + ' · ' + escapeHtml(r.category) + ' · ' + escapeHtml(r.file) + '</div></div>' +
-        '<div class="result-code">' + escapeHtml(r.code) + '</div>' +
-      '</div>'
-    ).join('');
-}
-
-async function getAllTaggedBlocks(){
-  const out = [];
-  for(const cat of Object.keys(CATS)){
-    const docs = state.docsMeta[cat] || [];
-    for(const d of docs){
-      const blocks = await getBlocksForDoc(cat, d.id);
-      blocks.forEach(b => out.push({ block: b, cat, doc: d }));
+    const matches = findMatches(allCandidates, nume);
+    if(matches.length===0){
+      setStatus(`Nu am găsit "${nume}" în nicio fișă salvată. Verifică ortografia sau încarcă fișa lunii respective din pagina „Fișă de lucru".`, 'err');
+      btn.disabled = false;
+      return;
     }
-  }
-  return out;
-}
+    if(matches.length>1){
+      const optiuni = matches.map(c=>`${c.surname} ${c.firstname} (${c.sourceFile})`).join(' / ');
+      setStatus(`Numele "${nume}" e ambiguu, am găsit mai mulți: ${optiuni}. Scrie numele complet (nume + prenume) pentru a alege exact persoana.`, 'err');
+      btn.disabled = false;
+      return;
+    }
 
-async function renderTeam(){
-  const container = document.getElementById('app');
-  container.innerHTML =
-    '<h2 style="margin:0 0 4px;">Programul unei persoane</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">Pui numele (mecanic, șef tren sau vânzător bilete) — cu zi vezi doar acea zi, fără zi vezi tot programul pe lună.</div>' +
-    '<div class="card">' +
-      '<div class="search-bar">' +
-        '<div><label>Nume</label><input type="text" id="team-name" placeholder="ex. Nitu Ionut" value="' + escapeHtml(state.teamName) + '"></div>' +
-        '<div><label>Zi (1-31, opțional)</label><input type="text" id="team-day" placeholder="ex. 15 (gol = toată luna)" value="' + escapeHtml(state.teamDay) + '" style="min-width:80px;"></div>' +
-        '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
-      '</div>' +
-      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna.</div>' +
-    '</div>' +
-    '<div id="team-results"><div class="empty">Introdu numele, apoi apasă Arată programul.</div></div>';
-
-  document.getElementById('team-btn').onclick = async ()=>{
-    state.teamName = document.getElementById('team-name').value.trim();
-    state.teamDay = document.getElementById('team-day').value.trim();
-    await runTeamSearch();
-  };
-  ['team-name','team-day'].forEach(id=>{
-    document.getElementById(id).addEventListener('keydown', e=>{
-      if(e.key==='Enter') document.getElementById('team-btn').click();
-    });
-  });
-}
-
-async function runTeamSearch(){
-  const holder = document.getElementById('team-results');
-  const nameQ = normalize(state.teamName);
-  const dayStr = state.teamDay.trim();
-  const hasDay = dayStr !== '';
-  const day = parseInt(dayStr, 10);
-  if(!nameQ || (hasDay && (isNaN(day) || day < 1 || day > 31))){
-    holder.innerHTML = '<div class="empty">Completează numele (ziua e opțională, 1-31).</div>';
-    return;
-  }
-  holder.innerHTML = '<div class="empty">Se caută...</div>';
-
-  const all = await getAllTaggedBlocks();
-  const matches = all.filter(t => normalize(t.block.name).includes(nameQ));
-
-  if(matches.length === 0){
-    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu numele „' + escapeHtml(state.teamName) + '”.</div>';
-    return;
-  }
-
-  function crewFor(m, d, code){
-    const seen = new Set();
-    const crew = all.filter(o => o !== m && o.block.role !== m.block.role && (o.block.dayCodes[d]||[]).includes(code))
-      .map(o => ({ name:o.block.name, role:o.block.role }))
-      .filter(c=>{
-        const key = c.name + '|' + c.role;
-        if(seen.has(key)) return false;
-        seen.add(key); return true;
-      });
-    return crew.length
-      ? crew.map(c=>'<div class="crew-row"><span class="crew-name">' + escapeHtml(c.name) + '</span><span class="crew-role">' + escapeHtml(c.role) + '</span></div>').join('')
-      : '<div class="crew-row"><span class="crew-name">— niciun coleg găsit —</span></div>';
-  }
-
-  if(hasDay){
-    holder.innerHTML = matches.map(m=>{
-      const codes = trainCodesForDay(m.block, day);
-      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
-        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
-
-      if(codes.length === 0){
-        return '<div class="person-card">' + header +
-          '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
-      }
-
-      const groupsHtml = codes.map(code=>
-        '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, day, code) + '</div>'
-      ).join('');
-
-      return '<div class="person-card">' + header + groupsHtml + '</div>';
-    }).join('');
-  } else {
-    holder.innerHTML = matches.map(m=>{
-      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
-        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
-
-      let dayGroups = '';
-      for(let d=1; d<=31; d++){
-        const codes = trainCodesForDay(m.block, d);
-        if(codes.length === 0) continue;
-        const codesHtml = codes.map(code=>
-          '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, d, code) + '</div>'
-        ).join('');
-        dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
-      }
-
-      if(!dayGroups){
-        dayGroups = '<div class="hint" style="margin-top:10px;">Niciun cod de tren găsit în această lună.</div>';
-      }
-
-      return '<div class="person-card">' + header + dayGroups + '</div>';
-    }).join('');
+    aplicaCandidat(matches[0], v('normaOre'));
+  } catch(err){
+    console.error(err);
+    setStatus('A apărut o eroare la citirea fișelor salvate. Încearcă din nou.', 'err');
+  } finally {
+    btn.disabled = false;
   }
 }
 
-async function render(){
-  if((state.view==='list' || state.view==='detail') && !hasToken() && (state.category==='conductori' || state.category==='mecanici')){
-    state.view = 'cross'; state.openDocId = null;
-    renderTabs();
-  }
-  if(state.view === 'team'){ await renderTeam(); return; }
-  if(state.view === 'cross'){ await renderCross(); return; }
-  if(state.view==='detail' && state.openDocId){
-    const doc = (state.docsMeta[state.category]||[]).find(d=>d.id===state.openDocId);
-    if(doc){ await renderDetail(state.category, doc); return; }
-    state.view='list';
-  }
-  renderList();
-}
-
-function updateGhAccountBtn(){
-  const authed = hasToken();
-  const dot = document.getElementById('statusDot');
-  if(dot) dot.classList.toggle('status-connected', authed);
-  const navBani = document.getElementById('navBani');
-  if(navBani && !authed) navBani.remove();
-}
-
-// Picks up a token connected/disconnected from index.html in another tab, without needing a manual refresh.
-window.addEventListener('storage', function(e){
-  if(e.key === TOKEN_KEY){ location.reload(); }
+document.getElementById('numeAngajat').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') extrageDinFisa();
 });
 
-(async function init(){
-  state.view = hasToken() ? 'list' : 'cross';
-  renderTabs();
-  await loadAllMeta();
-  render();
-})();
+// Pornire
+incarca();
+calculeaza();
 </script>
 </body>
 </html>
