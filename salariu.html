@@ -549,6 +549,14 @@ function normDiac(s){
 }
 
 // --- parsare grafic: găsește pentru fiecare angajat CO/Festive/Ore serv prestat/Noapte/CS75 ---
+// Unele etichete verticale din PDF ("efect", "Serv") ies extrase literă cu literă, pe rândul lor
+// separat (ex. "e f e c t"), chiar între rândul cu numele și cel cu prenumele. Le recunoaștem și
+// le sărim, altfel un rând ca ăsta rupe găsirea întregului angajat.
+function isJunkLabelLine(line){
+  const toks = line.trim().split(/\s+/);
+  return toks.length > 1 && toks.every(t => t.length === 1);
+}
+
 function parseGrafic(lines){
   const fullText = lines.join('\n');
   const mNorma = fullText.match(/NORMA\s+(\d+)/i);
@@ -556,6 +564,7 @@ function parseGrafic(lines){
 
   const candidates = [];
   for(let i=0; i<lines.length-1; i++){
+    if(isJunkLabelLine(lines[i])) continue;
     // Linia cu "Festive": la Mecanici are cuvântul "efect" ("CHIFOR efect 16537 ... Festive"),
     // la Șefi Tren / Vânzători bilete NU are "efect" deloc ("STEFAN CO CO 216511 ... Festive").
     // Îl facem opțional ca să prindem ambele formate.
@@ -566,21 +575,30 @@ function parseGrafic(lines){
     const efectBody = mm[2];
     const coCount = (efectBody.match(/\bCO\b/g) || []).length;
 
-    const nextLine = lines[i+1] || '';
-    const fm = nextLine.match(/^(?:\d{1,2}\s+)?(\S+)\s+.*?(\d{1,3}:\d{2})\s*$/);
-    if(!fm) continue;
-    const firstname = fm[1];
-    const festive = fm[2];
+    // Prenumele + totalul "Festive" pot fi pe linia imediat următoare, sau la câteva linii
+    // distanță dacă între ele s-au strecurat fragmente dintr-o etichetă verticală ruptă
+    // (litere răzlețe, cuvinte rupte etc.). Scanăm înainte până găsim un rând valid, nu ne
+    // oprim la primul rând care nu se potrivește.
+    let firstname = '', festive = '';
+    for(let k=i+1; k<Math.min(i+6, lines.length); k++){
+      const lk = lines[k];
+      if(/Festive\s*$/i.test(lk)) break; // am ajuns la următorul angajat fără să găsim prenumele
+      if(/^Nume\s+Data/i.test(lk)) break; // antet nou de tabel
+      const fm = lk.match(/^(?:\d{1,2}\s+)?(\S+)\s+.*?(\d{1,3}:\d{2})\s*$/);
+      if(fm){ firstname = fm[1]; festive = fm[2]; break; }
+    }
+    if(!firstname) continue;
 
-    // Găsim linia cu rolul (Sef tren / Mecanic / V bilete) ca reper de poziție.
+    // Găsim linia cu rolul (Sef tren / Mecanic / V(anzator) bilete) ca reper de poziție.
     let roleIdx = -1;
-    for(let j=i+1; j<Math.min(i+6, lines.length); j++){
+    for(let j=i+1; j<Math.min(i+7, lines.length); j++){
+      if(isJunkLabelLine(lines[j])) continue;
       if(/^(Sef\s*tren|Mecanic|V.*bilete)/i.test(lines[j])){ roleIdx = j; break; }
     }
 
     let serv=null, noapte=null, cs75=null;
     // 1) Format Mecanici: etichetele apar direct pe linie, cu totalul la final.
-    for(let j=i+1; j<Math.min(i+10, lines.length); j++){
+    for(let j=i+1; j<Math.min(i+11, lines.length); j++){
       const lj = lines[j];
       let mt;
       if(/^Ore serv prestat/i.test(lj)){ mt = lj.match(/(\d{1,3}:\d{2})\s*$/); if(mt) serv=mt[1]; }
@@ -591,8 +609,9 @@ function parseGrafic(lines){
     //    numerice (doar cifre/două puncte) de după linia cu rolul, în ordine: serv, noapte, cs75.
     if((!serv || !noapte || !cs75) && roleIdx !== -1){
       const numericTotals = [];
-      for(let j=roleIdx+1; j<Math.min(roleIdx+5, lines.length) && numericTotals.length<3; j++){
+      for(let j=roleIdx+1; j<Math.min(roleIdx+6, lines.length) && numericTotals.length<3; j++){
         const lj = lines[j];
+        if(isJunkLabelLine(lj)) continue;
         if(/^CO\s+inceput/i.test(lj)) break;
         const mt = lj.match(/^[\d:.\/ ]+(\d{1,3}:\d{2})\s*$/);
         if(mt) numericTotals.push(mt[1]);
@@ -616,6 +635,25 @@ function findMatches(candidates, numeCautat){
     for(const w of targetWords){ if(!fullWords.has(w)) return false; }
     return true;
   });
+}
+
+// Unele grafice au și rânduri-șablon goale (0:00 peste tot) pentru sloturi nefolosite, care din
+// întâmplare au același nume ca un angajat real din același fișier. Le grupăm după nume+fișier
+// și păstrăm doar varianta cu ore reale, ca să nu iasă fals "ambiguu".
+function dedupeCandidates(matches){
+  const groups = {};
+  matches.forEach(c=>{
+    const key = normDiac(c.surname+' '+c.firstname) + '|' + (c.sourceFile||'');
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(c);
+  });
+  const result = [];
+  Object.values(groups).forEach(group=>{
+    if(group.length === 1){ result.push(group[0]); return; }
+    const withHours = group.filter(c => hmToDec(c.serv) > 0 || hmToDec(c.noapte) > 0 || hmToDec(c.cs75) > 0);
+    result.push(withHours[0] || group[0]);
+  });
+  return result;
 }
 
 function aplicaCandidat(c, normaFallback){
@@ -686,7 +724,7 @@ async function extrageDinFisa(){
       return;
     }
 
-    const matches = findMatches(allCandidates, nume);
+    const matches = dedupeCandidates(findMatches(allCandidates, nume));
     if(matches.length===0){
       setStatus(`Nu am găsit "${nume}" în nicio fișă salvată. Verifică ortografia sau încarcă fișa lunii respective din pagina „Fișă de lucru".`, 'err');
       btn.disabled = false;
