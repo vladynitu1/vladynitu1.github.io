@@ -46,17 +46,6 @@
           "reason": "Masina"
         }
       ]
-    },
-    {
-      "id": 106,
-      "name": "Bomba",
-      "entries": [
-        {
-          "id": 220,
-          "amount": -50,
-          "reason": "Tuns"
-        }
-      ]
     }
   ],
   "nextPersonId": 107,
