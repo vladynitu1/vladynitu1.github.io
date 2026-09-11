@@ -52,11 +52,6 @@
       "name": "Bomba",
       "entries": [
         {
-          "id": 217,
-          "amount": 100,
-          "reason": "G"
-        },
-        {
           "id": 220,
           "amount": -50,
           "reason": "Tuns"
