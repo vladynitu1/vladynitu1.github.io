@@ -426,11 +426,11 @@ function splitBlocksStructured(rows){
   // (in funcție de PDF) le lipește intr-un singur text item: "CO inceput luna". Verificam
   // ambele variante — altfel randul e tratat ca rand normal de coduri si cifrele din el
   // (marcaje de zi, nu coduri de tren) se scurg gresit in harta zi->cod.
-  function isCoStartRow(items){
-    const strs = items.map(i=>i.str);
-    return (strs.includes('inceput') && strs.includes('luna')) ||
-      strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
-  }
+ function isCoStartRow(items){
+  const strs = items.map(i=>i.str);
+  return (strs.includes('inceput') && strs.includes('luna')) ||
+    strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
+}
 
   rows.forEach(row=>{
     if(isHeaderRow(row.items)){
@@ -493,17 +493,19 @@ function splitBlocksStructured(rows){
       return /^[A-Za-zĂÂÎȘȚăâîșț-]+$/.test(t) && !NON_NAME.has(t);
     }
 
+       function isPureAlphaToken(t){
+      return /^[A-Za-zĂÂÎȘȚăâîșț-]+$/.test(t) && !NON_NAME.has(t);
+    }
+
     let surname = '', firstname = '';
     for(let i=0;i<b.allRows.length;i++){
       const tokens = b.allRows[i].items.map(it=>it.str);
       if(tokens.includes('Festive')){
-        // Cand numele e lung, PDF-ul il rupe pe 2 randuri: bucata a doua ramane lipita de
-        // randul cu codurile zilnice + "Festive", iar bucata intai sta singura, pe randul
-        // de deasupra. Un rand cu foarte putine elemente (<=3 tokeni) e semnul ca randul cu
-        // codurile normale a fost impins pe un rand separat, deci suntem in acest caz.
         const isWrappedRow = tokens.length <= 3;
 
         if(isWrappedRow){
+          // numele e rupt pe mai multe randuri in PDF: pe randul cu "Festive" a ramas
+          // doar coada cuvantului; capul lui e pe un rand anterior, singur, doar litere.
           const tail = tokens.find(t => t !== 'Festive' && isPureAlphaToken(t)) || '';
           const headFragments = [];
           let back = i - 1;
