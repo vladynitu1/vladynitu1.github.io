@@ -471,11 +471,19 @@ function splitBlocksStructured(rows){
       const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
       return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
     }
+    function isAnnotationWord(t){
+      // Adnotările scrise de mână și adăugate în PDF (ex. "medicina", "solomon" — nume de
+      // înlocuitori) apar cu litere mici. Numele reale din grafic sunt mereu scrise cu Majusculă
+      // la început sau integral cu MAJUSCULE, niciodată tot cu litere mici — asta le desparte clar.
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length > 0 && letters === letters.toLowerCase() && letters !== letters.toUpperCase();
+    }
     function isLabelToken(t){
       if(NON_NAME.has(t)) return true;
       if(isAllCapsCode(t)) return true;
+      if(isAnnotationWord(t)) return true;
       const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
+      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w) || isAnnotationWord(w));
     }
     function firstNameToken(tokens){
       for(const t of tokens){
@@ -541,10 +549,6 @@ function splitBlocksStructured(rows){
             if(cand){ surname = cand; surnameRowIdx = back; break; }
           }
         }
-        if(surnameRowIdx >= 0){
-          surname = prependWrapFragment(surname, surnameRowIdx);
-          surname = appendWrapFragment(surname, surnameRowIdx);
-        }
 
         const candidateRows = [];
         candidateRows.push({ idx: i, tokens: sIdx >= 0 ? tokens.slice(sIdx+1) : tokens });
@@ -557,6 +561,22 @@ function splitBlocksStructured(rows){
           if(isRoleRow) break;
           const f = firstNameToken(row.tokens);
           if(f && f !== surname){ firstname = f; firstnameRowIdx = row.idx; break; }
+        }
+
+        // Lipim fragmentele rupte DOAR dacă rândul-țintă nu e deja folosit de cealaltă parte a
+        // numelui (ex. dacă "ALEXANDRU" de pe rândul următor e deja prenumele găsit, nu-l mai
+        // lipim și de numele de familie).
+        if(surnameRowIdx >= 0){
+          surname = prependWrapFragment(surname, surnameRowIdx);
+          if(surnameRowIdx + 1 !== firstnameRowIdx){
+            surname = appendWrapFragment(surname, surnameRowIdx);
+          }
+        }
+        if(firstnameRowIdx >= 0){
+          if(firstnameRowIdx - 1 !== surnameRowIdx){
+            firstname = prependWrapFragment(firstname, firstnameRowIdx);
+          }
+          firstname = appendWrapFragment(firstname, firstnameRowIdx);
         }
         if(firstnameRowIdx >= 0){
           firstname = prependWrapFragment(firstname, firstnameRowIdx);
