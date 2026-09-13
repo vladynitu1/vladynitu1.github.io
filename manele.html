@@ -421,12 +421,7 @@ function splitBlocksStructured(rows){
     const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
     return items.length > 0 && (timeLike / items.length) > 0.5;
   }
-  // Rândul de subsol "CO inceput luna" arată din ce zi începe fiecare bloc de concediu.
-  // pdf.js îl scoate uneori ca 3 tokeni separați ('CO','inceput','luna'), dar alteori
-  // (in funcție de PDF) le lipește intr-un singur text item: "CO inceput luna". Verificam
-  // ambele variante — altfel randul e tratat ca rand normal de coduri si cifrele din el
-  // (marcaje de zi, nu coduri de tren) se scurg gresit in harta zi->cod.
- function isCoStartRow(items){
+  function isCoStartRow(items){
   const strs = items.map(i=>i.str);
   return (strs.includes('inceput') && strs.includes('luna')) ||
     strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
@@ -486,70 +481,29 @@ function splitBlocksStructured(rows){
       }
       return '';
     }
-    // Un fragment de nume "pur": doar litere (inclusiv diacritice) sau cratimă, și NU un
-    // cuvant-eticheta (Serv, efect, Festive, Sef, CO, L etc). Folosit pentru reconstruirea
-    // numelor rupte pe 2 randuri in PDF (ex. "RADUL" / "ESCU", "CRISTI" / "AN").
-    function isPureAlphaToken(t){
-      return /^[A-Za-zĂÂÎȘȚăâîșț-]+$/.test(t) && !NON_NAME.has(t);
-    }
-
-       function isPureAlphaToken(t){
-      return /^[A-Za-zĂÂÎȘȚăâîșț-]+$/.test(t) && !NON_NAME.has(t);
-    }
-
     let surname = '', firstname = '';
     for(let i=0;i<b.allRows.length;i++){
       const tokens = b.allRows[i].items.map(it=>it.str);
       if(tokens.includes('Festive')){
-        const isWrappedRow = tokens.length <= 3;
-
-        if(isWrappedRow){
-          // numele e rupt pe mai multe randuri in PDF: pe randul cu "Festive" a ramas
-          // doar coada cuvantului; capul lui e pe un rand anterior, singur, doar litere.
-          const tail = tokens.find(t => t !== 'Festive' && isPureAlphaToken(t)) || '';
-          const headFragments = [];
-          let back = i - 1;
-          while(back >= 0){
-            const backTokens = b.allRows[back].items.map(it=>it.str);
-            if(backTokens.length === 1 && isPureAlphaToken(backTokens[0])){
-              headFragments.unshift(backTokens[0]);
-              back--;
-            } else break;
-          }
-          surname = (headFragments.join('') + tail).trim();
-        } else {
-          let sIdx = -1;
-          for(let k=0;k<tokens.length;k++){
-            const t = tokens[k];
-            if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
-            sIdx = k; break;
-          }
-          surname = sIdx >= 0 ? tokens[sIdx] : '';
+        let sIdx = -1;
+        for(let k=0;k<tokens.length;k++){
+          const t = tokens[k];
+          if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
+          sIdx = k; break;
         }
+        surname = sIdx >= 0 ? tokens[sIdx] : '';
 
-        const nextRow = b.allRows[i+1] ? b.allRows[i+1].items.map(it=>it.str) : null;
-        const afterNextRow = b.allRows[i+2] ? b.allRows[i+2].items.map(it=>it.str) : null;
+        const candidateRows = [];
+        candidateRows.push(sIdx >= 0 ? tokens.slice(sIdx+1) : tokens);
+        if(b.allRows[i+1]) candidateRows.push(b.allRows[i+1].items.map(it=>it.str));
+        if(b.allRows[i+2]) candidateRows.push(b.allRows[i+2].items.map(it=>it.str));
 
-        if(nextRow){
-          const isRoleRow = nextRow.includes('Sef') || nextRow.includes('Mecanic') ||
-            (nextRow.includes('V') && nextRow.some(t => t.indexOf('bilete') === 0));
-          if(!isRoleRow){
-            // acelasi fenomen de rupere pe 2 randuri, aplicat prenumelui
-            if(nextRow.length === 1 && isPureAlphaToken(nextRow[0]) && afterNextRow && afterNextRow.length > 0 && isPureAlphaToken(afterNextRow[0])){
-              firstname = nextRow[0] + afterNextRow[0];
-            } else {
-              const f = firstNameToken(nextRow);
-              if(f) firstname = f;
-              else if(afterNextRow){
-                const isRoleRow2 = afterNextRow.includes('Sef') || afterNextRow.includes('Mecanic') ||
-                  (afterNextRow.includes('V') && afterNextRow.some(t => t.indexOf('bilete') === 0));
-                if(!isRoleRow2){
-                  const f2 = firstNameToken(afterNextRow);
-                  if(f2) firstname = f2;
-                }
-              }
-            }
-          }
+        for(const rowTokens of candidateRows){
+          const isRoleRow = rowTokens.includes('Sef') || rowTokens.includes('Mecanic') ||
+            (rowTokens.includes('V') && rowTokens.some(t => t.indexOf('bilete') === 0));
+          if(isRoleRow) break;
+          const f = firstNameToken(rowTokens);
+          if(f){ firstname = f; break; }
         }
         break;
       }
