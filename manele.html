@@ -421,15 +421,15 @@ function splitBlocksStructured(rows){
     const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
     return items.length > 0 && (timeLike / items.length) > 0.5;
   }
+  // Rândul de subsol "CO inceput luna" arată din ce zi începe fiecare bloc de concediu.
+  // pdf.js îl scoate uneori ca 3 tokeni separați ('CO','inceput','luna'), dar alteori
+  // (in funcție de PDF) le lipește intr-un singur text item: "CO inceput luna". Verificam
+  // ambele variante — altfel randul e tratat ca rand normal de coduri si cifrele din el
+  // (marcaje de zi, nu coduri de tren) se scurg gresit in harta zi->cod.
   function isCoStartRow(items){
-    const strs = items.map(i=>i.str).filter(Boolean);
-    if(strs.length === 0) return false;
-    if(strs.some(s=>s === 'inceput') && strs.some(s=>s === 'luna')) return true;
-    // Marcajele de zile CO ("1 1 1 1...") sau totalul de zile CO ajung uneori pe un rând SEPARAT
-    // de eticheta "CO inceput luna", din cauza poziționării din PDF. Recunoaștem orice rând format
-    // DOAR din numere foarte scurte (1-2 cifre) — un cod de tren real are mereu cel puțin 4-5
-    // cifre, deci un rând numai cu "1", "7", "19" etc. nu poate fi un rând cu coduri de tren.
-    return strs.every(s => /^\d{1,2}$/.test(s));
+    const strs = items.map(i=>i.str);
+    return (strs.includes('inceput') && strs.includes('luna')) ||
+      strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
   }
 
   rows.forEach(row=>{
@@ -471,19 +471,11 @@ function splitBlocksStructured(rows){
       const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
       return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
     }
-    function isAnnotationWord(t){
-      // Adnotările scrise de mână și adăugate în PDF (ex. "medicina", "solomon" — nume de
-      // înlocuitori) apar cu litere mici. Numele reale din grafic sunt mereu scrise cu Majusculă
-      // la început sau integral cu MAJUSCULE, niciodată tot cu litere mici — asta le desparte clar.
-      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      return letters.length > 0 && letters === letters.toLowerCase() && letters !== letters.toUpperCase();
-    }
     function isLabelToken(t){
       if(NON_NAME.has(t)) return true;
       if(isAllCapsCode(t)) return true;
-      if(isAnnotationWord(t)) return true;
       const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w) || isAnnotationWord(w));
+      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
     }
     function firstNameToken(tokens){
       for(const t of tokens){
@@ -494,93 +486,68 @@ function splitBlocksStructured(rows){
       }
       return '';
     }
+    // Un fragment de nume "pur": doar litere (inclusiv diacritice) sau cratimă, și NU un
+    // cuvant-eticheta (Serv, efect, Festive, Sef, CO, L etc). Folosit pentru reconstruirea
+    // numelor rupte pe 2 randuri in PDF (ex. "RADUL" / "ESCU", "CRISTI" / "AN").
+    function isPureAlphaToken(t){
+      return /^[A-Za-zĂÂÎȘȚăâîșț-]+$/.test(t) && !NON_NAME.has(t);
+    }
+
     let surname = '', firstname = '';
-    let surnameRowIdx = -1, firstnameRowIdx = -1;
-
-    // Nume lungi (SPIRIDON, CRISTIAN...) se rup uneori la capăt de rând în PDF: "SPIRID" pe un
-    // rând, apoi "ON" lipit de codurile rândului următor. Recunoaștem bucata de continuare
-    // uitându-ne la poziția ei x: dacă e cel mai din stânga token de pe rândul următor și stă
-    // înaintea coloanei zilei 1 (deci nu e cod de zi), o lipim de nume.
-    function isNameWrapFragment(item){
-      if(!item) return false;
-      if(/\d/.test(item.str)) return false;
-      const letters = item.str.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      if(!letters || letters.length > 12) return false;
-      if(letters !== letters.toUpperCase()) return false;
-      if(NON_NAME.has(item.str)) return false;
-      if(colX.length > 0 && item.x >= colX[0] - 5) return false;
-      return true;
-    }
-    function appendWrapFragment(name, rowIdx){
-      const nextRow = b.allRows[rowIdx + 1];
-      if(!nextRow || !nextRow.items || !nextRow.items.length) return name;
-      const firstItem = nextRow.items[0];
-      if(isNameWrapFragment(firstItem)) return name + firstItem.str;
-      return name;
-    }
-    function prependWrapFragment(name, rowIdx){
-      const prevRow = b.allRows[rowIdx - 1];
-      if(!prevRow || !prevRow.items || !prevRow.items.length) return name;
-      const lastItem = prevRow.items[prevRow.items.length - 1];
-      if(isNameWrapFragment(lastItem)) return lastItem.str + name;
-      return name;
-    }
-
     for(let i=0;i<b.allRows.length;i++){
       const tokens = b.allRows[i].items.map(it=>it.str);
       if(tokens.includes('Festive')){
-        let sIdx = -1;
-        for(let k=0;k<tokens.length;k++){
-          const t = tokens[k];
-          if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
-          sIdx = k; break;
-        }
-        surname = sIdx >= 0 ? tokens[sIdx] : '';
-        surnameRowIdx = sIdx >= 0 ? i : -1;
+        // Cand numele e lung, PDF-ul il rupe pe 2 randuri: bucata a doua ramane lipita de
+        // randul cu codurile zilnice + "Festive", iar bucata intai sta singura, pe randul
+        // de deasupra. Un rand cu foarte putine elemente (<=3 tokeni) e semnul ca randul cu
+        // codurile normale a fost impins pe un rand separat, deci suntem in acest caz.
+        const isWrappedRow = tokens.length <= 3;
 
-        // Uneori numele de familie stă singur pe un rând anterior celui cu "Festive" (ex. la
-        // tabelele "Șefi tren" unde rândul cu Festive conține doar coduri, fără nume). Dacă n-am
-        // găsit nimic pe rândul cu Festive, căutăm înapoi cel mai apropiat rând din același bloc
-        // care conține un cuvânt valid de nume.
-        if(!surname){
-          for(let back=i-1; back>=0; back--){
+        if(isWrappedRow){
+          const tail = tokens.find(t => t !== 'Festive' && isPureAlphaToken(t)) || '';
+          const headFragments = [];
+          let back = i - 1;
+          while(back >= 0){
             const backTokens = b.allRows[back].items.map(it=>it.str);
-            const cand = firstNameToken(backTokens);
-            if(cand){ surname = cand; surnameRowIdx = back; break; }
+            if(backTokens.length === 1 && isPureAlphaToken(backTokens[0])){
+              headFragments.unshift(backTokens[0]);
+              back--;
+            } else break;
           }
+          surname = (headFragments.join('') + tail).trim();
+        } else {
+          let sIdx = -1;
+          for(let k=0;k<tokens.length;k++){
+            const t = tokens[k];
+            if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
+            sIdx = k; break;
+          }
+          surname = sIdx >= 0 ? tokens[sIdx] : '';
         }
 
-        const candidateRows = [];
-        candidateRows.push({ idx: i, tokens: sIdx >= 0 ? tokens.slice(sIdx+1) : tokens });
-        if(b.allRows[i+1]) candidateRows.push({ idx: i+1, tokens: b.allRows[i+1].items.map(it=>it.str) });
-        if(b.allRows[i+2]) candidateRows.push({ idx: i+2, tokens: b.allRows[i+2].items.map(it=>it.str) });
+        const nextRow = b.allRows[i+1] ? b.allRows[i+1].items.map(it=>it.str) : null;
+        const afterNextRow = b.allRows[i+2] ? b.allRows[i+2].items.map(it=>it.str) : null;
 
-        for(const row of candidateRows){
-          const isRoleRow = row.tokens.includes('Sef') || row.tokens.includes('Mecanic') ||
-            (row.tokens.includes('V') && row.tokens.some(t => t.indexOf('bilete') === 0));
-          if(isRoleRow) break;
-          const f = firstNameToken(row.tokens);
-          if(f && f !== surname){ firstname = f; firstnameRowIdx = row.idx; break; }
-        }
-
-        // Lipim fragmentele rupte DOAR dacă rândul-țintă nu e deja folosit de cealaltă parte a
-        // numelui (ex. dacă "ALEXANDRU" de pe rândul următor e deja prenumele găsit, nu-l mai
-        // lipim și de numele de familie).
-        if(surnameRowIdx >= 0){
-          surname = prependWrapFragment(surname, surnameRowIdx);
-          if(surnameRowIdx + 1 !== firstnameRowIdx){
-            surname = appendWrapFragment(surname, surnameRowIdx);
+        if(nextRow){
+          const isRoleRow = nextRow.includes('Sef') || nextRow.includes('Mecanic') ||
+            (nextRow.includes('V') && nextRow.some(t => t.indexOf('bilete') === 0));
+          if(!isRoleRow){
+            // acelasi fenomen de rupere pe 2 randuri, aplicat prenumelui
+            if(nextRow.length === 1 && isPureAlphaToken(nextRow[0]) && afterNextRow && afterNextRow.length > 0 && isPureAlphaToken(afterNextRow[0])){
+              firstname = nextRow[0] + afterNextRow[0];
+            } else {
+              const f = firstNameToken(nextRow);
+              if(f) firstname = f;
+              else if(afterNextRow){
+                const isRoleRow2 = afterNextRow.includes('Sef') || afterNextRow.includes('Mecanic') ||
+                  (afterNextRow.includes('V') && afterNextRow.some(t => t.indexOf('bilete') === 0));
+                if(!isRoleRow2){
+                  const f2 = firstNameToken(afterNextRow);
+                  if(f2) firstname = f2;
+                }
+              }
+            }
           }
-        }
-        if(firstnameRowIdx >= 0){
-          if(firstnameRowIdx - 1 !== surnameRowIdx){
-            firstname = prependWrapFragment(firstname, firstnameRowIdx);
-          }
-          firstname = appendWrapFragment(firstname, firstnameRowIdx);
-        }
-        if(firstnameRowIdx >= 0){
-          firstname = prependWrapFragment(firstname, firstnameRowIdx);
-          firstname = appendWrapFragment(firstname, firstnameRowIdx);
         }
         break;
       }
@@ -666,10 +633,9 @@ function trainCodesForDay(block, day){
   return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
 }
 
-// Dacă același cod de tren apare și în ziua următoare (sau precedentă) pentru aceeași
-// persoană, afișăm "ziua X/Y". Nu e o detecție perfectă (uneori e doar aceeași rută repetată
-// normal 2 zile la rând, nu neapărat un tren de noapte real), dar e cel mai apropiat semnal
-// disponibil în datele din PDF.
+// Trenurile de noapte apar uneori cu același cod atât în ziua X cât și în ziua X+1 (pleacă
+// seara, ajunge după miezul nopții). Aici detectăm asta ca să putem afișa "ziua 3/4" în loc
+// de o singură zi, care ar fi înșelătoare pentru un tren de noapte.
 function dayRangeLabel(block, day, code){
   const norm = c => (c||'').toLowerCase();
   const hasNext = (block.dayCodes[day+1] || []).some(c => norm(c) === norm(code));
@@ -872,7 +838,7 @@ async function runCrossSearch(){
         const codes = b.dayCodes[day] || [];
         const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
         if(hit){
-          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit });
+          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit, dayLabel: dayRangeLabel(b, day, hit) });
         }
       });
     }
@@ -884,13 +850,16 @@ async function runCrossSearch(){
   }
 
   holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + '</div>' +
-    results.map(r =>
-      '<div class="result-card">' +
-        '<div><div class="result-name">' + escapeHtml(r.name) + '</div>' +
+    results.map(r => {
+      const span = r.dayLabel && r.dayLabel.indexOf('/') !== -1
+        ? ' <span style="color:var(--grn); font-weight:600;">(ziua ' + escapeHtml(r.dayLabel) + ')</span>'
+        : '';
+      return '<div class="result-card">' +
+        '<div><div class="result-name">' + escapeHtml(r.name) + span + '</div>' +
         '<div class="result-meta">' + escapeHtml(r.role) + ' · ' + escapeHtml(r.category) + ' · ' + escapeHtml(r.file) + '</div></div>' +
         '<div class="result-code">' + escapeHtml(r.code) + '</div>' +
-      '</div>'
-    ).join('');
+      '</div>';
+    }).join('');
 }
 
 async function getAllTaggedBlocks(){
@@ -977,9 +946,11 @@ async function runTeamSearch(){
           '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
       }
 
-      const groupsHtml = codes.map(code=>
-        '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, day, code) + '</div>'
-      ).join('');
+      const groupsHtml = codes.map(code=>{
+        const label = dayRangeLabel(m.block, day, code);
+        const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
+        return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + '</span>' + crewFor(m, day, code) + '</div>';
+      }).join('');
 
       return '<div class="person-card">' + header + groupsHtml + '</div>';
     }).join('');
@@ -989,12 +960,19 @@ async function runTeamSearch(){
         '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
 
       let dayGroups = '';
+      const consumedDayCode = new Set();
       for(let d=1; d<=31; d++){
         const codes = trainCodesForDay(m.block, d);
         if(codes.length === 0) continue;
-        const codesHtml = codes.map(code=>
-          '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + '</span>' + crewFor(m, d, code) + '</div>'
-        ).join('');
+        const codesHtml = codes.map(code=>{
+          const key = d + ':' + code.toLowerCase();
+          if(consumedDayCode.has(key)) return ''; // deja afișat ca parte din perechea zilei precedente
+          const label = dayRangeLabel(m.block, d, code);
+          if(label.indexOf('/') !== -1) consumedDayCode.add((d+1) + ':' + code.toLowerCase());
+          const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
+          return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + '</span>' + crewFor(m, d, code) + '</div>';
+        }).join('');
+        if(!codesHtml.trim()) continue;
         dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
       }
 
