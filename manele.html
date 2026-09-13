@@ -422,10 +422,16 @@ function splitBlocksStructured(rows){
     return items.length > 0 && (timeLike / items.length) > 0.5;
   }
   function isCoStartRow(items){
-  const strs = items.map(i=>i.str);
-  return (strs.includes('inceput') && strs.includes('luna')) ||
-    strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
-}
+    const strs = items.map(i=>i.str).filter(Boolean);
+    if(strs.length === 0) return false;
+    if((strs.includes('inceput') && strs.includes('luna')) ||
+       strs.some(s => /inceput/i.test(s) && /luna/i.test(s))) return true;
+    // Marcajele de zile CO ("1 1 1 1...") sau totalul de zile CO ajung uneori pe un rând SEPARAT
+    // de eticheta "CO inceput luna", din cauza poziționării din PDF. Recunoaștem orice rând format
+    // DOAR din numere foarte scurte (1-2 cifre) — un cod de tren real are mereu cel puțin 4-5
+    // cifre, deci un rând numai cu "1", "7", "19" etc. nu poate fi un rând cu coduri de tren.
+    return strs.every(s => /^\d{1,2}$/.test(s));
+  }
 
   rows.forEach(row=>{
     if(isHeaderRow(row.items)){
@@ -466,11 +472,19 @@ function splitBlocksStructured(rows){
       const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
       return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
     }
+    function isAnnotationWord(t){
+      // Adnotările scrise de mână și adăugate în PDF (ex. "medicina", "solomon" — nume de
+      // înlocuitori) apar cu litere mici. Numele reale din grafic sunt mereu scrise cu Majusculă
+      // la început sau integral cu MAJUSCULE, niciodată tot cu litere mici — asta le desparte clar.
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length > 0 && letters === letters.toLowerCase() && letters !== letters.toUpperCase();
+    }
     function isLabelToken(t){
       if(NON_NAME.has(t)) return true;
       if(isAllCapsCode(t)) return true;
+      if(isAnnotationWord(t)) return true;
       const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
+      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w) || isAnnotationWord(w));
     }
     function firstNameToken(tokens){
       for(const t of tokens){
@@ -481,7 +495,34 @@ function splitBlocksStructured(rows){
       }
       return '';
     }
+
+    function isNameWrapFragment(item){
+      if(!item) return false;
+      if(/\d/.test(item.str)) return false;
+      const letters = item.str.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      if(!letters || letters.length > 12) return false;
+      if(letters !== letters.toUpperCase()) return false;
+      if(NON_NAME.has(item.str)) return false;
+      if(colX.length > 0 && item.x >= colX[0] - 5) return false;
+      return true;
+    }
+    function appendWrapFragment(name, rowIdx){
+      const nextRow = b.allRows[rowIdx + 1];
+      if(!nextRow || !nextRow.items || !nextRow.items.length) return name;
+      const firstItem = nextRow.items[0];
+      if(isNameWrapFragment(firstItem)) return name + firstItem.str;
+      return name;
+    }
+    function prependWrapFragment(name, rowIdx){
+      const prevRow = b.allRows[rowIdx - 1];
+      if(!prevRow || !prevRow.items || !prevRow.items.length) return name;
+      const lastItem = prevRow.items[prevRow.items.length - 1];
+      if(isNameWrapFragment(lastItem)) return lastItem.str + name;
+      return name;
+    }
+
     let surname = '', firstname = '';
+    let surnameRowIdx = -1, firstnameRowIdx = -1;
     for(let i=0;i<b.allRows.length;i++){
       const tokens = b.allRows[i].items.map(it=>it.str);
       if(tokens.includes('Festive')){
@@ -492,18 +533,47 @@ function splitBlocksStructured(rows){
           sIdx = k; break;
         }
         surname = sIdx >= 0 ? tokens[sIdx] : '';
+        surnameRowIdx = sIdx >= 0 ? i : -1;
+
+        // Uneori numele de familie stă singur pe un rând anterior celui cu "Festive" (ex. la
+        // tabelele "Șefi tren" unde rândul cu Festive conține doar coduri, fără nume). Dacă n-am
+        // găsit nimic pe rândul cu Festive, căutăm înapoi cel mai apropiat rând din același bloc
+        // care conține un cuvânt valid de nume.
+        if(!surname){
+          for(let back=i-1; back>=0; back--){
+            const backTokens = b.allRows[back].items.map(it=>it.str);
+            const cand = firstNameToken(backTokens);
+            if(cand){ surname = cand; surnameRowIdx = back; break; }
+          }
+        }
 
         const candidateRows = [];
-        candidateRows.push(sIdx >= 0 ? tokens.slice(sIdx+1) : tokens);
-        if(b.allRows[i+1]) candidateRows.push(b.allRows[i+1].items.map(it=>it.str));
-        if(b.allRows[i+2]) candidateRows.push(b.allRows[i+2].items.map(it=>it.str));
+        candidateRows.push({ idx: i, tokens: sIdx >= 0 ? tokens.slice(sIdx+1) : tokens });
+        if(b.allRows[i+1]) candidateRows.push({ idx: i+1, tokens: b.allRows[i+1].items.map(it=>it.str) });
+        if(b.allRows[i+2]) candidateRows.push({ idx: i+2, tokens: b.allRows[i+2].items.map(it=>it.str) });
 
-        for(const rowTokens of candidateRows){
-          const isRoleRow = rowTokens.includes('Sef') || rowTokens.includes('Mecanic') ||
-            (rowTokens.includes('V') && rowTokens.some(t => t.indexOf('bilete') === 0));
+        for(const row of candidateRows){
+          const isRoleRow = row.tokens.includes('Sef') || row.tokens.includes('Mecanic') ||
+            (row.tokens.includes('V') && row.tokens.some(t => t.indexOf('bilete') === 0));
           if(isRoleRow) break;
-          const f = firstNameToken(rowTokens);
-          if(f){ firstname = f; break; }
+          const f = firstNameToken(row.tokens);
+          if(f && f !== surname){ firstname = f; firstnameRowIdx = row.idx; break; }
+        }
+
+        // Lipim fragmentele rupte DOAR dacă rândul-țintă nu e deja folosit de cealaltă parte a
+        // numelui (ex. dacă "ALEXANDRU" de pe rândul următor e deja prenumele găsit, nu-l mai
+        // lipim și de numele de familie).
+        if(surnameRowIdx >= 0){
+          surname = prependWrapFragment(surname, surnameRowIdx);
+          if(surnameRowIdx + 1 !== firstnameRowIdx){
+            surname = appendWrapFragment(surname, surnameRowIdx);
+          }
+        }
+        if(firstnameRowIdx >= 0){
+          if(firstnameRowIdx - 1 !== surnameRowIdx){
+            firstname = prependWrapFragment(firstname, firstnameRowIdx);
+          }
+          firstname = appendWrapFragment(firstname, firstnameRowIdx);
         }
         break;
       }
@@ -523,6 +593,11 @@ function splitBlocksStructured(rows){
       b.codeRows.forEach(row=>{
         row.items.forEach(item=>{
           if(excludeTokens.has(item.str)) return;
+          // Numerele foarte scurte (1-3 cifre) nu pot fi coduri de tren reale (acestea au mereu
+          // 4-5 cifre) — sunt marcaje de CO, indici de rând ("Nr crt") sau zile din antet care au
+          // ajuns din greșeală în rândurile de coduri. Le excludem direct, indiferent pe ce rând
+          // se află, ca să nu mai apară "Tren / cod 1" etc.
+          if(/^\d{1,3}$/.test(item.str)) return;
           const x = item.x + (item.w||0)/2;
           let bestDay = -1, bestDist = Infinity;
           for(let k=0;k<n;k++){
