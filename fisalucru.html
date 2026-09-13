@@ -422,8 +422,10 @@ function splitBlocksStructured(rows){
     return items.length > 0 && (timeLike / items.length) > 0.5;
   }
   function isCoStartRow(items){
-    return items.some(i=>i.str === 'inceput') && items.some(i=>i.str === 'luna');
-  }
+  const strs = items.map(i=>i.str);
+  return (strs.includes('inceput') && strs.includes('luna')) ||
+    strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
+}
 
   rows.forEach(row=>{
     if(isHeaderRow(row.items)){
