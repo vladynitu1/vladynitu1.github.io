@@ -481,33 +481,51 @@ function splitBlocksStructured(rows){
       }
       return '';
     }
-    let surname = '', firstname = '';
-    for(let i=0;i<b.allRows.length;i++){
-      const tokens = b.allRows[i].items.map(it=>it.str);
-      if(tokens.includes('Festive')){
-        let sIdx = -1;
-        for(let k=0;k<tokens.length;k++){
-          const t = tokens[k];
-          if(/^\d+([:./]\d+)?$/.test(t) || isLabelToken(t)) continue;
-          sIdx = k; break;
-        }
-        surname = sIdx >= 0 ? tokens[sIdx] : '';
-
-        const candidateRows = [];
-        candidateRows.push(sIdx >= 0 ? tokens.slice(sIdx+1) : tokens);
-        if(b.allRows[i+1]) candidateRows.push(b.allRows[i+1].items.map(it=>it.str));
-        if(b.allRows[i+2]) candidateRows.push(b.allRows[i+2].items.map(it=>it.str));
-
-        for(const rowTokens of candidateRows){
-          const isRoleRow = rowTokens.includes('Sef') || rowTokens.includes('Mecanic') ||
-            (rowTokens.includes('V') && rowTokens.some(t => t.indexOf('bilete') === 0));
-          if(isRoleRow) break;
-          const f = firstNameToken(rowTokens);
-          if(f){ firstname = f; break; }
-        }
-        break;
-      }
+    // Numele lungi (ex. "RADULESCU", "CRISTIAN") depășesc lățimea celulei din PDF și
+    // se rup pe o a doua linie fizică ("RADUL" / "ESCU"), care ajunge într-un rând
+    // (y-cluster) DIFERIT de restul rândului (codurile zilnice + "Festive"/orele totale).
+    // Vechea logică citea un singur rând (cel cu "Festive") și lua doar fragmentul rămas
+    // acolo — de-asta ieșeau nume ca "CRISTI" sau "ESCU CRISTI" în loc de "RADULESCU CRISTIAN".
+    // Noua logică scanează coloana Nume/Prenume (imediat la stânga zilei 1) pe toate
+    // rândurile blocului, de la început până la rândul de rol ("Sef tren"/"Mecanic"/"V bilete"),
+    // și reasamblează fragmentele în ordine: tot ce e până la (și inclusiv) rândul cu "Festive"
+    // e numele de familie, tot ce urmează e prenumele. Fragmentele se lipesc fără spațiu,
+    // pentru că o linie ruptă e continuarea aceluiași cuvânt, nu un cuvânt nou.
+    const nameColMaxX = (n > 1 && colX.length) ? (colX[0] - gap * 0.6) : 115;
+    function isNameFragment(t){
+      if(!t) return false;
+      if(/\d/.test(t)) return false;
+      // Respinge etichete cunoscute, inclusiv varianta combinată "Serv efect" (eticheta
+      // verticală a coloanei apare uneori ca un singur token cu spațiu, alteori ca două
+      // separate) — dar NU folosim isAllCapsCode aici, ca să nu respingem un fragment de
+      // nume legitim de 2 litere (ex. "AN" din "CRISTIAN").
+      const words = t.split(/\s+/).filter(Boolean);
+      if(words.length > 0 && words.every(w => NON_NAME.has(w))) return false;
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length >= 1;
     }
+    let roleRowIdx = b.allRows.length;
+    for(let i=0;i<b.allRows.length;i++){
+      // Verificăm textul ÎNTREGULUI rând, nu doar tokenii individuali: în funcție de PDF,
+      // "Sef tren" / "V bilete II" pot ieși ca un singur token combinat SAU ca tokeni separați
+      // ("Sef" + "tren"), iar o verificare doar pe tokeni exacți ratează varianta combinată.
+      const rowText = b.allRows[i].items.map(it=>it.str).join(' ');
+      const isRoleRow = /Sef\s*tren/i.test(rowText) || /Mecanic/i.test(rowText) || /bilete/i.test(rowText);
+      if(isRoleRow){ roleRowIdx = i; break; }
+    }
+    let festiveRowIdx = -1;
+    for(let i=0;i<roleRowIdx;i++){
+      if(b.allRows[i].items.some(it=>it.str === 'Festive')){ festiveRowIdx = i; break; }
+    }
+    const surnameFrags = [], firstnameFrags = [];
+    for(let i=0;i<roleRowIdx;i++){
+      const frags = b.allRows[i].items.filter(it=>it.x < nameColMaxX).map(it=>it.str).filter(isNameFragment);
+      if(frags.length === 0) continue;
+      if(festiveRowIdx === -1 || i <= festiveRowIdx) surnameFrags.push(...frags);
+      else firstnameFrags.push(...frags);
+    }
+    const surname = surnameFrags.join('');
+    const firstname = firstnameFrags.join('');
     const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
 
     let role = 'Necunoscut';
@@ -516,7 +534,7 @@ function splitBlocksStructured(rows){
     else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
     else if(/Mecanic/i.test(allText)) role = 'Mecanic';
 
-    const excludeTokens = new Set([surname, firstname, 'Festive'].filter(Boolean));
+    const excludeTokens = new Set([surname, firstname, ...surnameFrags, ...firstnameFrags, 'Festive'].filter(Boolean));
 
     if(n > 1){
       const maxGapAllowed = gap * 0.75;
