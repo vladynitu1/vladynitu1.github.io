@@ -110,6 +110,8 @@
   .empty{color:var(--txtd); font-size:13px; padding:20px 4px; text-align:center;}
 
   .search-bar{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+  .day-quick{display:flex; gap:6px;}
+  .btn-sm{padding:9px 12px; font-size:11px;}
   .search-note{font-size:11px; color:var(--txtd); margin-top:10px; line-height:1.5; border-left:3px solid var(--acc); padding-left:10px;}
 
   .block{
@@ -603,6 +605,9 @@ function normalize(s){
     .replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/ș/g,'s').replace(/ț/g,'t');
 }
 
+function todayDayOfMonth(){ return new Date().getDate(); }
+function tomorrowDayOfMonth(){ const d = new Date(); d.setDate(d.getDate()+1); return d.getDate(); }
+
 function trainCodesForDay(block, day){
   return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
 }
@@ -650,6 +655,7 @@ async function renderDetail(cat, doc){
       '<div class="search-bar">' +
         '<div><label>Cod (ex. 16565)</label><input type="text" id="q-code" placeholder="cod / nume" value="' + escapeHtml(state.query) + '"></div>' +
         '<div><label>Zi (1-31, opțional)</label><input type="text" id="q-day" placeholder="ex. 15" value="' + escapeHtml(state.dayQuery) + '" style="min-width:80px;"></div>' +
+        '<div class="day-quick"><button class="btn ghost btn-sm" id="q-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="q-day-tomorrow" type="button">Mâine</button></div>' +
         '<button class="btn" id="search-btn">Caută</button>' +
         '<button class="btn ghost" id="clear-btn">Șterge filtrul</button>' +
       '</div>' +
@@ -665,6 +671,14 @@ async function renderDetail(cat, doc){
     state.query = document.getElementById('q-code').value.trim();
     state.dayQuery = document.getElementById('q-day').value.trim();
     renderBlocks(blocks);
+  };
+  document.getElementById('q-day-today').onclick = ()=>{
+    document.getElementById('q-day').value = String(todayDayOfMonth());
+    document.getElementById('search-btn').click();
+  };
+  document.getElementById('q-day-tomorrow').onclick = ()=>{
+    document.getElementById('q-day').value = String(tomorrowDayOfMonth());
+    document.getElementById('search-btn').click();
   };
   document.getElementById('clear-btn').onclick = ()=>{
     state.query=''; state.dayQuery='';
@@ -774,6 +788,7 @@ async function renderCross(){
     '<div class="card">' +
       '<div class="search-bar">' +
         '<div><label>Zi (1-31)</label><input type="text" id="cross-day" placeholder="ex. 15" value="' + escapeHtml(state.crossDay) + '" style="min-width:80px;"></div>' +
+        '<div class="day-quick"><button class="btn ghost btn-sm" id="cross-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="cross-day-tomorrow" type="button">Mâine</button></div>' +
         '<div><label>Cod tren</label><input type="text" id="cross-code" placeholder="ex. 16565" value="' + escapeHtml(state.crossCode) + '"></div>' +
         '<button class="btn solid-green" id="cross-btn">Caută trenul</button>' +
       '</div>' +
@@ -785,6 +800,14 @@ async function renderCross(){
     state.crossDay = document.getElementById('cross-day').value.trim();
     state.crossCode = document.getElementById('cross-code').value.trim();
     await runCrossSearch();
+  };
+  document.getElementById('cross-day-today').onclick = async ()=>{
+    document.getElementById('cross-day').value = String(todayDayOfMonth());
+    await document.getElementById('cross-btn').onclick();
+  };
+  document.getElementById('cross-day-tomorrow').onclick = async ()=>{
+    document.getElementById('cross-day').value = String(tomorrowDayOfMonth());
+    await document.getElementById('cross-btn').onclick();
   };
   ['cross-day','cross-code'].forEach(id=>{
     document.getElementById(id).addEventListener('keydown', e=>{
@@ -857,6 +880,7 @@ async function renderTeam(){
       '<div class="search-bar">' +
         '<div><label>Nume</label><input type="text" id="team-name" placeholder="ex. Nitu Ionut" value="' + escapeHtml(state.teamName) + '"></div>' +
         '<div><label>Zi (1-31, opțional)</label><input type="text" id="team-day" placeholder="ex. 15 (gol = toată luna)" value="' + escapeHtml(state.teamDay) + '" style="min-width:80px;"></div>' +
+        '<div class="day-quick"><button class="btn ghost btn-sm" id="team-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="team-day-tomorrow" type="button">Mâine</button></div>' +
         '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
       '</div>' +
       '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna.</div>' +
@@ -867,6 +891,14 @@ async function renderTeam(){
     state.teamName = document.getElementById('team-name').value.trim();
     state.teamDay = document.getElementById('team-day').value.trim();
     await runTeamSearch();
+  };
+  document.getElementById('team-day-today').onclick = async ()=>{
+    document.getElementById('team-day').value = String(todayDayOfMonth());
+    await document.getElementById('team-btn').onclick();
+  };
+  document.getElementById('team-day-tomorrow').onclick = async ()=>{
+    document.getElementById('team-day').value = String(tomorrowDayOfMonth());
+    await document.getElementById('team-btn').onclick();
   };
   ['team-name','team-day'].forEach(id=>{
     document.getElementById(id).addEventListener('keydown', e=>{
