@@ -73,7 +73,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .btn-y{background:var(--yel2);color:var(--yel);border:1px solid var(--yel)}.btn-y:hover{background:var(--yel);color:#07090f}
 .btn-sm{padding:4px 9px;font-size:0.75rem}
 
-.infobox{background:var(--surf2);border:1px solid var(--bord2);border-left:3px solid var(--acc);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.78rem;color:var(--txtm);line-height:1.6}
+.infobox{background:var(--surf2);border:1px solid var(--bord2);border-left:3px solid var(--acc);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.78rem;color:var(--txtm);line-height:1.6;position:sticky;top:var(--sticky-top,108px);z-index:15;box-shadow:0 8px 14px -8px rgba(0,0,0,0.7)}
 .infobox strong{color:var(--acc);font-family:'Rajdhani',sans-serif;letter-spacing:1px}
 .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
 .tag{background:var(--surf3);border:1px solid var(--bord2);border-radius:5px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--grn);cursor:default}
@@ -213,6 +213,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
     <div class="emx-logo">
       <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
       <span class="emx-dot" id="statusDot">●</span>
+      <span id="syncText" style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--txtd);margin-left:6px;vertical-align:middle;"></span>
     </div>
     <div class="board-sub">TURNUSURI ȘI PONTAJ</div>
   </div>
@@ -398,36 +399,26 @@ function nightMins(startH,endH){
 }
 
 // ── CALCUL AUTO TURNUS ──
-// Din array de segmente [{prez,iesire}] calculeaza:
-// - ore lucrate = suma durate segmente
-// - dormitoare = intervalele intre segmente (iesire[i] -> prez[i+1])
-// - ore odihna = suma dormitoare
-// - ore noapte = ore 22-06 din TOATE segmentele (nu din dormitoare)
-// - zi1prez, zi1iesire, zi2prez, zi2iesire (pt afisare)
 function calcTurnusAuto(segmente){
   if(!segmente||segmente.length===0)return{ol:'0:00',oo:'0:00',on:'0:00',dormitoare:[]};
 
   let olTotal=0, ooTotal=0, onTotal=0;
   const dormitoare=[];
 
-  // Ore lucrate = suma durate segmente, ore noapte DOAR din segmente lucrate
   for(const seg of segmente){
     if(seg.prez&&seg.iesire){
       const dur=diffm(seg.prez,seg.iesire);
       olTotal+=dur;
-      onTotal+=nightMins(seg.prez,seg.iesire); // DOAR din ore lucrate
+      onTotal+=nightMins(seg.prez,seg.iesire);
     }
   }
 
-  // Dormitoare = intre segmente consecutive (iesire[i] -> prez[i+1])
-  // Orele de noapte din dormitor NU se adauga
   for(let i=0;i<segmente.length-1;i++){
     const ie=segmente[i].iesire;
     const pr=segmente[i+1].prez;
     if(ie&&pr){
       const dur=diffm(ie,pr);
       ooTotal+=dur;
-      // NU adaugam nightMins din dormitor
       dormitoare.push({start:ie,end:pr,durata:fmtm(dur)});
     }
   }
@@ -437,13 +428,10 @@ function calcTurnusAuto(segmente){
     oo:fmtm(ooTotal),
     on:fmtm(onTotal),
     dormitoare,
-    // zi1 = primul segment, zi2 = ultimul daca e altul
     zi1prez:segmente[0].prez,
     zi1iesire:segmente[0].iesire,
     zi2prez:segmente.length>1?segmente[segmente.length-1].prez:'',
     zi2iesire:segmente.length>1?segmente[segmente.length-1].iesire:'',
-    // turnus pe 2 zile daca prima iesire < prima prezentare (trece miezul noptii)
-    // sau daca exista dormitor care trece de miezul noptii
     zile:detectZile(segmente)
   };
 }
@@ -451,23 +439,24 @@ function calcTurnusAuto(segmente){
 function detectZile(segmente){
   if(!segmente||segmente.length===0)return 1;
   if(segmente.length===1){
-    // Verifica daca trece miezul noptii (iesire < prez)
     const s=p2m(segmente[0].prez),e=p2m(segmente[0].iesire);
-    if(s>0&&e>0&&e<s)return 2; // trece miezul noptii
+    if(s>0&&e>0&&e<s)return 2;
     return 1;
   }
-  return 2; // mai multe segmente = 2 zile
+  return 2;
 }
 
 // ══════════════════════════════════════════
 // TURNUS DEFAULT — gol; le adaugi tu din Editor Turnus-uri
-// segmente: [{prez,iesire}, {prez,iesire}, ...]
 // ══════════════════════════════════════════
 const TURNUS_DEFAULT = {};
 
 // ── STATE ──
 const YEAR_MIN=2024,YEAR_MAX=2035;
-let curYear=2026,curM=3;
+// FIX: luna și anul pornesc mereu de la data curentă a dispozitivului,
+// nu mai rămân "înghețate" pe o valoare fixă sau pe ultima selecție salvată.
+const _today=new Date();
+let curYear=_today.getFullYear(), curM=_today.getMonth();
 let db={},TN={};
 
 const MO=['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
@@ -511,8 +500,14 @@ function b64DecodeUtf8(str){
   return new TextDecoder().decode(bytes);
 }
 
+// FIX: statusul de sincronizare acum se AFIȘEAZĂ vizibil lângă logo (nu mai e no-op),
+// ca să vezi exact ce se întâmplă (Local / Se salvează / Salvat pe GitHub / Eroare + cod).
 function setSyncStatus(st, msg){
-  // Statusul e afișat doar prin punctul verde/roșu de lângă logo (updateStatusDot), nu mai există etichetă text.
+  const el=document.getElementById('syncText');
+  if(!el)return;
+  el.textContent = msg || '';
+  const colors={ok:'var(--grn)', syncing:'var(--yel)', err:'var(--red)', local:'var(--txtd)'};
+  el.style.color = colors[st] || 'var(--txtd)';
 }
 
 function updateStatusDot(){
@@ -520,6 +515,7 @@ function updateStatusDot(){
   if(dot) dot.classList.toggle('status-connected', !!ghToken);
   const navBani = document.getElementById('navBani');
   if(navBani && !ghToken) navBani.remove();
+  if(!ghToken) setSyncStatus('local','Fără token — local');
 }
 
 // Salveaza local imediat; daca ai token, trimite si pe GitHub cu debounce 2s
@@ -551,7 +547,7 @@ async function saveToGithub(){
     let sha='';
     const check=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?_=${Date.now()}`,{headers:ghHeaders()});
     if(check.ok){ const j=await check.json(); sha=j.sha||''; }
-    else if(check.status!==404){ setSyncStatus('err','Eroare GitHub'); return; }
+    else if(check.status!==404){ setSyncStatus('err','Eroare GitHub ('+check.status+')'); return; }
 
     const body={ message:'EMX Turnusuri '+new Date().toISOString().slice(0,16).replace('T',' '), content:b64EncodeUtf8(JSON.stringify(allData)) };
     if(sha)body.sha=sha;
@@ -559,8 +555,8 @@ async function saveToGithub(){
     const r=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}`,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
     if(r.ok){ setSyncStatus('ok','Salvat pe GitHub'); }
     else if(r.status===409||r.status===422){ setSyncStatus('syncing','Reîncerc...'); setTimeout(saveToGithub,1500); }
-    else{ setSyncStatus('err','Eroare GitHub'); }
-  }catch(e){ setSyncStatus('err','Fără internet'); }
+    else{ setSyncStatus('err','Eroare GitHub ('+r.status+')'); }
+  }catch(e){ setSyncStatus('err','Eroare: '+e.message); }
 }
 
 async function loadFromGithub(){
@@ -568,7 +564,7 @@ async function loadFromGithub(){
   setSyncStatus('syncing','Se încarcă...');
   try{
     const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?t=${Date.now()}`,{headers:ghHeaders(),cache:'no-store'});
-    if(!r.ok){ setSyncStatus(r.status===404?'local':'err', r.status===404?'Local':'Eroare GitHub'); return false; }
+    if(!r.ok){ setSyncStatus(r.status===404?'local':'err', r.status===404?'Local (fișier nou)':'Eroare GitHub ('+r.status+')'); return false; }
     const j = await r.json();
     const allData = JSON.parse(b64DecodeUtf8(j.content));
     Object.entries(allData).forEach(([k,v])=>{
@@ -576,13 +572,14 @@ async function loadFromGithub(){
     });
     setSyncStatus('ok','Sincronizat cu GitHub');
     return true;
-  }catch(e){ setSyncStatus('err','Fără internet'); return false; }
+  }catch(e){ setSyncStatus('err','Eroare: '+e.message); return false; }
 }
 
 function load(){
+  // FIX: nu mai suprascriem curYear din localStorage('cfr_yr') — anul/luna
+  // rămân cele curente (setate mai sus din data reală a telefonului).
+  // Se încarcă doar datele salvate PENTRU anul curent (dacă există).
   try{
-    const cy=localStorage.getItem('cfr_yr');
-    if(cy)curYear=parseInt(cy)||2026;
     const s=localStorage.getItem('cfr_'+curYear);
     if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||deepCopy(TURNUS_DEFAULT);}
     else{db={};TN=deepCopy(TURNUS_DEFAULT);}
@@ -623,7 +620,6 @@ function applyTurnus(num,m,d){
   const calc=calcTurnusAuto(t.segmente);
   const daysInM=new Date(curYear,m+1,0).getDate();
 
-  // ZI 1: primul segment
   const dd1=gd(m,d);
   dd1.tn=`T${num}`;
   dd1.prez=t.segmente[0].prez||'';
@@ -632,25 +628,19 @@ function applyTurnus(num,m,d){
   dd1.overflow=false;
 
   if(calc.zile===1||t.segmente.length===1){
-    // Turnus pe o singura zi
     dd1.ol=calc.ol;
     dd1.oo=calc.oo;
     dd1.on=calc.on;
     dd1.of=isFest(m,d)?calc.ol:'';
   } else {
-    // Turnus pe 2 zile
-    // ── ZI 1: primul segment ──
     const seg0=t.segmente[0];
     const olZi1=diffm(seg0.prez,seg0.iesire);
-    // Ore noapte zi 1 = ore din intervalul [prez, iesire_zi1] care sunt intre 22:00-24:00
-    // (partea de noapte din prima zi, pana la miezul noptii)
     const onZi1=nightMins(seg0.prez, seg0.iesire);
     dd1.ol=fmtm(olZi1);
-    dd1.oo=calc.oo; // toata odihna
+    dd1.oo=calc.oo;
     dd1.on=fmtm(onZi1);
     dd1.of=isFest(m,d)?fmtm(olZi1):'';
 
-    // ── ZI 2: segmentele 2, 3... ──
     let m2=m,d2=d+1;
     if(d2>daysInM){m2=m+1;d2=1;}
     if(m2<=11){
@@ -659,12 +649,10 @@ function applyTurnus(num,m,d){
       dd2.tn=`T${num}`;
       dd2.prez=lastSeg.prez||'';
       dd2.iesire=lastSeg.iesire||'';
-      // Ore lucrate zi 2 = suma segmentelor 1..n (fara primul)
       let olZi2=0, onZi2=0;
       const segsZi2=t.segmente.slice(1);
       for(const sg of segsZi2){
         olZi2+=diffm(sg.prez,sg.iesire);
-        // Ore noapte din segmentele zilei 2 = ore intre 00:00-06:00
         onZi2+=nightMins(sg.prez,sg.iesire);
       }
       dd2.ol=fmtm(olZi2);
@@ -701,7 +689,21 @@ function init(){
   document.getElementById('yrBadge').textContent='📅 '+curYear;
   renderTags();renderTabs();renderTable();
   buildAddTnBox();
+  updateStickyOffset();
 }
+
+// FIX: calculează cât de înaltă e bara de sus (logo EMX) și setează
+// acea înălțime ca offset pentru caseta cu T1,T2... — astfel caseta
+// rămâne vizibilă (lipită) sub logo când derulezi lista de zile în jos.
+function updateStickyOffset(){
+  const board=document.querySelector('.board');
+  if(board){
+    const h=board.getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--sticky-top', h+'px');
+  }
+}
+window.addEventListener('resize', updateStickyOffset);
+window.addEventListener('load', updateStickyOffset);
 
 function renderTags(){
   const w=document.getElementById('tagList');w.innerHTML='';
@@ -713,6 +715,7 @@ function renderTags(){
     sp.title=note+' | segs:'+TN[k].segmente.length;
     w.appendChild(sp);
   });
+  updateStickyOffset();
 }
 
 function renderTabs(){
@@ -753,13 +756,10 @@ function renderTable(){
     const isFestD=isWk||isHol;
     const dd=gd(m,d);
 
-    // Ore noapte: foloseste valoarea salvata (setata corect de applyTurnus)
-    // Recalculeaza auto doar daca nu e setat deloc (introducere manuala)
     let showN=dd.on;
     if(!showN&&dd.prez&&dd.iesire){
       const n=nightMins(dd.prez,dd.iesire);if(n>0)showN=fmtm(n);
     }
-    // Ore festive
     let showF=dd.of;
     if(!showF&&isFestD&&dd.ol)showF=dd.ol;
 
@@ -769,7 +769,6 @@ function renderTable(){
     tF+=p2m(showF)<0?0:p2m(showF);
     if(dd.tn||dd.ol)zile++;
 
-    // Row class
     let cls='';
     if(isHol&&(dd.tn||dd.ol))cls='rHolWork';
     else if(isWk&&(dd.tn||dd.ol))cls='rWkWork';
@@ -781,18 +780,15 @@ function renderTable(){
     const tr=document.createElement('tr');
     if(cls)tr.className=cls;
 
-    // DATA
     const tdD=document.createElement('td');
     tdD.innerHTML=`<b>${String(d).padStart(2,'0')}.${String(m+1).padStart(2,'0')}</b>`+
       (isHol?`<span style="font-size:.56rem;color:var(--yel);margin-left:3px">${hols[hk]}</span>`:'');
     tr.appendChild(tdD);
 
-    // ZI
     const tdZ=document.createElement('td');
     tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;
     tr.appendChild(tdZ);
 
-    // TURNUS INPUT
     const tdTn=document.createElement('td');
     const wrap=document.createElement('div');wrap.className='tn-inp-wrap';
     const inp=document.createElement('input');
@@ -813,7 +809,6 @@ function renderTable(){
     }
     tdTn.appendChild(wrap);tr.appendChild(tdTn);
 
-    // DELETE
     const tdDel=document.createElement('td');tdDel.style.width='30px';tdDel.style.padding='3px';
     if(dd.tn&&!dd.overflow){
       const btnDel=document.createElement('button');
@@ -823,7 +818,6 @@ function renderTable(){
     }
     tr.appendChild(tdDel);
 
-    // CELULE INPUT
     const fields=[
       {v:dd.prez,c:'pr',p:'--:--',f:'prez'},
       {v:dd.iesire,c:'ie',p:'--:--',f:'iesire'},
@@ -838,7 +832,6 @@ function renderTable(){
       td.appendChild(i);tr.appendChild(td);
     }
 
-    // NOTE
     const tdN=document.createElement('td');
     const iN=document.createElement('input');iN.className='ne';iN.value=dd.note||'';iN.placeholder='mențiuni...';
     iN.addEventListener('change',function(){setF(m,d,'note',this.value);});
@@ -847,7 +840,6 @@ function renderTable(){
     body.appendChild(tr);
   }
 
-  // TOTAL
   const tot=document.createElement('tr');tot.className='totrow';
   const tc=document.createElement('td');tc.colSpan=5;tc.textContent=`TOTAL ${MO[m].toUpperCase()} ${curYear}`;
   tot.appendChild(tc);
@@ -867,7 +859,6 @@ function updateCards(){
   const hols=buildHols(curYear);
   let tL=0,tO=0,tN=0,tF=0,zile=0;
 
-  // Calculeaza norma: zile lucratoare (L-V, fara sarbatori) x 8h
   let zileLucratoare=0;
   for(let d=1;d<=days;d++){
     const dd=gd(m,d);
@@ -876,7 +867,6 @@ function updateCards(){
     const ol=p2m(dd.ol);const oo=p2m(dd.oo);const on=p2m(n);const of2=p2m(f);
     tL+=ol<0?0:ol;tO+=oo<0?0:oo;tN+=on<0?0:on;tF+=of2<0?0:of2;
     if(dd.tn||dd.ol)zile++;
-    // Zile lucratoare = L-V care nu sunt sarbatori legale
     const dow=new Date(curYear,m,d).getDay();
     const hk=`${m+1}-${d}`;
     if(dow>=1&&dow<=5&&!hols[hk]) zileLucratoare++;
@@ -891,11 +881,9 @@ function updateCards(){
   document.getElementById('cF').textContent=fmtm(tF);
   document.getElementById('cLz').textContent=zile+' zile cu activitate';
 
-  // Norma
   document.getElementById('cNorma').textContent=fmtm(normaMin);
   document.getElementById('cNormaZile').textContent=zileLucratoare+' zile lucrătoare × 8h';
 
-  // Ore suplimentare
   const suplEl=document.getElementById('cSupl');
   const suplNote=document.getElementById('cSuplNote');
   const suplBar=document.getElementById('suplBar');
@@ -936,7 +924,6 @@ function buildAddTnBox(){
     </div>
     <div id="nCalcPreview" class="calc-note" style="margin-top:6px"></div>
   </div>`;
-  // Incepe cu 2 segmente default
   newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];
   renderNewSegs();
 }
@@ -993,7 +980,6 @@ function saveNewTN(){
   document.getElementById('nNote').value='';
   newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];
   renderNewSegs();
-  // Feedback inline - fara alert
   const prev=document.getElementById('nCalcPreview');
   prev.style.color='var(--grn)';
   prev.textContent=`✅ T${num} salvat! Scrie T${num} în pontaj.`;
@@ -1015,7 +1001,6 @@ function renderEditorList(){
     </div>`;
 
     (t.segmente||[]).forEach((seg,i)=>{
-      // Dormitor intre segmente
       if(i>0){
         const prev=t.segmente[i-1];
         const dormDur=diffm(prev.iesire,seg.prez);
@@ -1053,7 +1038,6 @@ function updateTNCalc(k){
 function addSegToTN(k){TN[k].segmente=TN[k].segmente||[];TN[k].segmente.push({prez:'',iesire:''});save();renderEditorList();showEditorMsg('Segment adăugat.');}
 function removeLastSeg(k){if(TN[k].segmente&&TN[k].segmente.length>1){TN[k].segmente.pop();save();renderEditorList();}}
 function delTN(k){
-  // Inline confirm in editor in loc de popup
   const btn=document.querySelector(`#tni_${k} .btn-r`);
   if(btn&&btn.dataset.confirm!=='1'){
     btn.dataset.confirm='1';btn.textContent='Confirmi ✕?';btn.style.background='var(--red)';btn.style.color='#fff';
@@ -1114,7 +1098,6 @@ function renderHolPreview(y){
 
 // ── FUNCTIE DOWNLOAD cu ZIP (merge pe orice browser/telefon) ──
 function descarca(continut, tip, numeFisier){
-  // Incearca download direct mai intai
   try{
     const blob=new Blob([continut],{type:tip+';charset=utf-8'});
     const url=URL.createObjectURL(blob);
@@ -1124,15 +1107,12 @@ function descarca(continut, tip, numeFisier){
     setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},2000);
     return;
   }catch(e){}
-  // Fallback
   alert('Foloseste butonul ZIP pentru descărcare pe telefon.');
 }
 
 // ── DOWNLOAD ZIP (pentru telefon) ──
 function downloadZip(){
-  // Verifica daca JSZip e incarcat
   if(typeof JSZip==='undefined'){
-    // Incarca JSZip din CDN
     const script=document.createElement('script');
     script.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
     script.onload=function(){_doZip();};
@@ -1146,7 +1126,6 @@ function downloadZip(){
 }
 
 function _downloadFaraZip(){
-  // Fallback fara ZIP - deschide HTML intr-un tab nou
   save();
   const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
   try{
@@ -1162,13 +1141,10 @@ function _downloadFaraZip(){
 function _doZip(){
   save();
   const zip=new JSZip();
-  // Adauga HTML-ul aplicatiei
   const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
   zip.file('fisa-pontaj-CFR.html', html);
-  // Adauga si CSV-ul lunii curente
   const csvContent=_generateCsv();
   zip.file('Pontaj_'+MO[curM]+'_'+curYear+'.csv', csvContent);
-  // Genereaza ZIP
   zip.generateAsync({type:'blob',compression:'DEFLATE'}).then(function(blob){
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -1263,19 +1239,13 @@ function setUploadStatus(msg,color){
   el.textContent=msg;
 }
 
-// Decodează numărul de tren din fișă: 27→10227, 32→10232, 201→10201, 119→10119
 function decodeTren(cod){
   cod=String(cod).trim().replace(/\s/g,'');
   if(!cod||cod==='-')return null;
-  // Deja format complet (5 cifre)
   if(/^\d{5}$/.test(cod))return cod;
-  // R1024 = tren regie
   if(/^[Rr]\d+$/.test(cod))return cod.toUpperCase();
-  // 2 cifre → 102XX
   if(/^\d{2}$/.test(cod))return '102'+cod;
-  // 3 cifre → 10XXX
   if(/^\d{3}$/.test(cod))return '10'+cod;
-  // 4 cifre → 1XXXX
   if(/^\d{4}$/.test(cod))return '1'+cod;
   return cod;
 }
@@ -1291,7 +1261,6 @@ async function runUploadAI(){
   btn.disabled=true; btn.textContent='⏳ Procesez...';
   setUploadStatus('🤖 Trimit fișa la AI... 10-20 secunde...','var(--yel)');
 
-  // Construieste info turnusuri pentru AI
   let tnInfo='';
   Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
     const t=TN[k];
@@ -1372,10 +1341,9 @@ Returnează STRICT JSON, fără markdown.`;
       else throw new Error('JSON invalid: '+clean.substring(0,200));
     }
 
-    // Aplica zilele in pontaj
     const zile=parsed.zile||parsed;
     let aplicate=0, neidentificate=[];
-    const m=luna-1; // 0-based
+    const m=luna-1;
 
     Object.entries(zile).forEach(([ziStr,val])=>{
       const zi=parseInt(ziStr);
@@ -1390,14 +1358,13 @@ Returnează STRICT JSON, fără markdown.`;
         return;
       }
       if(v==='L'||v==='LIBER'){
-        return; // liber = nimic
+        return;
       }
       if(v==='?'||v==='NECLAR'){
         neidentificate.push(ziStr);
         return;
       }
 
-      // Extrage numarul turnus-ului
       const num=parseInt(v.replace(/[Tt]/g,''));
       if(num>=1&&TN[num]){
         applyTurnus(num,m,zi);
@@ -1409,7 +1376,7 @@ Returnează STRICT JSON, fără markdown.`;
 
     let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
     if(neidentificate.length>0){
-      msg+=`\n⚠️ Neidentificate (verifică manual): zilele ${neidentificate.join(', ')}`;
+      msg+=`\n⚠ Neidentificate (verifică manual): zilele ${neidentificate.join(', ')}`;
     }
     setUploadStatus(msg,'var(--grn)');
     renderTabs(); renderTable();
