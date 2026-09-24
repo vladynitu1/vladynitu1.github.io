@@ -176,6 +176,15 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
 .seg-actions{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
 .calc-note{font-size:.65rem;color:var(--grn);font-family:'Share Tech Mono',monospace;margin-top:4px}
 
+/* UPLOAD TURNUS (poza/PDF) */
+.tu-drop{background:var(--surf);border:2px dashed var(--bord2);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.tu-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tu-thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--bord2);background:var(--surf3);display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.tu-thumb img{width:100%;height:100%;object-fit:cover}
+.tu-thumb .tu-rm{position:absolute;top:1px;right:1px;background:var(--red);color:#fff;border:none;border-radius:4px;width:16px;height:16px;font-size:.6rem;line-height:1;cursor:pointer}
+.tu-map{width:100%;background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:8px;min-height:100px;resize:vertical;margin-bottom:10px}
+.tu-map:focus{outline:none;border-color:var(--org)}
+
 /* YEAR MODAL */
 .yr-modal::before{background:linear-gradient(90deg,transparent,var(--acc),var(--grn),transparent)}
 .yr-modal h2{color:var(--acc)}
@@ -290,6 +299,49 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
 </div>
 </div>
 
+<!-- UPLOAD TURNUS MODAL -->
+<div class="overlay" id="turnusUploadOverlay">
+<div class="modal" style="max-width:640px">
+  <button class="mclose" onclick="closeTurnusUpload()">✕</button>
+  <h2 style="color:var(--org)">📸 Adaugă Turnusuri din Poză/PDF</h2>
+  <p style="font-size:.8rem;color:var(--txtm);margin-bottom:10px">
+    Încarcă poza sau PDF-ul cu tabelul de turnus (poți încărca separat și varianta L-S, și varianta D). Citirea se face direct în telefon/browser, fără server extern — merge și pe pagina găzduită pe GitHub.
+  </p>
+
+  <label style="font-size:.68rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--txtd);font-family:'Rajdhani',sans-serif;display:block;margin-bottom:4px">Mapare chenar → turnus</label>
+  <textarea id="tuMapping" class="tu-map">T1 = chenar 1+2
+T2 = chenar 3+4
+T3 = chenar 6
+T4 = chenar 8+9 (varianta L-S)
+T5 = chenar 8+9 (varianta D)</textarea>
+
+  <div id="tuThumbs" class="tu-thumbs"></div>
+
+  <div class="tu-drop" id="tuDrop" onclick="document.getElementById('tuFileIn').click()"
+    ondragover="event.preventDefault();this.style.borderColor='var(--org)'"
+    ondragleave="this.style.borderColor='var(--bord2)'"
+    ondrop="onTurnusUploadDrop(event)">
+    <div style="font-size:1.8rem;margin-bottom:6px">📸</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:600;color:var(--org);letter-spacing:1px">CLICK SAU TRAGE POZELE/PDF CU TURNUS</div>
+    <div style="font-size:.7rem;color:var(--txtd);margin-top:4px">JPG, PNG sau PDF — poți încărca mai multe</div>
+  </div>
+  <input type="file" id="tuFileIn" accept="image/*,.pdf" multiple style="display:none" onchange="onTurnusUploadFiles(event)">
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <button class="btn btn-o" id="tuAnalyzeBtn" onclick="analyzeTurnusFiles()" disabled style="opacity:.4">🔍 Analizează</button>
+  </div>
+
+  <div id="tuPreview"></div>
+
+  <div id="tuStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:.73rem;color:var(--grn);margin-bottom:10px;max-height:160px;overflow-y:auto;white-space:pre-wrap"></div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-g" onclick="applyTurnusMapping()">✓ Aplică turnusurile</button>
+    <button class="btn btn-s" onclick="closeTurnusUpload()">Închide</button>
+  </div>
+</div>
+</div>
+
 <div class="infobox">
   <div class="tags" id="tagList"></div>
 </div>
@@ -345,6 +397,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
 <div class="modal">
   <button class="mclose" onclick="closeEditor()">✕</button>
   <h2>⚙ Editor Turnus-uri</h2>
+  <button class="btn btn-g btn-sm" style="margin-bottom:10px" onclick="openTurnusUpload()">📸 Adaugă din poză/PDF</button>
   <div id="addTnBox"></div>
   <div class="tn-list" id="tnList"></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">
@@ -1387,6 +1440,211 @@ Returnează STRICT JSON, fără markdown.`;
   }finally{
     btn.disabled=false; btn.textContent='🤖 Procesează cu AI';
   }
+}
+
+// ══════════════════════════════════════════════
+// UPLOAD TURNUS (poză/PDF) — parsare 100% client-side, fără API extern
+// (necesar ca să meargă și pe pagina găzduită standalone pe GitHub Pages)
+// ══════════════════════════════════════════════
+let tuFiles=[]; // {name, mediaType, dataUrl, b64, parsed:null|{variant,prez[],iesire[],error?}}
+
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=resolve; s.onerror=()=>reject(new Error('Nu s-a putut încărca '+src));
+    document.head.appendChild(s);
+  });
+}
+async function ensurePdfJs(){
+  if(window.pdfjsLib)return;
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+async function ensureTesseract(){
+  if(window.Tesseract)return;
+  await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+}
+
+// ── grupare text in randuri/coloane (functioneaza la fel pt. pdf.js sau OCR) ──
+function tuGroupRows(items){
+  const sorted=[...items].sort((a,b)=>b.y-a.y||a.x-b.x);
+  const rows=[]; const TH=4;
+  sorted.forEach(it=>{
+    let row=rows.find(r=>Math.abs(r.y-it.y)<TH);
+    if(!row){row={y:it.y,items:[]};rows.push(row);}
+    row.items.push(it);
+  });
+  rows.forEach(r=>r.items.sort((a,b)=>a.x-b.x));
+  return rows;
+}
+function tuFindRow(rows,re){
+  for(const r of rows){
+    const t=r.items.map(i=>i.text).join(' ');
+    if(re.test(t))return r;
+  }
+  return null;
+}
+function tuExtractTimes(row){
+  if(!row)return[];
+  const re=/^\d{1,2}[:.]\d{2}$/;
+  return row.items.filter(i=>re.test(i.text)).map(i=>i.text.replace('.',':'));
+}
+function tuDetectVariant(rows){
+  const all=rows.map(r=>r.items.map(i=>i.text).join(' ')).join(' ');
+  if(/CIRCUL\S*\s*L[\s-]*S/i.test(all))return 'L-S';
+  if(/CIRCUL\S*\s*D\b/i.test(all))return 'D';
+  return '';
+}
+
+async function tuExtractPdf(b64){
+  await ensurePdfJs();
+  const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  const pdf=await pdfjsLib.getDocument({data:bytes}).promise;
+  let items=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const tc=await page.getTextContent();
+    tc.items.forEach(it=>{
+      if(it.str&&it.str.trim())items.push({text:it.str.trim(),x:it.transform[4],y:it.transform[5]});
+    });
+  }
+  return items;
+}
+async function tuExtractImage(dataUrl){
+  await ensureTesseract();
+  const worker=await Tesseract.createWorker('eng');
+  const{data}=await worker.recognize(dataUrl);
+  await worker.terminate();
+  return (data.words||[]).filter(w=>w.text&&w.text.trim()).map(w=>({
+    text:w.text.trim(), x:(w.bbox.x0+w.bbox.x1)/2, y:(w.bbox.y0+w.bbox.y1)/2
+  }));
+}
+async function tuParseFile(f){
+  const items = f.mediaType==='application/pdf' ? await tuExtractPdf(f.b64) : await tuExtractImage(f.dataUrl);
+  const rows=tuGroupRows(items);
+  const prez=tuExtractTimes(tuFindRow(rows,/Prezentare/i));
+  const iesire=tuExtractTimes(tuFindRow(rows,/Remizare/i));
+  const variant=tuDetectVariant(rows);
+  return{variant,prez,iesire};
+}
+
+function openTurnusUpload(){document.getElementById('turnusUploadOverlay').classList.add('open');}
+function closeTurnusUpload(){document.getElementById('turnusUploadOverlay').classList.remove('open');}
+
+function onTurnusUploadDrop(e){
+  e.preventDefault();
+  document.getElementById('tuDrop').style.borderColor='var(--bord2)';
+  Array.from(e.dataTransfer.files||[]).forEach(tuAddFile);
+}
+function onTurnusUploadFiles(e){
+  Array.from(e.target.files||[]).forEach(tuAddFile);
+  e.target.value='';
+}
+function tuAddFile(file){
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const dataUrl=ev.target.result;
+    const b64=dataUrl.split(',')[1];
+    const mediaType=file.type||(file.name.toLowerCase().endsWith('.pdf')?'application/pdf':'image/jpeg');
+    tuFiles.push({name:file.name,mediaType,dataUrl,b64,parsed:null});
+    renderTuThumbs();
+  };
+  reader.readAsDataURL(file);
+}
+function renderTuThumbs(){
+  const w=document.getElementById('tuThumbs');w.innerHTML='';
+  tuFiles.forEach((f,i)=>{
+    const div=document.createElement('div');div.className='tu-thumb';
+    div.innerHTML = f.mediaType.startsWith('image/') ? `<img src="${f.dataUrl}">` : '📄';
+    const rm=document.createElement('button');rm.className='tu-rm';rm.textContent='✕';
+    rm.onclick=()=>{tuFiles.splice(i,1);renderTuThumbs();renderTuPreview();};
+    div.appendChild(rm);
+    w.appendChild(div);
+  });
+  const btn=document.getElementById('tuAnalyzeBtn');
+  if(btn){btn.disabled=tuFiles.length===0;btn.style.opacity=tuFiles.length===0?'.4':'1';}
+}
+
+async function analyzeTurnusFiles(){
+  if(tuFiles.length===0){alert('Încarcă cel puțin o poză/PDF!');return;}
+  const btn=document.getElementById('tuAnalyzeBtn');
+  btn.disabled=true;btn.textContent='⏳ Analizez...';
+  setTuStatus('Citesc tabelul (poate dura câteva secunde, mai ales pentru poze)...','var(--yel)');
+  for(const f of tuFiles){
+    try{ f.parsed=await tuParseFile(f); }
+    catch(e){ f.parsed={variant:'',prez:[],iesire:[],error:e.message}; }
+  }
+  renderTuPreview();
+  setTuStatus('✓ Citire terminată. Verifică orele de mai jos (le poți corecta direct) înainte să aplici turnusurile.','var(--grn)');
+  btn.disabled=false;btn.textContent='🔍 Analizează din nou';
+}
+
+function renderTuPreview(){
+  const w=document.getElementById('tuPreview');
+  if(!w)return;
+  w.innerHTML='';
+  tuFiles.forEach((f,fi)=>{
+    if(!f.parsed)return;
+    const box=document.createElement('div');
+    box.style.cssText='background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:8px 10px;margin-bottom:8px';
+    let html=`<div style="font-family:'Rajdhani',sans-serif;font-size:.78rem;font-weight:700;color:var(--org);margin-bottom:5px">${f.name}${f.parsed.variant?' — varianta '+f.parsed.variant:''}</div>`;
+    if(f.parsed.error){
+      html+=`<div style="color:var(--red);font-size:.7rem">Eroare: ${f.parsed.error}</div>`;
+    } else {
+      const n=Math.max(f.parsed.prez.length,f.parsed.iesire.length,12);
+      if(f.parsed.prez.length===0&&f.parsed.iesire.length===0){
+        html+=`<div style="color:var(--red);font-size:.7rem;margin-bottom:5px">Nu am găsit automat rândurile Prezentare/Remizare — completează manual mai jos.</div>`;
+      }
+      html+=`<div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:4px;font-size:.7rem;align-items:center">
+        <b style="color:var(--txtd)">Chenar</b><b style="color:var(--txtd)">Prezentare</b><b style="color:var(--txtd)">Remizare</b>`;
+      for(let i=0;i<n;i++){
+        html+=`<span>${i+1}</span>
+          <input class="ce" style="min-width:0;border-color:var(--bord2)" value="${f.parsed.prez[i]||''}" onchange="tuFiles[${fi}].parsed.prez[${i}]=this.value">
+          <input class="ce" style="min-width:0;border-color:var(--bord2)" value="${f.parsed.iesire[i]||''}" onchange="tuFiles[${fi}].parsed.iesire[${i}]=this.value">`;
+      }
+      html+=`</div>`;
+    }
+    box.innerHTML=html;
+    w.appendChild(box);
+  });
+}
+
+function setTuStatus(msg,color){
+  const el=document.getElementById('tuStatus');
+  el.style.display='block';el.style.color=color||'var(--grn)';el.textContent=msg;
+}
+
+function applyTurnusMapping(){
+  const mapping=document.getElementById('tuMapping').value.trim();
+  if(!mapping){alert('Scrie maparea chenar → turnus!');return;}
+  if(tuFiles.every(f=>!f.parsed)){alert('Apasă întâi "Analizează".');return;}
+
+  const lineRe=/T\s*(\d+)\s*=\s*chenar\s*([\d\s+]+)(?:\(?\s*variant[aă]?\s*([A-Za-z-]+)\)?)?/gi;
+  let m; const adaugate=[],omise=[];
+  while((m=lineRe.exec(mapping))){
+    const num=parseInt(m[1]);
+    const chenare=m[2].split('+').map(s=>parseInt(s.trim())).filter(n=>n>=1);
+    const variant=(m[3]||'').trim();
+    if(!num||chenare.length===0){omise.push(m[0].trim());continue;}
+
+    let file = variant ? tuFiles.find(f=>f.parsed && f.parsed.variant && f.parsed.variant.toUpperCase()===variant.toUpperCase()) : null;
+    if(!file) file = tuFiles.find(f=>f.parsed && (f.parsed.prez.length>0||f.parsed.iesire.length>0));
+    if(!file){omise.push('T'+num);continue;}
+
+    const segs=chenare.map(c=>({prez:file.parsed.prez[c-1]||'',iesire:file.parsed.iesire[c-1]||''}))
+      .filter(s=>s.prez&&s.iesire);
+    if(segs.length===0){omise.push('T'+num);continue;}
+
+    TN[num]={segmente:segs,note:(TN[num]&&TN[num].note)||''};
+    adaugate.push('T'+num);
+  }
+
+  save();renderTags();renderTable();
+  if(document.getElementById('editorOverlay').classList.contains('open'))renderEditorList();
+
+  let msg=adaugate.length>0?`✅ Turnusuri salvate: ${adaugate.join(', ')}.`:'⚠ Niciun turnus aplicat.';
+  if(omise.length>0)msg+=`\n⚠ Verifică maparea pentru: ${omise.join(', ')}`;
+  setTuStatus(msg,adaugate.length>0?'var(--grn)':'var(--red)');
 }
 
 init();
