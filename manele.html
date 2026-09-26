@@ -1624,16 +1624,21 @@ function applyTurnusMapping(){
   while((m=lineRe.exec(mapping))){
     const num=parseInt(m[1]);
     const chenare=m[2].split('+').map(s=>parseInt(s.trim())).filter(n=>n>=1);
-    const variant=(m[3]||'').trim();
+    const variant=(m[3]||'').trim().toUpperCase();
     if(!num||chenare.length===0){omise.push(m[0].trim());continue;}
 
-    let file = variant ? tuFiles.find(f=>f.parsed && f.parsed.variant && f.parsed.variant.toUpperCase()===variant.toUpperCase()) : null;
-    if(!file) file = tuFiles.find(f=>f.parsed && (f.parsed.prez.length>0||f.parsed.iesire.length>0));
-    if(!file){omise.push('T'+num);continue;}
+    // O linie cu varianta explicita (ex: "varianta D") foloseste STRICT poza acelei variante —
+    // nu sare pe altă poză doar pentru că e singura încărcată.
+    // O linie fără variantă foloseste poza L-S (implicit), sau o poza fara varianta detectata.
+    let file = variant
+      ? tuFiles.find(f=>f.parsed && f.parsed.variant && f.parsed.variant.toUpperCase()===variant)
+      : (tuFiles.find(f=>f.parsed && f.parsed.variant==='L-S')
+         || tuFiles.find(f=>f.parsed && !f.parsed.variant && (f.parsed.prez.length>0||f.parsed.iesire.length>0)));
+    if(!file){omise.push('T'+num+' (lipsește poza variantei '+(variant||'L-S')+')');continue;}
 
     const segs=chenare.map(c=>({prez:file.parsed.prez[c-1]||'',iesire:file.parsed.iesire[c-1]||''}))
       .filter(s=>s.prez&&s.iesire);
-    if(segs.length===0){omise.push('T'+num);continue;}
+    if(segs.length===0){omise.push('T'+num+' (chenar '+chenare.join('+')+' incomplet în poza citită)');continue;}
 
     TN[num]={segmente:segs,note:(TN[num]&&TN[num].note)||''};
     adaugate.push('T'+num);
@@ -1642,8 +1647,8 @@ function applyTurnusMapping(){
   save();renderTags();renderTable();
   if(document.getElementById('editorOverlay').classList.contains('open'))renderEditorList();
 
-  let msg=adaugate.length>0?`✅ Turnusuri salvate: ${adaugate.join(', ')}.`:'⚠ Niciun turnus aplicat.';
-  if(omise.length>0)msg+=`\n⚠ Verifică maparea pentru: ${omise.join(', ')}`;
+  let msg=adaugate.length>0?`✅ Turnusuri salvate/actualizate: ${adaugate.join(', ')}.`:'⚠ Niciun turnus aplicat.';
+  if(omise.length>0)msg+=`\n⚠ Sărite: ${omise.join('; ')}`;
   setTuStatus(msg,adaugate.length>0?'var(--grn)':'var(--red)');
 }
 
