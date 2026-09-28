@@ -1262,6 +1262,24 @@ function computeColumns(labels,vx){
   return{cols,method:'etichete'};
 }
 
+// Schema automată: coloanele cu „L” = zile libere (separatori); coloanele consecutive care au
+// „Ore odihnă” (dormitor între ele) formează același turnus; celelalte coloane sunt turnus de sine stătător.
+function autoTnMap(colNums,freeCols,restCols){
+  const map={};let t=0,i=0;
+  while(i<colNums.length){
+    const n=colNums[i];
+    if(freeCols.has(n)){i++;continue;}
+    const grp=[n];
+    if(restCols.has(n)){
+      while(grp.length<2&&i+grp.length<colNums.length){
+        const nx=colNums[i+grp.length];
+        if(!freeCols.has(nx)&&restCols.has(nx))grp.push(nx);else break;
+      }
+    }
+    map[++t]=grp;i+=grp.length;
+  }
+  return map;
+}
 function parseTurnusRows(rows,vx,map){
   // 1) rândul de antet cu numerele coloanelor
   const hdr=rows.find(r=>r.items.some(i=>/Statiile/i.test(i.str))&&r.items.filter(i=>/^\d{1,2}$/.test(i.str)).length>=2);
@@ -1295,8 +1313,27 @@ function parseTurnusRows(rows,vx,map){
   });
   takeTimes(prezRow,'prez');takeTimes(remizRow,'remiz');
 
+  // coloane libere (L) și coloane cu odihnă
+  const freeCols=new Set(),restCols=new Set();
+  rows.forEach(r=>{
+    if(r.y<hdr.y-1&&r.y>prezRow.y+1)r.items.forEach(it=>{
+      if(it.x<leftEdge||!/^L$/.test(it.str))return;
+      const n=colOf(it);if(n!=null)freeCols.add(n);
+    });
+  });
+  const restRow=rows.find(r=>{const l=rowLabel(r);return /ore\s*odihna/.test(l)&&!/neproductive/.test(l);});
+  if(restRow)restRow.items.forEach(it=>{
+    if(it.x<leftEdge||!isTimeStr(it.str)||p2m(it.str)<=0)return;
+    const n=colOf(it);if(n!=null)restCols.add(n);
+  });
+  const usedAuto=!map||!Object.keys(map).length;
+  const warnsAuto=[];
+  if(usedAuto){
+    if(!restRow)warnsAuto.push('Nu am găsit rândul „Ore odihnă” — fiecare coloană fără „L” e tratată ca turnus separat.');
+    map=autoTnMap(cols.map(c=>c.n),freeCols,restCols);
+  }
   // 2) turnusurile după mapare
-  const out={};const warns=[];
+  const out={};const warns=warnsAuto.slice();
   Object.keys(map).forEach(k=>{
     const ccols=map[k];
     const bad=ccols.filter(n=>!info[n]);
@@ -1311,7 +1348,7 @@ function parseTurnusRows(rows,vx,map){
     if(!segmente.length)warns.push(`T${k}: nu am găsit ore (prezentare/remizare).`);
     out[k]={segmente,trenuri,cols:ccols,note:trenuri.map(a=>a.join(' ')).join(' / ')};
   });
-  return{turnusuri:out,warns,method,colInfo:info};
+  return{turnusuri:out,warns,method,colInfo:info,map,auto:usedAuto,freeCols:[...freeCols]};
 }
 
 // împarte segmentele pe zile calendaristice (la miezul nopții), ca în fișa de lucru
@@ -1606,13 +1643,13 @@ async function readTurnusPdf(file){
 }
 
 function pdfImportBoxHtml(){
-  let mapVal=TN_MAP_DEFAULT;
-  try{mapVal=localStorage.getItem('emx_tn_map')||TN_MAP_DEFAULT;}catch(e){}
+  let mapVal='';
+  try{mapVal=localStorage.getItem('emx_tn_map2')||'';}catch(e){}
   return `
   <div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
     <div style="font-family:Rajdhani,sans-serif;font-size:.85rem;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">📄 Importă turnusuri din PDF</div>
-    <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Alege PDF-ul cu turnusul (ex. „TURNUS T1 MECANICI BRAȘOV”). Trenurile și orele (prezentare → remizare) se citesc automat pe coloane. Mai jos scrii ce coloane formează fiecare turnus (coloanele 3 și 7 din PDF sunt zile libere, „L”).</p>
-    <div class="tn-field" style="margin-bottom:8px"><label>Coloane per turnus</label><input id="tnMapIn" value="${escH(mapVal)}" placeholder="T1=1+2, T2=4+5, T3=6, T4=8+9" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--acc);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:5px 7px;width:100%"></div>
+    <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Alege PDF-ul cu turnusul (ex. „TURNUS T1 MECANICI BRAȘOV”). Trenurile și orele (prezentare → remizare) se citesc automat pe coloane. Schema se recunoaște automat: coloanele cu „L” sunt zile libere, iar coloanele legate prin „Ore odihnă” formează același turnus. Dacă un PDF are altă schemă, scrii manual coloanele (ex. T1=1+2, T2=4+5).</p>
+    <div class="tn-field" style="margin-bottom:8px"><label>Coloane per turnus (lasă gol = automat)</label><input id="tnMapIn" value="${escH(mapVal)}" placeholder="gol = automat, sau ex: T1=1+2, T2=4+5" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--acc);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:5px 7px;width:100%"></div>
     <input type="file" id="tnPdfIn" accept="application/pdf,.pdf" style="display:none" onchange="onTnPdf(event)">
     <button class="btn btn-g btn-sm" onclick="document.getElementById('tnPdfIn').click()">📄 Alege PDF turnus</button>
     <div id="tnPdfMsg" class="calc-note" style="white-space:pre-wrap;margin-top:6px"></div>
@@ -1627,9 +1664,9 @@ async function onTnPdf(e){
   say('⏳ Citesc PDF-ul...');
   try{
     const mapStr=document.getElementById('tnMapIn').value;
-    try{localStorage.setItem('emx_tn_map',mapStr);}catch(_){}
-    const map=parseTnMap(mapStr);
-    if(!Object.keys(map).length)throw new Error('Scrie coloanele, ex: T1=1+2, T2=4+5');
+    try{localStorage.setItem('emx_tn_map2',mapStr);}catch(_){}
+    const map=mapStr.trim()?parseTnMap(mapStr):null;
+    if(mapStr.trim()&&!Object.keys(map).length)throw new Error('Format greșit. Ex: T1=1+2, T2=4+5 — sau lasă gol pentru automat.');
     const data=await readTurnusPdf(f);
     if(!data)throw new Error('Nu am găsit tabelul de turnus în PDF.');
     const res=parseTurnusRows(data.rows,data.vx,map);
@@ -1642,7 +1679,7 @@ async function onTnPdf(e){
       TN[k]={segmente:v.segmente,note:v.note,trenuri:v.trenuri,cols:v.cols,src:'pdf',cal:buildCal(v.segmente)};
     });
     save();renderEditorList();renderTags();
-    let out='✅ Importat din PDF:\n';
+    let out='✅ Importat din PDF'+(res.auto?' (schemă recunoscută automat)':'')+':\n';
     keys.forEach(k=>{
       const t=TN[k];
       out+=`T${k} (col ${t.cols.join('+')}): `+t.segmente.map(s=>s.prez+'→'+s.iesire).join(' | ')+'\n';
@@ -1783,10 +1820,12 @@ function applySheetCand(c,luna){
   res.co.forEach(d=>{gd(m,d).note='Concediu';});
   if(res.co.length)save();
   curM=m;renderTabs();renderTable();
+  const diag=Object.keys(TN).sort((a,b)=>+a-+b).map(k=>{const t=TN[k];return `T${k}${t.cols?' (col '+t.cols.join('+')+')':''}: `+((t.trenuri||[]).map(a=>a.join(' ')).join(' / ')||'FĂRĂ TRENURI');}).join('\n');
   let msg=`✅ ${c.b.name} — ${c.doc.filename}\n${applied.length} turnusuri puse în ${MO[m]} ${curYear}:\n${applied.join('  ')||'—'}`;
   if(res.co.length)msg+=`\nConcediu: zilele ${res.co.join(', ')}`;
   if(orphan.length)msg+=`\n⚠ Continuare de turnus fără zi de start în lună: ${orphan.join(', ')}`;
   if(res.unknown.length)msg+=`\n⚠ Nepotrivite cu niciun turnus: `+res.unknown.map(u=>`${u.d} (${u.trains.join(', ')})`).join('; ');
+  msg+='\n\nTurnusuri în editor (trenuri):\n'+diag;
   setUploadStatus(msg,res.unknown.length||orphan.length?'var(--yel)':'var(--grn)');
 }
 
