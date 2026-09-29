@@ -1236,12 +1236,29 @@ function clusterRows(items){
     else{if(cur)clusters.push(cur);cur={refY:it.y,items:[it]};}
   });
   if(cur)clusters.push(cur);
-  return clusters.map(c=>({y:c.refY,items:c.items.slice().sort((a,b)=>a.x-b.x).map(i=>({x:i.x,w:i.w,str:i.str}))}));
+  // pdf.js poate rupe un singur cuvânt (ex. un număr de tren) în mai multe „items” dacă
+  // fontul/kerning-ul din PDF schimbă randarea la mijlocul cuvântului. Lipim la loc bucățile
+  // foarte apropiate pe orizontală (fără spațiu real între ele), ca la extragerea de cuvinte.
+  function mergeAdjacent(items){
+    const sorted=items.slice().sort((a,b)=>a.x-b.x);
+    const out=[];
+    sorted.forEach(it=>{
+      const prev=out[out.length-1];
+      if(prev&&/^[\w]+$/.test(prev.str)&&/^[\w]+$/.test(it.str)&&(it.x-(prev.x+prev.w))<2.2){
+        prev.str+=it.str;prev.w=(it.x+it.w)-prev.x;
+      }else out.push({x:it.x,w:it.w,str:it.str});
+    });
+    return out;
+  }
+  return clusters.map(c=>({y:c.refY,items:mergeAdjacent(c.items)}));
 }
 
 // limitele coloanelor: din liniile verticale ale tabelului (dacă le avem), altfel la mijlocul dintre etichete
 function computeColumns(labels,vx){
   // labels: [{n,cx}] sortate după x
+  // Liniile verticale desenate în PDF (dacă au fost găsite) dau cele mai precise limite de
+  // coloană; dar dacă randarea/canvas-ul nu le-a prins pe toate, folosim mijlocul dintre
+  // etichetele „1 2 3 ...” — mai puțin exact la margini, dar sigur.
   if(vx&&vx.length>=labels.length+1){
     const xs=vx.slice().sort((a,b)=>a-b).filter((x,i,a)=>i===0||x-a[i-1]>2);
     const intervals=[];
@@ -1634,10 +1651,7 @@ async function readTurnusPdf(file){
       .filter(i=>i.str);
     if(!items.some(i=>/Statiile/i.test(i.str)))continue;
     const rows=clusterRows(items);
-    const key=findTurnusKeyRows(rows);
-    let vx=[];
-    if(key){try{vx=await detectVLines(page,key.hdr.y,key.prez.y);}catch(e){console.warn('linii tabel:',e);}}
-    return{rows,vx};
+    return{rows,vx:[]};
   }
   return null;
 }
