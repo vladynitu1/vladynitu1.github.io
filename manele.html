@@ -1689,21 +1689,39 @@ async function onTnPdf(e){
     const res=parseTurnusRows(data.rows,data.vx,map);
     const keys=Object.keys(res.turnusuri).filter(k=>res.turnusuri[k].segmente.length);
     if(!keys.length)throw new Error('Nu am găsit niciun turnus cu ore. '+res.warns.join(' '));
-    const exist=keys.filter(k=>TN[k]);
-    if(exist.length&&!confirm('Turnusurile T'+exist.join(', T')+' există deja. Le înlocuiesc cu cele din PDF?')){say('Anulat.','var(--txtm)');return;}
+
+    // identitatea unui turnus = trenurile lui, nu numărul T#. Așa pot exista mai multe
+    // scheme (ex. „circulă L-S” și „circulă Duminică”) cu T1..T4 diferite, fără să se șteargă
+    // una pe alta la import.
+    const sig=t=>(t&&t.trenuri||[]).flat().filter(Boolean).slice().sort().join(',');
+    const usedKeys=Object.keys(TN).map(Number).filter(n=>!isNaN(n));
+    let nextFree=1;
+    const freeKey=()=>{while(TN[nextFree]||usedKeys.includes(nextFree))nextFree++;usedKeys.push(nextFree);return nextFree;};
+
+    const added=[],unchanged=[],renumbered=[];
     keys.forEach(k=>{
       const v=res.turnusuri[k];
-      TN[k]={segmente:v.segmente,note:v.note,trenuri:v.trenuri,cols:v.cols,src:'pdf',cal:buildCal(v.segmente)};
+      const s=sig(v);
+      const matchKey=Object.keys(TN).find(ek=>TN[ek]&&sig(TN[ek])===s&&s);
+      if(matchKey){unchanged.push({from:k,at:matchKey});return;}
+      let target=k;
+      if(TN[target])target=freeKey();
+      if(String(target)!==String(k))renumbered.push({from:k,to:target});
+      TN[target]={segmente:v.segmente,note:v.note,trenuri:v.trenuri,cols:v.cols,src:'pdf',cal:buildCal(v.segmente)};
+      added.push(target);
     });
-    save();renderEditorList();renderTags();
-    let out='✅ Importat din PDF'+(res.auto?' (schemă recunoscută automat)':'')+':\n';
-    keys.forEach(k=>{
+    if(added.length)save();
+    renderEditorList();renderTags();
+    let out=added.length?`✅ Adăugat${added.length>1?'e':''} din PDF`+(res.auto?' (schemă recunoscută automat)':'')+':\n':'ℹ️ Nimic nou de adăugat.\n';
+    added.forEach(k=>{
       const t=TN[k];
       out+=`T${k} (col ${t.cols.join('+')}): `+t.segmente.map(s=>s.prez+'→'+s.iesire).join(' | ')+'\n';
     });
+    if(renumbered.length)out+='↪ Diferă de turnusul cu același număr din PDF, așa că '+renumbered.map(r=>`T${r.from}→T${r.to}`).join(', ')+'.\n';
+    if(unchanged.length)out+='= Neschimbate (identice cu ce aveai deja): '+unchanged.map(u=>`T${u.from} = T${u.at}`).join(', ')+'\n';
     if(res.method!=='linii')out+='⚠ Nu am putut citi liniile tabelului — coloanele sunt estimate. Verifică trenurile din fiecare turnus!\n';
     if(res.warns.length)out+='⚠ '+res.warns.join('\n⚠ ');
-    say(out.trim(),res.warns.length||res.method!=='linii'?'var(--yel)':'var(--grn)');
+    say(out.trim(),res.warns.length||res.method!=='linii'?'var(--yel)':(added.length?'var(--grn)':'var(--txtm)'));
   }catch(err){
     console.error(err);
     say('❌ '+err.message,'var(--red)');
