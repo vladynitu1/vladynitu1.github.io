@@ -1629,11 +1629,11 @@ async function detectVLines(page,hdrY,prezY){
     const o=y*W*4;
     for(let x=0;x<W;x++){
       const p=o+x*4;
-      if(data[p+3]>0&&(data[p]*0.3+data[p+1]*0.59+data[p+2]*0.11)<110)cov[x]++;
+      if(data[p+3]>0&&(data[p]*0.3+data[p+1]*0.59+data[p+2]*0.11)<170)cov[x]++;
     }
   }
   const xs=[];
-  for(let x=0;x<W;x++)if(cov[x]>=n*0.9)xs.push(x);
+  for(let x=0;x<W;x++)if(cov[x]>=n*0.55)xs.push(x);
   const cl=[];
   xs.forEach(x=>{if(cl.length&&x-cl[cl.length-1][cl[cl.length-1].length-1]<=3)cl[cl.length-1].push(x);else cl.push([x]);});
   return cl.map(c=>(c.reduce((a,b)=>a+b,0)/c.length)/sc);
@@ -1651,7 +1651,10 @@ async function readTurnusPdf(file){
       .filter(i=>i.str);
     if(!items.some(i=>/Statiile/i.test(i.str)))continue;
     const rows=clusterRows(items);
-    return{rows,vx:[]};
+    let vx=[];
+    const key=findTurnusKeyRows(rows);
+    if(key){try{vx=await detectVLines(page,key.hdr.y,key.prez.y);}catch(e){console.warn('linii tabel:',e);}}
+    return{rows,vx};
   }
   return null;
 }
