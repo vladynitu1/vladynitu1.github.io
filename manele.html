@@ -1476,13 +1476,13 @@ function matchMonth(dayCodes,dim,refs,weekdayOf){
     const up=codes.map(c=>String(c).trim().toUpperCase());
     const S=trainSetFromCodes(codes);
     if(!S.size){if(up.includes('CO'))res.co.push(d);continue;}
-    let dayRefs=refs;
+    let dayRefs=refs,b=null;
     if(weekdayOf){
       const wc=weekdayOf(d);
       const scoped=refs.filter(r=>!r.circDays||!r.circDays.length||r.circDays.includes(wc));
-      if(scoped.length)dayRefs=scoped; // dacă nimic nu circulă azi conform etichetei, încearcă totuși toate (etichetă lipsă/greșită)
+      b=matchDayToTurnus(S,scoped);
     }
-    const b=matchDayToTurnus(S,dayRefs);
+    if(!b)b=matchDayToTurnus(S,refs);
     if(b)res.days[d]=b;else res.unknown.push({d,trains:[...S]});
   }
   return res;
