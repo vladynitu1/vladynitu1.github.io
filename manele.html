@@ -716,7 +716,7 @@ function renderTags(){
     sp.className='tag'+(+k===12?' t12':'');
     const note=(TN[k].note||'').trim();
     sp.textContent=`T${k}`+(note?` (${note})`:'');
-    sp.title=note+' | segs:'+TN[k].segmente.length;
+    sp.title=note+' | segs:'+TN[k].segmente.length+(TN[k].circRaw?' | circulă: '+TN[k].circRaw:'');
     w.appendChild(sp);
   });
   updateStickyOffset();
@@ -1206,6 +1206,42 @@ function downloadApp(){
 // TURNUS DIN PDF — citire coloane, segmente, împărțire pe zile calendaristice
 // ══════════════════════════════════════════════
 const TN_MAP_DEFAULT='T1=1+2, T2=4+5, T3=6, T4=8+9';
+// ── zilele în care circulă turnusul (citit din antetul PDF-ului, ex. „CIRCULĂ L-S”) ──
+const CIRC_ORDER=['L','MA','MI','J','V','S','D'];
+const CIRC_WORD={LUNI:'L',MARTI:'MA',MARȚI:'MA',MIERCURI:'MI',JOI:'J',VINERI:'V',SAMBATA:'S',SÂMBĂTĂ:'S',DUMINICA:'D',DUMINICĂ:'D'};
+function circToken(tok){
+  tok=tok.trim().toUpperCase();
+  if(CIRC_WORD[tok])return CIRC_WORD[tok];
+  if(CIRC_ORDER.includes(tok))return tok;
+  return null;
+}
+function parseCirc(raw){
+  if(!raw)return null;
+  const parts=raw.toUpperCase().split(/[,\/]|\bȘI\b|\bSI\b|\bȘ\b|\+/).map(p=>p.trim()).filter(Boolean);
+  const days=new Set();let any=false;
+  parts.forEach(p=>{
+    const rng=p.split('-').map(x=>x.trim()).filter(Boolean);
+    if(rng.length===2){
+      const a=circToken(rng[0]),b=circToken(rng[1]);
+      if(a&&b){
+        const ia=CIRC_ORDER.indexOf(a),ib=CIRC_ORDER.indexOf(b);
+        if(ia>=0&&ib>=0){any=true;for(let i=ia;i<=ib;i++)days.add(CIRC_ORDER[i]);return;}
+      }
+    }
+    const t=circToken(p);
+    if(t){any=true;days.add(t);}
+  });
+  return any?[...days]:null;
+}
+function findCircLabel(rows){
+  for(const r of rows){
+    const txt=r.items.map(i=>i.str).join(' ');
+    const m=txt.match(/CIRCUL[AĂ]\s*[:\-]?\s*([A-ZĂÂÎȘȚa-zăâîșț0-9,\/\-\+\s]{1,30}?)(?:\s{2,}|$)/i);
+    if(m&&m[1].trim())return m[1].trim();
+  }
+  return null;
+}
+
 function parseTnMap(str){
   const out={};
   String(str||'').split(/[,;\n]+/).forEach(p=>{
@@ -1298,6 +1334,8 @@ function autoTnMap(colNums,freeCols,restCols){
   return map;
 }
 function parseTurnusRows(rows,vx,map){
+  const circRaw=findCircLabel(rows);
+  const circDays=parseCirc(circRaw);
   // 1) rândul de antet cu numerele coloanelor
   const hdr=rows.find(r=>r.items.some(i=>/Statiile/i.test(i.str))&&r.items.filter(i=>/^\d{1,2}$/.test(i.str)).length>=2);
   if(!hdr)throw new Error('Nu găsesc rândul cu numerele coloanelor (Statiile/nr.ech).');
@@ -1363,9 +1401,9 @@ function parseTurnusRows(rows,vx,map){
     const nTr=trenuri.reduce((s,a)=>s+a.length,0);
     if(!nTr)warns.push(`T${k}: nu am găsit trenuri în coloana ${ccols.join('+')}.`);
     if(!segmente.length)warns.push(`T${k}: nu am găsit ore (prezentare/remizare).`);
-    out[k]={segmente,trenuri,cols:ccols,note:trenuri.map(a=>a.join(' ')).join(' / ')};
+    out[k]={segmente,trenuri,cols:ccols,note:trenuri.map(a=>a.join(' ')).join(' / '),circRaw,circDays};
   });
-  return{turnusuri:out,warns,method,colInfo:info,map,auto:usedAuto,freeCols:[...freeCols]};
+  return{turnusuri:out,warns,method,colInfo:info,map,auto:usedAuto,freeCols:[...freeCols],circRaw,circDays};
 }
 
 // împarte segmentele pe zile calendaristice (la miezul nopții), ca în fișa de lucru
@@ -1429,14 +1467,22 @@ function matchDayToTurnus(S,refs){
   if(best&&best.covS<0.5)return null;
   return best;
 }
-function matchMonth(dayCodes,dim,refs){
+// codul zilei (L,MA,MI,J,V,S,D) pentru un JS Date.getDay() (0=Duminică)
+const JSDAY_TO_CIRC=['D','L','MA','MI','J','V','S'];
+function matchMonth(dayCodes,dim,refs,weekdayOf){
   const res={days:{},co:[],unknown:[]};
   for(let d=1;d<=dim;d++){
     const codes=dayCodes[d]||[];
     const up=codes.map(c=>String(c).trim().toUpperCase());
     const S=trainSetFromCodes(codes);
     if(!S.size){if(up.includes('CO'))res.co.push(d);continue;}
-    const b=matchDayToTurnus(S,refs);
+    let dayRefs=refs;
+    if(weekdayOf){
+      const wc=weekdayOf(d);
+      const scoped=refs.filter(r=>!r.circDays||!r.circDays.length||r.circDays.includes(wc));
+      if(scoped.length)dayRefs=scoped; // dacă nimic nu circulă azi conform etichetei, încearcă totuși toate (etichetă lipsă/greșită)
+    }
+    const b=matchDayToTurnus(S,dayRefs);
     if(b)res.days[d]=b;else res.unknown.push({d,trains:[...S]});
   }
   return res;
@@ -1707,7 +1753,7 @@ async function onTnPdf(e){
       let target=k;
       if(TN[target])target=freeKey();
       if(String(target)!==String(k))renumbered.push({from:k,to:target});
-      TN[target]={segmente:v.segmente,note:v.note,trenuri:v.trenuri,cols:v.cols,src:'pdf',cal:buildCal(v.segmente)};
+      TN[target]={segmente:v.segmente,note:v.note,trenuri:v.trenuri,cols:v.cols,src:'pdf',cal:buildCal(v.segmente),circRaw:v.circRaw,circDays:v.circDays};
       added.push(target);
     });
     if(added.length)save();
@@ -1720,6 +1766,7 @@ async function onTnPdf(e){
     if(renumbered.length)out+='↪ Diferă de turnusul cu același număr din PDF, așa că '+renumbered.map(r=>`T${r.from}→T${r.to}`).join(', ')+'.\n';
     if(unchanged.length)out+='= Neschimbate (identice cu ce aveai deja): '+unchanged.map(u=>`T${u.from} = T${u.at}`).join(', ')+'\n';
     if(res.method!=='linii')out+='⚠ Nu am putut citi liniile tabelului — coloanele sunt estimate. Verifică trenurile din fiecare turnus!\n';
+    if(res.circRaw)out+=`🗓 Circulă: ${res.circRaw}`+(res.circDays?'':' (etichetă nerecunoscută — turnusul va fi propus în orice zi)')+'\n';
     if(res.warns.length)out+='⚠ '+res.warns.join('\n⚠ ');
     say(out.trim(),res.warns.length||res.method!=='linii'?'var(--yel)':(added.length?'var(--grn)':'var(--txtm)'));
   }catch(err){
@@ -1839,9 +1886,10 @@ function applySheetCand(c,luna){
   const refs=[];
   Object.keys(TN).forEach(k=>{
     const t=TN[k];
-    (t&&t.trenuri||[]).forEach((tr,i)=>{if(tr&&tr.length)refs.push({k:+k,i,set:new Set(tr)});});
+    (t&&t.trenuri||[]).forEach((tr,i)=>{if(tr&&tr.length)refs.push({k:+k,i,set:new Set(tr),circDays:t.circDays});});
   });
-  const res=matchMonth(c.b.dayCodes,dim,refs);
+  const weekdayOf=d=>JSDAY_TO_CIRC[new Date(curYear,m,d).getDay()];
+  const res=matchMonth(c.b.dayCodes,dim,refs,weekdayOf);
   const applied=[],orphan=[];
   for(let d=1;d<=dim;d++){
     const mt=res.days[d];
