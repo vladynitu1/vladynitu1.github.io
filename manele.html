@@ -236,8 +236,8 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
   </div>
   <div class="hdr-right">
     <button class="yr-badge" id="yrBadge" onclick="openYearModal()">📅 2026</button>
-    <button class="btn btn-o" onclick="openEditor()">⚙ Turnus-uri</button>
-    <button class="btn btn-g" onclick="openUpload()">📋 Din Fișa de Lucru</button>
+    <button class="btn btn-o" id="btnEditorTurnus" onclick="openEditor()">⚙ Turnus-uri</button>
+    <button class="btn btn-g" onclick="openUpload()">🔄 Actualizează din Fișe</button>
   </div>
 </div>
 
@@ -247,23 +247,16 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
 <div class="overlay" id="uploadOverlay">
 <div class="modal" style="max-width:520px">
   <button class="mclose" onclick="closeUpload()">✕</button>
-  <h2 style="color:var(--grn)">📋 Turnusuri din Fișa de Lucru</h2>
+  <h2 style="color:var(--grn)">🔄 Actualizează Turnusurile din Fișe</h2>
   <p style="font-size:.8rem;color:var(--txtm);margin-bottom:12px">
-    Scrie numele exact cum apare în fișa de lucru (deja încărcată pe site) și luna.
-    Trenurile tale din fișă sunt comparate cu turnusurile din editor, iar turnusul se trece automat pe fiecare zi.
+    Scrie numele exact cum apare în fișa de lucru. Caut automat numele tău în toate fișele de lucru
+    încărcate pe site (orice lună/an), iar turnusul potrivit se trece automat pe fiecare zi găsită.
   </p>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <div class="tn-field">
-      <label>Numele tău (din fișă)</label>
-      <input id="uploadNume" placeholder="ex: Nitu Ionut" value="Nitu Ionut"
-        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.82rem;padding:6px 9px;width:100%">
-    </div>
-    <div class="tn-field">
-      <label>Luna (1-12)</label>
-      <input id="uploadLuna" type="number" min="1" max="12" placeholder="4"
-        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.82rem;padding:6px 9px;width:100%">
-    </div>
+  <div class="tn-field" style="margin-bottom:10px">
+    <label>Numele tău (din fișă)</label>
+    <input id="uploadNume" placeholder="ex: Nitu Ionut" value="Nitu Ionut"
+      style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.82rem;padding:6px 9px;width:100%">
   </div>
 
   <div id="uploadPick" style="display:none;margin-bottom:10px"></div>
@@ -694,6 +687,7 @@ function init(){
   renderTags();renderTabs();renderTable();
   buildAddTnBox();
   updateStickyOffset();
+  updateAdminUI();
 }
 
 // FIX: calculează cât de înaltă e bara de sus (logo EMX) și setează
@@ -908,8 +902,16 @@ function updateCards(){
 }
 
 // ── EDITOR TURNUS ──
-function openEditor(){renderEditorList();document.getElementById('editorOverlay').classList.add('open');}
+function isAdmin(){return !!ghToken;}
+function openEditor(){
+  if(!isAdmin()){alert('Editorul de turnusuri e doar pentru admin. Conectează-te cu tokenul GitHub din pagina principală (index.html).');return;}
+  renderEditorList();document.getElementById('editorOverlay').classList.add('open');
+}
 function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');renderTags();renderTable();}
+function updateAdminUI(){
+  const b=document.getElementById('btnEditorTurnus');
+  if(b)b.style.display=isAdmin()?'':'none';
+}
 
 function buildAddTnBox(){
   const box=document.getElementById('addTnBox');
@@ -1782,7 +1784,6 @@ const SHEET_OWNER='vladynitu1',SHEET_REPO='vladynitu1.github.io',SHEET_BRANCH='m
 let _sheetCands=[];
 
 function openUpload(){
-  document.getElementById('uploadLuna').value=curM+1;
   document.getElementById('uploadOverlay').classList.add('open');
 }
 function closeUpload(){
@@ -1823,10 +1824,8 @@ function nameMatches(blockName,typed){
 
 async function runSheetImport(){
   const nume=document.getElementById('uploadNume').value.trim();
-  const luna=parseInt(document.getElementById('uploadLuna').value,10);
   const pick=document.getElementById('uploadPick');pick.style.display='none';pick.innerHTML='';
   if(!nume){alert('Scrie numele tău!');return;}
-  if(!luna||luna<1||luna>12){alert('Luna invalidă!');return;}
   const haveTN=Object.keys(TN).some(k=>TN[k]&&TN[k].trenuri&&TN[k].trenuri.length);
   if(!haveTN){
     setUploadStatus('Nu am turnusuri cu trenuri. Deschide „⚙ Turnus-uri” și importă întâi PDF-ul cu turnusul.','var(--red)');
@@ -1834,40 +1833,51 @@ async function runSheetImport(){
   }
   const btn=document.getElementById('uploadBtn');
   btn.disabled=true;btn.textContent='⏳ Caut...';
-  setUploadStatus('Caut fișa de lucru pentru '+MO[luna-1]+' '+curYear+'...','var(--yel)');
+  setUploadStatus('Caut „'+nume+'” în toate fișele de lucru...','var(--yel)');
   try{
     const idx=await sheetFetch('data/mecanici/index.json');
     const docs=Array.isArray(idx)?idx:[];
     if(!docs.length){setUploadStatus('Nu găsesc fișe de lucru încărcate (data/mecanici).','var(--red)');return;}
-    const lunaTxt=normTxt(MO[luna-1]);
-    const cands=[];const seen=[];
+    const cands=[];const noMonth=[];
     for(const doc of docs){
       const data=await sheetFetch('data/mecanici/'+doc.id+'.json');
       const rows=data&&Array.isArray(data.rows)?data.rows:[];
       if(!rows.length)continue;
       const head=normTxt(rowsToText(rows.slice(0,8))+' '+(doc.filename||''));
+      const mIdx=MO.findIndex(mn=>head.includes(normTxt(mn)));
+      if(mIdx<0){noMonth.push(doc.filename);continue;}
       const ym=head.match(/\b(20\d\d)\b/);
-      if(!head.includes(lunaTxt)||(ym&&+ym[1]!==curYear))continue;
-      seen.push(doc.filename);
-      splitBlocksStructured(rows).forEach(b=>{if(nameMatches(b.name,nume))cands.push({doc,b});});
-    }
-    if(!seen.length){
-      setUploadStatus('Nu există fișă de lucru pentru '+MO[luna-1]+' '+curYear+' printre cele încărcate ('+docs.map(d=>d.filename).join(', ')+').','var(--red)');
-      return;
+      const an=ym?+ym[1]:curYear;
+      splitBlocksStructured(rows).forEach(b=>{if(nameMatches(b.name,nume))cands.push({doc,b,luna:mIdx+1,an});});
     }
     if(!cands.length){
-      setUploadStatus('Nu am găsit „'+nume+'” în: '+seen.join(', ')+'. Verifică cum e scris numele în fișă.','var(--red)');
+      let m='Nu am găsit „'+nume+'” în nicio fișă de lucru încărcată.';
+      if(noMonth.length)m+='\n⚠ Nu am putut recunoaște luna din: '+noMonth.join(', ')+'.';
+      setUploadStatus(m,'var(--red)');
       return;
     }
-    if(cands.length>1){
-      _sheetCands=cands;
+    // grupăm pe (an-lună): dacă într-o lună apar mai multe potriviri pentru nume, cerem alegerea;
+    // restul se aplică direct, automat, pentru fiecare lună/an găsit(ă).
+    const byMonth={};
+    cands.forEach(c=>{(byMonth[c.an+'-'+c.luna]=byMonth[c.an+'-'+c.luna]||[]).push(c);});
+    const autoApply=[],ambiguous=[];
+    Object.values(byMonth).forEach(arr=>{ if(arr.length===1)autoApply.push(arr[0]); else ambiguous.push(arr); });
+    const results=autoApply.map(applySheetCand);
+    if(ambiguous.length){
+      _sheetCands=ambiguous.flat();
+      let offset=0;
       pick.style.display='block';
-      pick.innerHTML='<div style="font-size:.75rem;color:var(--txtm);margin-bottom:4px">Am găsit mai multe potriviri — alege:</div>'+
-        cands.map((c,i)=>`<button class="btn btn-s btn-sm" style="margin:3px 4px 3px 0" onclick="pickSheetCand(${i})">${escH(c.b.name)} — ${escH(c.doc.filename)}</button>`).join('');
-      setUploadStatus('Alege persoana corectă mai sus.','var(--yel)');
-      return;
+      pick.innerHTML='<div style="font-size:.75rem;color:var(--txtm);margin-bottom:4px">Mai multe potriviri într-o lună — alege pentru fiecare:</div>'+
+        ambiguous.map(arr=>arr.map((c,i)=>{const gi=offset+i;return `<button class="btn btn-s btn-sm" style="margin:3px 4px 3px 0" onclick="pickSheetCand(${gi})">${escH(c.b.name)} — ${MO[c.luna-1]} ${c.an} (${escH(c.doc.filename)})</button>`;}).join('')+((offset+=arr.length),'')).join('<br>');
     }
-    applySheetCand(cands[0],luna);
+    const applied=results.reduce((s,r)=>s+r.applied.length,0);
+    const co=results.reduce((s,r)=>s+r.co.length,0);
+    let msg=results.length?results.map(r=>r.msg).join('\n\n'):'';
+    if(ambiguous.length)msg+=(msg?'\n\n':'')+'⚠ Alege mai sus persoana corectă pentru lunile ambigue.';
+    if(!msg)msg='ℹ️ Nimic de aplicat automat — alege mai sus.';
+    const diag=Object.keys(TN).sort((a,b)=>+a-+b).map(k=>{const t=TN[k];return `T${k}${t.cols?' (col '+t.cols.join('+')+')':''}: `+((t.trenuri||[]).map(a=>a.join(' ')).join(' / ')||'FĂRĂ TRENURI');}).join('\n');
+    msg+='\n\nTurnusuri în editor (trenuri):\n'+diag;
+    setUploadStatus(msg,ambiguous.length||results.some(r=>r.warn)?'var(--yel)':'var(--grn)');
   }catch(err){
     console.error(err);
     setUploadStatus('❌ Eroare: '+err.message,'var(--red)');
@@ -1876,13 +1886,19 @@ async function runSheetImport(){
   }
 }
 function pickSheetCand(i){
-  const luna=parseInt(document.getElementById('uploadLuna').value,10);
   const pick=document.getElementById('uploadPick');pick.style.display='none';
-  if(_sheetCands[i])applySheetCand(_sheetCands[i],luna);
+  if(_sheetCands[i]){
+    const r=applySheetCand(_sheetCands[i]);
+    setUploadStatus(r.msg,r.warn?'var(--yel)':'var(--grn)');
+  }
 }
 
-function applySheetCand(c,luna){
-  const m=luna-1,dim=new Date(curYear,luna,0).getDate();
+function applySheetCand(c){
+  const luna=c.luna,an=c.an||curYear;
+  if(an!==curYear){
+    return {msg:`⚠ ${c.b.name} — ${c.doc.filename}: e pentru anul ${an}, dar ești pe ${curYear}. Schimbă anul (📅 sus) și reia.`,warn:true,applied:[],co:[]};
+  }
+  const m=luna-1,dim=new Date(an,luna,0).getDate();
   const refs=[];
   Object.keys(TN).forEach(k=>{
     const t=TN[k];
@@ -1903,13 +1919,11 @@ function applySheetCand(c,luna){
   res.co.forEach(d=>{gd(m,d).note='Concediu';});
   if(res.co.length)save();
   curM=m;renderTabs();renderTable();
-  const diag=Object.keys(TN).sort((a,b)=>+a-+b).map(k=>{const t=TN[k];return `T${k}${t.cols?' (col '+t.cols.join('+')+')':''}: `+((t.trenuri||[]).map(a=>a.join(' ')).join(' / ')||'FĂRĂ TRENURI');}).join('\n');
-  let msg=`✅ ${c.b.name} — ${c.doc.filename}\n${applied.length} turnusuri puse în ${MO[m]} ${curYear}:\n${applied.join('  ')||'—'}`;
+  let msg=`✅ ${c.b.name} — ${c.doc.filename}\n${applied.length} turnusuri puse în ${MO[m]} ${an}:\n${applied.join('  ')||'—'}`;
   if(res.co.length)msg+=`\nConcediu: zilele ${res.co.join(', ')}`;
   if(orphan.length)msg+=`\n⚠ Continuare de turnus fără zi de start în lună: ${orphan.join(', ')}`;
   if(res.unknown.length)msg+=`\n⚠ Nepotrivite cu niciun turnus: `+res.unknown.map(u=>`${u.d} (${u.trains.join(', ')})`).join('; ');
-  msg+='\n\nTurnusuri în editor (trenuri):\n'+diag;
-  setUploadStatus(msg,res.unknown.length||orphan.length?'var(--yel)':'var(--grn)');
+  return {msg,warn:!!(res.unknown.length||orphan.length),applied,co:res.co};
 }
 
 init();
