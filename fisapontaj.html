@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Fișă Pontaj</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
 :root{
@@ -236,35 +235,56 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase;padding-left:
   </div>
   <div class="hdr-right">
     <button class="yr-badge" id="yrBadge" onclick="openYearModal()">📅 2026</button>
-    <button class="btn btn-o" id="btnEditorTurnus" onclick="openEditor()">⚙ Turnus-uri</button>
-    <button class="btn btn-g" onclick="openUpload()">🔄 Actualizează din Fișe</button>
+    <button class="btn btn-o" onclick="openEditor()">⚙ Turnus-uri</button>
+    <button class="btn btn-g" onclick="openUpload()">📋 Încarcă Fișă</button>
   </div>
 </div>
 
 
 
-<!-- FISA DE LUCRU -> TURNUSURI MODAL -->
+<!-- UPLOAD FISA MODAL -->
 <div class="overlay" id="uploadOverlay">
 <div class="modal" style="max-width:520px">
   <button class="mclose" onclick="closeUpload()">✕</button>
-  <h2 style="color:var(--grn)">🔄 Actualizează Turnusurile din Fișe</h2>
+  <h2 style="color:var(--grn)">📋 Încarcă Fișă de Lucru</h2>
   <p style="font-size:.8rem;color:var(--txtm);margin-bottom:12px">
-    Scrie numele exact cum apare în fișa de lucru. Caut automat numele tău în toate fișele de lucru
-    încărcate pe site (orice lună/an), iar turnusul potrivit se trece automat pe fiecare zi găsită.
+    Încarcă poza cu fișa de lucru lunară. Scrie numele tău exact cum apare în fișă și luna.
+    AI-ul va citi fișa și va completa pontajul automat.
   </p>
 
-  <div class="tn-field" style="margin-bottom:10px">
-    <label>Numele tău (din fișă)</label>
-    <input id="uploadNume" placeholder="ex: Nitu Ionut" value="Nitu Ionut"
-      style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.82rem;padding:6px 9px;width:100%">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <div class="tn-field">
+      <label>Numele tău (din fișă)</label>
+      <input id="uploadNume" placeholder="ex: Nitu Ionut" value="Nitu Ionut"
+        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.82rem;padding:6px 9px;width:100%">
+    </div>
+    <div class="tn-field">
+      <label>Luna (1-12)</label>
+      <input id="uploadLuna" type="number" min="1" max="12" placeholder="4"
+        style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.82rem;padding:6px 9px;width:100%">
+    </div>
   </div>
 
-  <div id="uploadPick" style="display:none;margin-bottom:10px"></div>
+  <!-- Drop zone -->
+  <div id="uploadZone" onclick="document.getElementById('uploadFileIn').click()"
+    style="background:var(--surf);border:2px dashed var(--bord2);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px"
+    ondragover="event.preventDefault();this.style.borderColor='var(--grn)'"
+    ondragleave="this.style.borderColor='var(--bord2)'"
+    ondrop="onUploadDrop(event)">
+    <div style="font-size:2rem;margin-bottom:8px">📸</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:600;color:var(--grn);letter-spacing:1px">CLICK SAU TRAGE POZA</div>
+    <div style="font-size:.73rem;color:var(--txtd);margin-top:4px">JPG, PNG — fișa de lucru lunară CFR</div>
+  </div>
+  <input type="file" id="uploadFileIn" accept="image/*" style="display:none" onchange="onUploadFile(event)">
 
-  <div id="uploadStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:.73rem;color:var(--grn);margin-bottom:10px;max-height:220px;overflow-y:auto;white-space:pre-wrap"></div>
+  <img id="uploadPreview" style="display:none;max-width:100%;max-height:150px;border-radius:8px;border:1px solid var(--bord2);margin-bottom:10px">
+
+  <!-- Status AI -->
+  <div id="uploadStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:.73rem;color:var(--grn);margin-bottom:10px;max-height:160px;overflow-y:auto;white-space:pre-wrap"></div>
 
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn btn-g" id="uploadBtn" onclick="runSheetImport()">🔎 Preia turnusurile</button>
+    <button class="btn btn-g" id="uploadBtn" onclick="runUploadAI()" disabled
+      style="opacity:.4">🤖 Procesează cu AI</button>
     <button class="btn btn-s" onclick="closeUpload()">Anulează</button>
   </div>
 </div>
@@ -600,23 +620,6 @@ function applyTurnus(num,m,d){
   const calc=calcTurnusAuto(t.segmente);
   const daysInM=new Date(curYear,m+1,0).getDate();
 
-  // Turnus importat din PDF: orele sunt deja împărțite pe zile calendaristice (la miezul nopții)
-  if(t.cal&&t.cal.length){
-    let mm=m,dd_=d;
-    t.cal.forEach((c,i)=>{
-      if(i>0){dd_++;if(dd_>new Date(curYear,mm+1,0).getDate()){dd_=1;mm++;}}
-      if(mm>11)return;
-      const x=gd(mm,dd_);
-      x.tn=`T${num}`;x.prez=c.prez;x.iesire=c.iesire;
-      x.ol=c.ol;x.oo=c.oo;x.on=c.on;
-      x.of=isFest(mm,dd_)?c.ol:'';
-      x.note=(t.note||'')+(i>0?` (zi ${i+1})`:'');
-      x.overflow=i>0;
-    });
-    save();renderTabs();renderTable();
-    return;
-  }
-
   const dd1=gd(m,d);
   dd1.tn=`T${num}`;
   dd1.prez=t.segmente[0].prez||'';
@@ -687,7 +690,6 @@ function init(){
   renderTags();renderTabs();renderTable();
   buildAddTnBox();
   updateStickyOffset();
-  updateAdminUI();
 }
 
 // FIX: calculează cât de înaltă e bara de sus (logo EMX) și setează
@@ -710,7 +712,7 @@ function renderTags(){
     sp.className='tag'+(+k===12?' t12':'');
     const note=(TN[k].note||'').trim();
     sp.textContent=`T${k}`+(note?` (${note})`:'');
-    sp.title=note+' | segs:'+TN[k].segmente.length+(TN[k].circRaw?' | circulă: '+TN[k].circRaw:'');
+    sp.title=note+' | segs:'+TN[k].segmente.length;
     w.appendChild(sp);
   });
   updateStickyOffset();
@@ -902,20 +904,12 @@ function updateCards(){
 }
 
 // ── EDITOR TURNUS ──
-function isAdmin(){return !!ghToken;}
-function openEditor(){
-  if(!isAdmin()){alert('Editorul de turnusuri e doar pentru admin. Conectează-te cu tokenul GitHub din pagina principală (index.html).');return;}
-  renderEditorList();document.getElementById('editorOverlay').classList.add('open');
-}
+function openEditor(){renderEditorList();document.getElementById('editorOverlay').classList.add('open');}
 function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');renderTags();renderTable();}
-function updateAdminUI(){
-  const b=document.getElementById('btnEditorTurnus');
-  if(b)b.style.display=isAdmin()?'':'none';
-}
 
 function buildAddTnBox(){
   const box=document.getElementById('addTnBox');
-  box.innerHTML=pdfImportBoxHtml()+`
+  box.innerHTML=`
   <div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
     <div style="font-family:Rajdhani,sans-serif;font-size:.85rem;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">+ Adaugă Turnus Nou</div>
     <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Introdu doar prezentarea și ieșirea pentru fiecare segment. Orele lucrate, odihna și orele de noapte se calculează automat. Dacă turnus-ul are dormitor între segmente, acesta se detectează automat.</p>
@@ -1037,13 +1031,12 @@ function renderEditorList(){
 }
 
 function updateTNCalc(k){
-  if(TN[k]&&TN[k].cal)TN[k].cal=buildCal(TN[k].segmente||[]);
   const calc=calcTurnusAuto(TN[k].segmente||[]);
   const el=document.getElementById('calc_'+k);
   if(el)el.textContent=`${calc.ol} lucrate | ${calc.oo} odihnă | ${calc.on} noapte | ${calc.zile} ${calc.zile===1?'zi':'zile'}`;
 }
-function addSegToTN(k){TN[k].segmente=TN[k].segmente||[];TN[k].segmente.push({prez:'',iesire:''});if(TN[k].cal)TN[k].cal=buildCal(TN[k].segmente);save();renderEditorList();showEditorMsg('Segment adăugat.');}
-function removeLastSeg(k){if(TN[k].segmente&&TN[k].segmente.length>1){TN[k].segmente.pop();if(TN[k].cal)TN[k].cal=buildCal(TN[k].segmente);save();renderEditorList();}}
+function addSegToTN(k){TN[k].segmente=TN[k].segmente||[];TN[k].segmente.push({prez:'',iesire:''});save();renderEditorList();showEditorMsg('Segment adăugat.');}
+function removeLastSeg(k){if(TN[k].segmente&&TN[k].segmente.length>1){TN[k].segmente.pop();save();renderEditorList();}}
 function delTN(k){
   const btn=document.querySelector(`#tni_${k} .btn-r`);
   if(btn&&btn.dataset.confirm!=='1'){
@@ -1205,589 +1198,39 @@ function downloadApp(){
 }
 
 // ══════════════════════════════════════════════
-// TURNUS DIN PDF — citire coloane, segmente, împărțire pe zile calendaristice
+// UPLOAD FIȘĂ DE LUCRU + AI
 // ══════════════════════════════════════════════
-const TN_MAP_DEFAULT='T1=1+2, T2=4+5, T3=6, T4=8+9';
-// ── zilele în care circulă turnusul (citit din antetul PDF-ului, ex. „CIRCULĂ L-S”) ──
-const CIRC_ORDER=['L','MA','MI','J','V','S','D'];
-const CIRC_WORD={LUNI:'L',MARTI:'MA',MARȚI:'MA',MIERCURI:'MI',JOI:'J',VINERI:'V',SAMBATA:'S',SÂMBĂTĂ:'S',DUMINICA:'D',DUMINICĂ:'D'};
-function circToken(tok){
-  tok=tok.trim().toUpperCase();
-  if(CIRC_WORD[tok])return CIRC_WORD[tok];
-  if(CIRC_ORDER.includes(tok))return tok;
-  return null;
-}
-function parseCirc(raw){
-  if(!raw)return null;
-  const parts=raw.toUpperCase().split(/[,\/]|\bȘI\b|\bSI\b|\bȘ\b|\+/).map(p=>p.trim()).filter(Boolean);
-  const days=new Set();let any=false;
-  parts.forEach(p=>{
-    const rng=p.split('-').map(x=>x.trim()).filter(Boolean);
-    if(rng.length===2){
-      const a=circToken(rng[0]),b=circToken(rng[1]);
-      if(a&&b){
-        const ia=CIRC_ORDER.indexOf(a),ib=CIRC_ORDER.indexOf(b);
-        if(ia>=0&&ib>=0){any=true;for(let i=ia;i<=ib;i++)days.add(CIRC_ORDER[i]);return;}
-      }
-    }
-    const t=circToken(p);
-    if(t){any=true;days.add(t);}
-  });
-  return any?[...days]:null;
-}
-function findCircLabel(rows){
-  for(const r of rows){
-    const txt=r.items.map(i=>i.str).join(' ');
-    const m=txt.match(/CIRCUL[AĂ]\s*[:\-]?\s*([A-ZĂÂÎȘȚa-zăâîșț0-9,\/\-\+\s]{1,30}?)(?:\s{2,}|$)/i);
-    if(m&&m[1].trim())return m[1].trim();
-  }
-  return null;
-}
-
-function parseTnMap(str){
-  const out={};
-  String(str||'').split(/[,;\n]+/).forEach(p=>{
-    const m=p.trim().match(/^T?(\d+)\s*=\s*([\d\s+]+)$/i);
-    if(!m)return;
-    const cols=m[2].split('+').map(x=>parseInt(x,10)).filter(x=>x>0);
-    if(cols.length)out[parseInt(m[1],10)]=cols;
-  });
-  return out;
-}
-function normTime(s){
-  const m=String(s||'').trim().match(/^(\d{1,2}):(\d{2})$/);
-  return m?String(m[1]).padStart(2,'0')+':'+m[2]:'';
-}
-function isTimeStr(s){return /^\d{1,2}:\d{2}$/.test(String(s||'').trim());}
-function isTrainStr(s){return /^\d{5,6}$/.test(String(s||'').trim());}
-function normTxt(s){
-  return (s||'').toLowerCase().replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/[șş]/g,'s').replace(/[țţ]/g,'t');
-}
-
-// grupează itemii de text pe rânduri (aceeași logică ca în fișa de lucru)
-function clusterRows(items){
-  const TOL=2;
-  const arr=items.slice().sort((a,b)=>b.y-a.y||a.x-b.x);
-  const clusters=[];let cur=null;
-  arr.forEach(it=>{
-    if(cur&&Math.abs(it.y-cur.refY)<=TOL)cur.items.push(it);
-    else{if(cur)clusters.push(cur);cur={refY:it.y,items:[it]};}
-  });
-  if(cur)clusters.push(cur);
-  // pdf.js poate rupe un singur cuvânt (ex. un număr de tren) în mai multe „items” dacă
-  // fontul/kerning-ul din PDF schimbă randarea la mijlocul cuvântului. Lipim la loc bucățile
-  // foarte apropiate pe orizontală (fără spațiu real între ele), ca la extragerea de cuvinte.
-  function mergeAdjacent(items){
-    const sorted=items.slice().sort((a,b)=>a.x-b.x);
-    const out=[];
-    sorted.forEach(it=>{
-      const prev=out[out.length-1];
-      if(prev&&/^[\w]+$/.test(prev.str)&&/^[\w]+$/.test(it.str)&&(it.x-(prev.x+prev.w))<2.2){
-        prev.str+=it.str;prev.w=(it.x+it.w)-prev.x;
-      }else out.push({x:it.x,w:it.w,str:it.str});
-    });
-    return out;
-  }
-  return clusters.map(c=>({y:c.refY,items:mergeAdjacent(c.items)}));
-}
-
-// limitele coloanelor: din liniile verticale ale tabelului (dacă le avem), altfel la mijlocul dintre etichete
-function computeColumns(labels,vx){
-  // labels: [{n,cx}] sortate după x
-  // Liniile verticale desenate în PDF (dacă au fost găsite) dau cele mai precise limite de
-  // coloană; dar dacă randarea/canvas-ul nu le-a prins pe toate, folosim mijlocul dintre
-  // etichetele „1 2 3 ...” — mai puțin exact la margini, dar sigur.
-  if(vx&&vx.length>=labels.length+1){
-    const xs=vx.slice().sort((a,b)=>a-b).filter((x,i,a)=>i===0||x-a[i-1]>2);
-    const intervals=[];
-    for(let i=0;i<xs.length-1;i++)intervals.push([xs[i],xs[i+1]]);
-    const cols=[];let ok=true;
-    labels.forEach(l=>{
-      const iv=intervals.find(v=>l.cx>=v[0]&&l.cx<v[1]);
-      if(!iv||cols.some(c=>c.x0===iv[0]))ok=false;
-      else cols.push({n:l.n,x0:iv[0],x1:iv[1]});
-    });
-    if(ok&&cols.length===labels.length)return{cols,method:'linii'};
-  }
-  const cols=labels.map((l,i)=>{
-    const x0=i===0?l.cx-100:(labels[i-1].cx+l.cx)/2;
-    const x1=i===labels.length-1?l.cx+100:(l.cx+labels[i+1].cx)/2;
-    return{n:l.n,x0,x1};
-  });
-  return{cols,method:'etichete'};
-}
-
-// Schema automată: coloanele cu „L” = zile libere (separatori); coloanele consecutive care au
-// „Ore odihnă” (dormitor între ele) formează același turnus; celelalte coloane sunt turnus de sine stătător.
-function autoTnMap(colNums,freeCols,restCols){
-  const map={};let t=0,i=0;
-  while(i<colNums.length){
-    const n=colNums[i];
-    if(freeCols.has(n)){i++;continue;}
-    const grp=[n];
-    if(restCols.has(n)){
-      while(grp.length<2&&i+grp.length<colNums.length){
-        const nx=colNums[i+grp.length];
-        if(!freeCols.has(nx)&&restCols.has(nx))grp.push(nx);else break;
-      }
-    }
-    map[++t]=grp;i+=grp.length;
-  }
-  return map;
-}
-function parseTurnusRows(rows,vx,map){
-  const circRaw=findCircLabel(rows);
-  const circDays=parseCirc(circRaw);
-  // 1) rândul de antet cu numerele coloanelor
-  const hdr=rows.find(r=>r.items.some(i=>/Statiile/i.test(i.str))&&r.items.filter(i=>/^\d{1,2}$/.test(i.str)).length>=2);
-  if(!hdr)throw new Error('Nu găsesc rândul cu numerele coloanelor (Statiile/nr.ech).');
-  const labels=hdr.items.filter(i=>/^\d{1,2}$/.test(i.str)).map(i=>({n:parseInt(i.str,10),cx:i.x+(i.w||0)/2})).sort((a,b)=>a.cx-b.cx);
-  const {cols,method}=computeColumns(labels,vx);
-  const colOf=it=>{
-    const cx=it.x+(it.w||0)/2;
-    const c=cols.find(c=>cx>=c.x0&&cx<c.x1);
-    return c?c.n:null;
-  };
-  const leftEdge=cols[0].x0;
-  const rowLabel=r=>normTxt(r.items.filter(i=>i.x<leftEdge).map(i=>i.str).join(' '));
-  const prezRow=rows.find(r=>/prezentare/.test(rowLabel(r)));
-  const remizRow=rows.find(r=>/remizare/.test(rowLabel(r)));
-  if(!prezRow||!remizRow)throw new Error('Nu găsesc rândurile „Prezentare” / „Remizare”.');
-
-  const info={};cols.forEach(c=>info[c.n]={trains:[],prez:[],remiz:[]});
-  rows.forEach(r=>{
-    if(r.y<hdr.y-1&&r.y>prezRow.y+1){
-      r.items.forEach(it=>{
-        if(it.x<leftEdge||!isTrainStr(it.str))return;
-        const n=colOf(it);
-        if(n!=null&&!info[n].trains.includes(it.str))info[n].trains.push(it.str);
-      });
-    }
-  });
-  const takeTimes=(row,key)=>row.items.forEach(it=>{
-    if(it.x<leftEdge||!isTimeStr(it.str))return;
-    const n=colOf(it);if(n!=null)info[n][key].push(normTime(it.str));
-  });
-  takeTimes(prezRow,'prez');takeTimes(remizRow,'remiz');
-
-  // coloane libere (L) și coloane cu odihnă
-  const freeCols=new Set(),restCols=new Set();
-  rows.forEach(r=>{
-    if(r.y<hdr.y-1&&r.y>prezRow.y+1)r.items.forEach(it=>{
-      if(it.x<leftEdge||!/^L$/.test(it.str))return;
-      const n=colOf(it);if(n!=null)freeCols.add(n);
-    });
-  });
-  const restRow=rows.find(r=>{const l=rowLabel(r);return /ore\s*odihna/.test(l)&&!/neproductive/.test(l);});
-  if(restRow)restRow.items.forEach(it=>{
-    if(it.x<leftEdge||!isTimeStr(it.str)||p2m(it.str)<=0)return;
-    const n=colOf(it);if(n!=null)restCols.add(n);
-  });
-  const usedAuto=!map||!Object.keys(map).length;
-  const warnsAuto=[];
-  if(usedAuto){
-    if(!restRow)warnsAuto.push('Nu am găsit rândul „Ore odihnă” — fiecare coloană fără „L” e tratată ca turnus separat.');
-    map=autoTnMap(cols.map(c=>c.n),freeCols,restCols);
-  }
-  // 2) turnusurile după mapare
-  const out={};const warns=warnsAuto.slice();
-  Object.keys(map).forEach(k=>{
-    const ccols=map[k];
-    const bad=ccols.filter(n=>!info[n]);
-    if(bad.length){warns.push(`T${k}: coloana ${bad.join(',')} nu există în PDF.`);return;}
-    const prez=[],remiz=[],trenuri=[];
-    ccols.forEach(n=>{prez.push(...info[n].prez);remiz.push(...info[n].remiz);trenuri.push(info[n].trains.slice());});
-    if(prez.length!==remiz.length)warns.push(`T${k}: ${prez.length} prezentări vs ${remiz.length} remizări — verifică orele.`);
-    const segmente=[];
-    for(let i=0;i<Math.min(prez.length,remiz.length);i++)segmente.push({prez:prez[i],iesire:remiz[i]});
-    const nTr=trenuri.reduce((s,a)=>s+a.length,0);
-    if(!nTr)warns.push(`T${k}: nu am găsit trenuri în coloana ${ccols.join('+')}.`);
-    if(!segmente.length)warns.push(`T${k}: nu am găsit ore (prezentare/remizare).`);
-    out[k]={segmente,trenuri,cols:ccols,note:trenuri.map(a=>a.join(' ')).join(' / '),circRaw,circDays};
-  });
-  return{turnusuri:out,warns,method,colInfo:info,map,auto:usedAuto,freeCols:[...freeCols],circRaw,circDays};
-}
-
-// împarte segmentele pe zile calendaristice (la miezul nopții), ca în fișa de lucru
-function buildCal(segs){
-  const iv=[];let base=0,prevEnd=-1;
-  (segs||[]).forEach(sg=>{
-    const s=p2m(sg.prez),e=p2m(sg.iesire);
-    if(s<0||e<0)return;
-    let a=base+s;
-    while(prevEnd>=0&&a<prevEnd){base+=1440;a=base+s;}
-    let dur=e-s;if(dur<0)dur+=1440;
-    iv.push([a,a+dur]);prevEnd=a+dur;
-  });
-  if(!iv.length)return[];
-  const nd=Math.ceil(iv[iv.length-1][1]/1440);
-  const tod=mm=>{const v=mm-Math.floor((mm-1)/1440)*1440;return v===1440?'24:00':String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0');};
-  const night=(a,b)=>{let n=0;for(let t=a;t<b;t++){const x=t%1440;if(x>=1320||x<360)n++;}return n;};
-  const days=[];
-  for(let d=0;d<nd;d++){
-    const w0=d*1440,w1=w0+1440;
-    let ol=0,on=0,oo=0,first=null,last=null;
-    iv.forEach(([a,b])=>{
-      const s=Math.max(a,w0),e=Math.min(b,w1);
-      if(e>s){ol+=e-s;on+=night(s,e);if(first===null||s<first)first=s;if(last===null||e>last)last=e;}
-    });
-    for(let i=0;i<iv.length-1;i++){
-      const s=Math.max(iv[i][1],w0),e=Math.min(iv[i+1][0],w1);
-      if(e>s)oo+=e-s;
-    }
-    days.push({
-      prez:first===null?'':tod(first===w0?w0+1440:first).replace(/^24:00$/,'00:00'),
-      iesire:last===null?'':tod(last),
-      ol:fmtm(ol),oo:fmtm(oo),on:fmtm(on)
-    });
-  }
-  return days;
-}
-
-// ── potrivire fișă de lucru ↔ turnusuri ──
-function trainSetFromCodes(codes){
-  const set=new Set();
-  (codes||[]).forEach(tok=>{
-    const re=/(\d{5,6})(?:\/(\d{1,3}))?/g;let m;
-    while((m=re.exec(String(tok)))){
-      set.add(m[1]);
-      if(m[2]&&m[2].length<m[1].length)set.add(m[1].slice(0,m[1].length-m[2].length)+m[2]);
-    }
-  });
-  return set;
-}
-function matchDayToTurnus(S,refs){
-  // refs: [{k,i,set}]
-  let best=null;
-  refs.forEach(r=>{
-    let inter=0;S.forEach(t=>{if(r.set.has(t))inter++;});
-    if(!inter)return;
-    const covS=inter/S.size,covT=inter/Math.max(1,r.set.size);
-    const cand={k:r.k,i:r.i,inter,covS,covT};
-    if(!best||inter>best.inter||(inter===best.inter&&covT>best.covT)||(inter===best.inter&&covT===best.covT&&r.i<best.i))best=cand;
-  });
-  if(best&&best.covS<0.5)return null;
-  return best;
-}
-// codul zilei (L,MA,MI,J,V,S,D) pentru un JS Date.getDay() (0=Duminică)
-const JSDAY_TO_CIRC=['D','L','MA','MI','J','V','S'];
-function matchMonth(dayCodes,dim,refs,weekdayOf){
-  const res={days:{},co:[],unknown:[]};
-  for(let d=1;d<=dim;d++){
-    const codes=dayCodes[d]||[];
-    const up=codes.map(c=>String(c).trim().toUpperCase());
-    const S=trainSetFromCodes(codes);
-    if(!S.size){if(up.includes('CO'))res.co.push(d);continue;}
-    let dayRefs=refs,b=null;
-    if(weekdayOf){
-      const wc=weekdayOf(d);
-      const scoped=refs.filter(r=>!r.circDays||!r.circDays.length||r.circDays.includes(wc));
-      b=matchDayToTurnus(S,scoped);
-    }
-    if(!b)b=matchDayToTurnus(S,refs);
-    if(b)res.days[d]=b;else res.unknown.push({d,trains:[...S]});
-  }
-  return res;
-}
-
-// ── parser fișă de lucru (copiat din fisalucru.html) ──
-function rowsToText(rows){
-  return rows.map(r => r.items.map(i=>i.str).join(' ')).join('\n');
-}
-
-// ---- Split positioned rows into per-employee blocks, with a day->codes map ----
-function splitBlocksStructured(rows){
-  const blocks = [];
-  let current = null;
-
-  function isHeaderRow(items){
-    const strs = items.map(i=>i.str);
-    return strs.includes('Data') && strs.filter(s=>/^\d{1,2}$/.test(s)).length >= 15;
-  }
-  function isTimeRow(items){
-    const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
-    return items.length > 0 && (timeLike / items.length) > 0.5;
-  }
-  function isCoStartRow(items){
-  const strs = items.map(i=>i.str);
-  return (strs.includes('inceput') && strs.includes('luna')) ||
-    strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
-}
-
-  rows.forEach(row=>{
-    if(isHeaderRow(row.items)){
-      if(current) blocks.push(current);
-      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str))
-        .map(i=>({ x: i.x, w: i.w, str: i.str, day: parseInt(i.str, 10) }))
-        .filter(i=>i.day >= 1 && i.day <= 31);
-      current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
-    } else if(current){
-      current.allRows.push(row);
-      if(!isTimeRow(row.items) && !isCoStartRow(row.items)){
-        current.codeRows.push(row);
-      }
-    }
-  });
-  if(current) blocks.push(current);
-
-  return blocks.map((b, idx)=>{
-    const colX = b.dayTokens.map(t=>t.x + (t.w||0)/2);
-    const colDay = b.dayTokens.map(t=>t.day);
-    const n = colX.length;
-    let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
-
-    const dayCodes = {};
-    for(let d=1; d<=31; d++) dayCodes[d] = [];
-
-    const allText = rowsToText(b.allRows);
-    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU','TL','CM','VPP','SMM']);
-    function isAllCapsCode(t){
-      // Codurile SCURTE din grafic (TL, CO, L, CM, R etc.) sunt scrise doar cu MAJUSCULE și au
-      // cel mult 2 litere. Codurile mai lungi, tot cu majuscule (SSM, VPP, ASC, ITS, SMM...), sunt
-      // cunoscute și adăugate explicit în NON_NAME mai sus, nu mai sunt „ghicite" după lungime.
-      // NU mai tratăm orice token 100% majuscul ca fiind cod, indiferent de lungime, pentru că în
-      // unele fișiere (ex. Brasov-Bucuresti, Cluj) și NUMELE angajaților sunt scrise integral cu
-      // MAJUSCULE (ex. "RADU", "NELUTA", "CHIFOR", "SUCEAVA", "POPA", "TUDORACHE") — un prag de
-      // lungime le desparte corect de coduri, pentru că niciun nume real din aceste fișiere nu are
-      // 1-2 litere.
-      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
-    }
-    function isLabelToken(t){
-      if(NON_NAME.has(t)) return true;
-      if(isAllCapsCode(t)) return true;
-      const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
-    }
-    function firstNameToken(tokens){
-      for(const t of tokens){
-        if(/\d/.test(t)) continue;
-        if(isLabelToken(t)) continue;
-        if(t.length < 2) continue;
-        return t;
-      }
-      return '';
-    }
-    // Numele lungi (ex. "RADULESCU", "CRISTIAN") depășesc lățimea celulei din PDF și
-    // se rup pe o a doua linie fizică ("RADUL" / "ESCU"), care ajunge într-un rând
-    // (y-cluster) DIFERIT de restul rândului (codurile zilnice + "Festive"/orele totale).
-    // Vechea logică citea un singur rând (cel cu "Festive") și lua doar fragmentul rămas
-    // acolo — de-asta ieșeau nume ca "CRISTI" sau "ESCU CRISTI" în loc de "RADULESCU CRISTIAN".
-    // Noua logică scanează coloana Nume/Prenume (imediat la stânga zilei 1) pe toate
-    // rândurile blocului, de la început până la rândul de rol ("Sef tren"/"Mecanic"/"V bilete"),
-    // și reasamblează fragmentele în ordine: tot ce e până la (și inclusiv) rândul cu "Festive"
-    // e numele de familie, tot ce urmează e prenumele. Fragmentele se lipesc fără spațiu,
-    // pentru că o linie ruptă e continuarea aceluiași cuvânt, nu un cuvânt nou.
-    const nameColMaxX = (n > 1 && colX.length) ? (colX[0] - gap * 0.6) : 115;
-    function isNameFragment(t){
-      if(!t) return false;
-      if(/\d/.test(t)) return false;
-      // Respinge etichete cunoscute, inclusiv varianta combinată "Serv efect" (eticheta
-      // verticală a coloanei apare uneori ca un singur token cu spațiu, alteori ca două
-      // separate) — dar NU folosim isAllCapsCode aici, ca să nu respingem un fragment de
-      // nume legitim de 2 litere (ex. "AN" din "CRISTIAN").
-      const words = t.split(/\s+/).filter(Boolean);
-      if(words.length > 0 && words.every(w => NON_NAME.has(w))) return false;
-      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      return letters.length >= 1;
-    }
-    let roleRowIdx = b.allRows.length;
-    for(let i=0;i<b.allRows.length;i++){
-      // Verificăm textul ÎNTREGULUI rând, nu doar tokenii individuali: în funcție de PDF,
-      // "Sef tren" / "V bilete II" pot ieși ca un singur token combinat SAU ca tokeni separați
-      // ("Sef" + "tren"), iar o verificare doar pe tokeni exacți ratează varianta combinată.
-      const rowText = b.allRows[i].items.map(it=>it.str).join(' ');
-      const isRoleRow = /Sef\s*tren/i.test(rowText) || /Mecanic/i.test(rowText) || /bilete/i.test(rowText);
-      if(isRoleRow){ roleRowIdx = i; break; }
-    }
-    let festiveRowIdx = -1;
-    for(let i=0;i<roleRowIdx;i++){
-      if(b.allRows[i].items.some(it=>it.str === 'Festive')){ festiveRowIdx = i; break; }
-    }
-    const surnameFrags = [], firstnameFrags = [];
-    for(let i=0;i<roleRowIdx;i++){
-      const frags = b.allRows[i].items.filter(it=>it.x < nameColMaxX).map(it=>it.str).filter(isNameFragment);
-      if(frags.length === 0) continue;
-      if(festiveRowIdx === -1 || i <= festiveRowIdx) surnameFrags.push(...frags);
-      else firstnameFrags.push(...frags);
-    }
-    const surname = surnameFrags.join('');
-    const firstname = firstnameFrags.join('');
-    const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
-
-    let role = 'Necunoscut';
-    if(/Sef\s*tren/i.test(allText)) role = 'Șef tren';
-    else if(/V\s*bilete\s*II/i.test(allText)) role = 'Vânzător bilete II';
-    else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
-    else if(/Mecanic/i.test(allText)) role = 'Mecanic';
-
-    const excludeTokens = new Set([surname, firstname, ...surnameFrags, ...firstnameFrags, 'Festive'].filter(Boolean));
-
-    if(n > 1){
-      const maxGapAllowed = gap * 0.75;
-      b.codeRows.forEach(row=>{
-        row.items.forEach(item=>{
-          if(excludeTokens.has(item.str)) return;
-          const x = item.x + (item.w||0)/2;
-          let bestDay = -1, bestDist = Infinity;
-          for(let k=0;k<n;k++){
-            const dist = Math.abs(x - colX[k]);
-            if(dist < bestDist){ bestDist = dist; bestDay = colDay[k]; }
-          }
-          if(bestDay === -1 || bestDist > maxGapAllowed) return;
-          dayCodes[bestDay].push(item.str);
-        });
-      });
-    }
-
-    return { id: idx, name, role, dayCodes, text: allText };
-  }).filter(b => b.text.trim().length > 0);
-}
-
-
-// ══════════════════════════════════════════════
-// PDF.js + citire PDF turnus
-// ══════════════════════════════════════════════
-if(typeof pdfjsLib!=='undefined'){
-  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}
-function escH(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-
-function findTurnusKeyRows(rows){
-  const hdr=rows.find(r=>r.items.some(i=>/Statiile/i.test(i.str)));
-  const prez=rows.find(r=>/prezentare/.test(normTxt(r.items.filter(i=>i.x<110).map(i=>i.str).join(' '))));
-  return(hdr&&prez)?{hdr,prez}:null;
-}
-
-// liniile verticale ale tabelului: randăm pagina și căutăm coloanele de pixeli întunecați pe toată zona diagramei
-async function detectVLines(page,hdrY,prezY){
-  const sc=2,vp=page.getViewport({scale:sc});
-  const cv=document.createElement('canvas');
-  cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
-  const ctx=cv.getContext('2d',{willReadFrequently:true});
-  await page.render({canvasContext:ctx,viewport:vp,background:'#ffffff'}).promise;
-  const pageH=vp.height/sc;
-  const y0=Math.max(0,Math.floor((pageH-(hdrY-3))*sc));
-  const y1=Math.min(cv.height,Math.ceil((pageH-(prezY+4))*sc));
-  const n=y1-y0,W=cv.width;
-  if(n<20)return[];
-  const data=ctx.getImageData(0,y0,W,n).data;
-  const cov=new Array(W).fill(0);
-  for(let y=0;y<n;y++){
-    const o=y*W*4;
-    for(let x=0;x<W;x++){
-      const p=o+x*4;
-      if(data[p+3]>0&&(data[p]*0.3+data[p+1]*0.59+data[p+2]*0.11)<170)cov[x]++;
-    }
-  }
-  const xs=[];
-  for(let x=0;x<W;x++)if(cov[x]>=n*0.55)xs.push(x);
-  const cl=[];
-  xs.forEach(x=>{if(cl.length&&x-cl[cl.length-1][cl[cl.length-1].length-1]<=3)cl[cl.length-1].push(x);else cl.push([x]);});
-  return cl.map(c=>(c.reduce((a,b)=>a+b,0)/c.length)/sc);
-}
-
-async function readTurnusPdf(file){
-  if(typeof pdfjsLib==='undefined')throw new Error('pdf.js nu s-a încărcat (verifică conexiunea la internet).');
-  const buf=await file.arrayBuffer();
-  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-  for(let p=1;p<=pdf.numPages;p++){
-    const page=await pdf.getPage(p);
-    const content=await page.getTextContent();
-    const items=content.items
-      .map(it=>({x:it.transform[4],y:it.transform[5],w:it.width||0,str:(it.str||'').trim()}))
-      .filter(i=>i.str);
-    if(!items.some(i=>/Statiile/i.test(i.str)))continue;
-    const rows=clusterRows(items);
-    let vx=[];
-    const key=findTurnusKeyRows(rows);
-    if(key){try{vx=await detectVLines(page,key.hdr.y,key.prez.y);}catch(e){console.warn('linii tabel:',e);}}
-    return{rows,vx};
-  }
-  return null;
-}
-
-function pdfImportBoxHtml(){
-  let mapVal='';
-  try{mapVal=localStorage.getItem('emx_tn_map2')||'';}catch(e){}
-  return `
-  <div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
-    <div style="font-family:Rajdhani,sans-serif;font-size:.85rem;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">📄 Importă turnusuri din PDF</div>
-    <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Alege PDF-ul cu turnusul (ex. „TURNUS T1 MECANICI BRAȘOV”). Trenurile și orele (prezentare → remizare) se citesc automat pe coloane. Schema se recunoaște automat: coloanele cu „L” sunt zile libere, iar coloanele legate prin „Ore odihnă” formează același turnus. Dacă un PDF are altă schemă, scrii manual coloanele (ex. T1=1+2, T2=4+5).</p>
-    <div class="tn-field" style="margin-bottom:8px"><label>Coloane per turnus (lasă gol = automat)</label><input id="tnMapIn" value="${escH(mapVal)}" placeholder="gol = automat, sau ex: T1=1+2, T2=4+5" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--acc);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:5px 7px;width:100%"></div>
-    <input type="file" id="tnPdfIn" accept="application/pdf,.pdf" style="display:none" onchange="onTnPdf(event)">
-    <button class="btn btn-g btn-sm" onclick="document.getElementById('tnPdfIn').click()">📄 Alege PDF turnus</button>
-    <div id="tnPdfMsg" class="calc-note" style="white-space:pre-wrap;margin-top:6px"></div>
-  </div>`;
-}
-
-async function onTnPdf(e){
-  const f=e.target.files[0];e.target.value='';
-  if(!f)return;
-  const msg=document.getElementById('tnPdfMsg');
-  const say=(t,c)=>{msg.style.color=c||'var(--yel)';msg.textContent=t;};
-  say('⏳ Citesc PDF-ul...');
-  try{
-    const mapStr=document.getElementById('tnMapIn').value;
-    try{localStorage.setItem('emx_tn_map2',mapStr);}catch(_){}
-    const map=mapStr.trim()?parseTnMap(mapStr):null;
-    if(mapStr.trim()&&!Object.keys(map).length)throw new Error('Format greșit. Ex: T1=1+2, T2=4+5 — sau lasă gol pentru automat.');
-    const data=await readTurnusPdf(f);
-    if(!data)throw new Error('Nu am găsit tabelul de turnus în PDF.');
-    const res=parseTurnusRows(data.rows,data.vx,map);
-    const keys=Object.keys(res.turnusuri).filter(k=>res.turnusuri[k].segmente.length);
-    if(!keys.length)throw new Error('Nu am găsit niciun turnus cu ore. '+res.warns.join(' '));
-
-    // identitatea unui turnus = trenurile lui, nu numărul T#. Așa pot exista mai multe
-    // scheme (ex. „circulă L-S” și „circulă Duminică”) cu T1..T4 diferite, fără să se șteargă
-    // una pe alta la import.
-    const sig=t=>(t&&t.trenuri||[]).flat().filter(Boolean).slice().sort().join(',');
-    const usedKeys=Object.keys(TN).map(Number).filter(n=>!isNaN(n));
-    let nextFree=1;
-    const freeKey=()=>{while(TN[nextFree]||usedKeys.includes(nextFree))nextFree++;usedKeys.push(nextFree);return nextFree;};
-
-    const added=[],unchanged=[],renumbered=[];
-    keys.forEach(k=>{
-      const v=res.turnusuri[k];
-      const s=sig(v);
-      const matchKey=Object.keys(TN).find(ek=>TN[ek]&&sig(TN[ek])===s&&s);
-      if(matchKey){unchanged.push({from:k,at:matchKey});return;}
-      let target=k;
-      if(TN[target])target=freeKey();
-      if(String(target)!==String(k))renumbered.push({from:k,to:target});
-      TN[target]={segmente:v.segmente,note:v.note,trenuri:v.trenuri,cols:v.cols,src:'pdf',cal:buildCal(v.segmente),circRaw:v.circRaw,circDays:v.circDays};
-      added.push(target);
-    });
-    if(added.length)save();
-    renderEditorList();renderTags();
-    let out=added.length?`✅ Adăugat${added.length>1?'e':''} din PDF`+(res.auto?' (schemă recunoscută automat)':'')+':\n':'ℹ️ Nimic nou de adăugat.\n';
-    added.forEach(k=>{
-      const t=TN[k];
-      out+=`T${k} (col ${t.cols.join('+')}): `+t.segmente.map(s=>s.prez+'→'+s.iesire).join(' | ')+'\n';
-    });
-    if(renumbered.length)out+='↪ Diferă de turnusul cu același număr din PDF, așa că '+renumbered.map(r=>`T${r.from}→T${r.to}`).join(', ')+'.\n';
-    if(unchanged.length)out+='= Neschimbate (identice cu ce aveai deja): '+unchanged.map(u=>`T${u.from} = T${u.at}`).join(', ')+'\n';
-    if(res.method!=='linii')out+='⚠ Nu am putut citi liniile tabelului — coloanele sunt estimate. Verifică trenurile din fiecare turnus!\n';
-    if(res.circRaw)out+=`🗓 Circulă: ${res.circRaw}`+(res.circDays?'':' (etichetă nerecunoscută — turnusul va fi propus în orice zi)')+'\n';
-    if(res.warns.length)out+='⚠ '+res.warns.join('\n⚠ ');
-    say(out.trim(),res.warns.length||res.method!=='linii'?'var(--yel)':(added.length?'var(--grn)':'var(--txtm)'));
-  }catch(err){
-    console.error(err);
-    say('❌ '+err.message,'var(--red)');
-  }
-}
-
-// ══════════════════════════════════════════════
-// FIȘA DE LUCRU (deja încărcată pe site) → TURNUSURI PE ZILE
-// ══════════════════════════════════════════════
-const SHEET_OWNER='vladynitu1',SHEET_REPO='vladynitu1.github.io',SHEET_BRANCH='main';
-let _sheetCands=[];
+let uploadImageB64 = null;
 
 function openUpload(){
+  document.getElementById('uploadLuna').value = curM + 1;
   document.getElementById('uploadOverlay').classList.add('open');
 }
 function closeUpload(){
   document.getElementById('uploadOverlay').classList.remove('open');
+}
+function onUploadDrop(e){
+  e.preventDefault();
+  document.getElementById('uploadZone').style.borderColor='var(--bord2)';
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/'))processUploadFile(f);
+}
+function onUploadFile(e){
+  const f=e.target.files[0];
+  if(f)processUploadFile(f);
+  e.target.value='';
+}
+function processUploadFile(file){
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    uploadImageB64=ev.target.result.split(',')[1];
+    const prev=document.getElementById('uploadPreview');
+    prev.src=ev.target.result; prev.style.display='block';
+    const btn=document.getElementById('uploadBtn');
+    btn.disabled=false; btn.style.opacity='1';
+    setUploadStatus('✓ Poza încărcată. Apasă "Procesează cu AI".');
+  };
+  reader.readAsDataURL(file);
 }
 function setUploadStatus(msg,color){
   const el=document.getElementById('uploadStatus');
@@ -1796,134 +1239,154 @@ function setUploadStatus(msg,color){
   el.textContent=msg;
 }
 
-async function sheetFetch(path){
-  const enc=path.split('/').map(encodeURIComponent).join('/');
-  try{
-    const headers={Accept:'application/vnd.github.raw'};
-    if(ghToken)headers.Authorization='Bearer '+ghToken;
-    const r=await fetch(`https://api.github.com/repos/${SHEET_OWNER}/${SHEET_REPO}/contents/${enc}?ref=${SHEET_BRANCH}`,{cache:'no-store',headers});
-    if(r.status===404)return null;
-    if(r.ok){try{return JSON.parse(await r.text());}catch(e){}}
-  }catch(e){}
-  try{
-    const r=await fetch(path+'?t='+Date.now(),{cache:'no-store'});
-    if(r.ok)return await r.json();
-  }catch(e){}
-  try{
-    const r=await fetch(`https://raw.githubusercontent.com/${SHEET_OWNER}/${SHEET_REPO}/${SHEET_BRANCH}/${path}?t=${Date.now()}`,{cache:'no-store'});
-    if(r.ok)return await r.json();
-  }catch(e){}
-  return null;
+function decodeTren(cod){
+  cod=String(cod).trim().replace(/\s/g,'');
+  if(!cod||cod==='-')return null;
+  if(/^\d{5}$/.test(cod))return cod;
+  if(/^[Rr]\d+$/.test(cod))return cod.toUpperCase();
+  if(/^\d{2}$/.test(cod))return '102'+cod;
+  if(/^\d{3}$/.test(cod))return '10'+cod;
+  if(/^\d{4}$/.test(cod))return '1'+cod;
+  return cod;
 }
 
-function nameMatches(blockName,typed){
-  const b=normTxt(blockName);
-  const toks=normTxt(typed).split(/\s+/).filter(Boolean);
-  return toks.length>0&&toks.every(t=>b.includes(t));
-}
-
-async function runSheetImport(){
+async function runUploadAI(){
+  if(!uploadImageB64){alert('Încarcă o poză mai întâi!');return;}
   const nume=document.getElementById('uploadNume').value.trim();
-  const pick=document.getElementById('uploadPick');pick.style.display='none';pick.innerHTML='';
+  const luna=parseInt(document.getElementById('uploadLuna').value);
   if(!nume){alert('Scrie numele tău!');return;}
-  const haveTN=Object.keys(TN).some(k=>TN[k]&&TN[k].trenuri&&TN[k].trenuri.length);
-  if(!haveTN){
-    setUploadStatus('Nu am turnusuri cu trenuri. Deschide „⚙ Turnus-uri” și importă întâi PDF-ul cu turnusul.','var(--red)');
-    return;
-  }
+  if(!luna||luna<1||luna>12){alert('Luna invalidă!');return;}
+
   const btn=document.getElementById('uploadBtn');
-  btn.disabled=true;btn.textContent='⏳ Caut...';
-  setUploadStatus('Caut „'+nume+'” în toate fișele de lucru...','var(--yel)');
+  btn.disabled=true; btn.textContent='⏳ Procesez...';
+  setUploadStatus('🤖 Trimit fișa la AI... 10-20 secunde...','var(--yel)');
+
+  let tnInfo='';
+  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+    const t=TN[k];
+    const segs=(t.segmente||[]).map(s=>`${s.prez}→${s.iesire}`).join(' | ');
+    tnInfo+=`T${k}: note="${t.note||''}" | ore: ${segs}\n`;
+  });
+
+  const prompt=`Ești expert în citirea fișelor de lucru CFR România.
+
+Analizează imaginea și găsește rândul pentru angajatul: "${nume}"
+
+REGULA DECODARE TRENURI (foarte importantă):
+- 2 cifre (ex: 27, 32, 42, 50) → 102XX (ex: 10227, 10232, 10242, 10250)
+- 3 cifre (ex: 201, 202, 119, 120) → 10XXX (ex: 10201, 10202, 10119, 10120)  
+- 4 cifre (ex: 1024, 2034) → rămân ca atare sau cu prefix R (Regie)
+- "Pl vest" sau "Pl Vest" = Piața Vest (locație, nu tren)
+- "Grivita" = Grivița, "Gr Nord" = Gara Nord (locații)
+- "/" între numere = două trenuri diferite (ex: 27/32 = 10227 și 10232)
+- "co" = concediu, "L" = liber
+
+TURNUSURI DISPONIBILE:
+${tnInfo}
+
+SARCINA:
+1. Găsește rândul "${nume}" în tabel
+2. Tabelul are coloanele 1,2,3...30 reprezentând zilele lunii ${luna}
+3. Pentru fiecare zi citește ce scrie în celulă (trenuri/coduri)
+4. Identifică turnus-ul T1-T12 potrivit comparând trenurile din celulă cu trenurile din turnusuri
+5. Returnează DOAR JSON valid fără alt text:
+
+{
+  "zile": {
+    "1": "T3",
+    "2": "T1", 
+    "3": null,
+    "4": "CO",
+    "5": "T7"
+  }
+}
+
+Unde: "T1"-"T12" = turnus identificat, null = liber, "CO" = concediu, "?" = neclar
+Completează TOATE zilele 1-${new Date(curYear,luna,0).getDate()}.
+Returnează STRICT JSON, fără markdown.`;
+
   try{
-    const idx=await sheetFetch('data/mecanici/index.json');
-    const docs=Array.isArray(idx)?idx:[];
-    if(!docs.length){setUploadStatus('Nu găsesc fișe de lucru încărcate (data/mecanici).','var(--red)');return;}
-    const cands=[];const noMonth=[];
-    for(const doc of docs){
-      const data=await sheetFetch('data/mecanici/'+doc.id+'.json');
-      const rows=data&&Array.isArray(data.rows)?data.rows:[];
-      if(!rows.length)continue;
-      const head=normTxt(rowsToText(rows.slice(0,8))+' '+(doc.filename||''));
-      const mIdx=MO.findIndex(mn=>head.includes(normTxt(mn)));
-      if(mIdx<0){noMonth.push(doc.filename);continue;}
-      const ym=head.match(/\b(20\d\d)\b/);
-      const an=ym?+ym[1]:curYear;
-      splitBlocksStructured(rows).forEach(b=>{if(nameMatches(b.name,nume))cands.push({doc,b,luna:mIdx+1,an});});
-    }
-    if(!cands.length){
-      let m='Nu am găsit „'+nume+'” în nicio fișă de lucru încărcată.';
-      if(noMonth.length)m+='\n⚠ Nu am putut recunoaște luna din: '+noMonth.join(', ')+'.';
-      setUploadStatus(m,'var(--red)');
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:uploadImageB64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+
+    const data=await resp.json();
+    if(data.error){
+      setUploadStatus('Eroare API: '+data.error.message,'var(--red)');
+      btn.disabled=false; btn.textContent='🤖 Procesează cu AI';
       return;
     }
-    // grupăm pe (an-lună): dacă într-o lună apar mai multe potriviri pentru nume, cerem alegerea;
-    // restul se aplică direct, automat, pentru fiecare lună/an găsit(ă).
-    const byMonth={};
-    cands.forEach(c=>{(byMonth[c.an+'-'+c.luna]=byMonth[c.an+'-'+c.luna]||[]).push(c);});
-    const autoApply=[],ambiguous=[];
-    Object.values(byMonth).forEach(arr=>{ if(arr.length===1)autoApply.push(arr[0]); else ambiguous.push(arr); });
-    const results=autoApply.map(applySheetCand);
-    if(ambiguous.length){
-      _sheetCands=ambiguous.flat();
-      let offset=0;
-      pick.style.display='block';
-      pick.innerHTML='<div style="font-size:.75rem;color:var(--txtm);margin-bottom:4px">Mai multe potriviri într-o lună — alege pentru fiecare:</div>'+
-        ambiguous.map(arr=>arr.map((c,i)=>{const gi=offset+i;return `<button class="btn btn-s btn-sm" style="margin:3px 4px 3px 0" onclick="pickSheetCand(${gi})">${escH(c.b.name)} — ${MO[c.luna-1]} ${c.an} (${escH(c.doc.filename)})</button>`;}).join('')+((offset+=arr.length),'')).join('<br>');
-    }
-    const applied=results.reduce((s,r)=>s+r.applied.length,0);
-    const co=results.reduce((s,r)=>s+r.co.length,0);
-    let msg=results.length?results.map(r=>r.msg).join('\n\n'):'';
-    if(ambiguous.length)msg+=(msg?'\n\n':'')+'⚠ Alege mai sus persoana corectă pentru lunile ambigue.';
-    if(!msg)msg='ℹ️ Nimic de aplicat automat — alege mai sus.';
-    const diag=Object.keys(TN).sort((a,b)=>+a-+b).map(k=>{const t=TN[k];return `T${k}${t.cols?' (col '+t.cols.join('+')+')':''}: `+((t.trenuri||[]).map(a=>a.join(' ')).join(' / ')||'FĂRĂ TRENURI');}).join('\n');
-    msg+='\n\nTurnusuri în editor (trenuri):\n'+diag;
-    setUploadStatus(msg,ambiguous.length||results.some(r=>r.warn)?'var(--yel)':'var(--grn)');
-  }catch(err){
-    console.error(err);
-    setUploadStatus('❌ Eroare: '+err.message,'var(--red)');
-  }finally{
-    btn.disabled=false;btn.textContent='🔎 Preia turnusurile';
-  }
-}
-function pickSheetCand(i){
-  const pick=document.getElementById('uploadPick');pick.style.display='none';
-  if(_sheetCands[i]){
-    const r=applySheetCand(_sheetCands[i]);
-    setUploadStatus(r.msg,r.warn?'var(--yel)':'var(--grn)');
-  }
-}
 
-function applySheetCand(c){
-  const luna=c.luna,an=c.an||curYear;
-  if(an!==curYear){
-    return {msg:`⚠ ${c.b.name} — ${c.doc.filename}: e pentru anul ${an}, dar ești pe ${curYear}. Schimbă anul (📅 sus) și reia.`,warn:true,applied:[],co:[]};
-  }
-  const m=luna-1,dim=new Date(an,luna,0).getDate();
-  const refs=[];
-  Object.keys(TN).forEach(k=>{
-    const t=TN[k];
-    (t&&t.trenuri||[]).forEach((tr,i)=>{if(tr&&tr.length)refs.push({k:+k,i,set:new Set(tr),circDays:t.circDays});});
-  });
-  const weekdayOf=d=>JSDAY_TO_CIRC[new Date(curYear,m,d).getDay()];
-  const res=matchMonth(c.b.dayCodes,dim,refs,weekdayOf);
-  const applied=[],orphan=[];
-  for(let d=1;d<=dim;d++){
-    const mt=res.days[d];
-    if(!mt)continue;
-    if(mt.i===0){applyTurnus(mt.k,m,d);applied.push(`${d}=T${mt.k}`);}
-    else{
-      const prev=res.days[d-1];
-      if(!(prev&&prev.k===mt.k&&prev.i===mt.i-1))orphan.push(`${d} (T${mt.k}, ziua ${mt.i+1})`);
+    const txt=(data.content||[]).map(x=>x.text||'').join('');
+    const clean=txt.replace(/```json|```/g,'').trim();
+
+    let parsed;
+    try{
+      parsed=JSON.parse(clean);
+    }catch(e){
+      const m=clean.match(/\{[\s\S]*\}/);
+      if(m)parsed=JSON.parse(m[0]);
+      else throw new Error('JSON invalid: '+clean.substring(0,200));
     }
+
+    const zile=parsed.zile||parsed;
+    let aplicate=0, neidentificate=[];
+    const m=luna-1;
+
+    Object.entries(zile).forEach(([ziStr,val])=>{
+      const zi=parseInt(ziStr);
+      if(!zi||zi<1||zi>31)return;
+      if(!val||val===null||val==='null')return;
+      
+      const v=String(val).trim().toUpperCase();
+      
+      if(v==='CO'||v==='CONCEDIU'){
+        const dd=gd(m,zi);
+        dd.note='Concediu'; save(); aplicate++;
+        return;
+      }
+      if(v==='L'||v==='LIBER'){
+        return;
+      }
+      if(v==='?'||v==='NECLAR'){
+        neidentificate.push(ziStr);
+        return;
+      }
+
+      const num=parseInt(v.replace(/[Tt]/g,''));
+      if(num>=1&&TN[num]){
+        applyTurnus(num,m,zi);
+        aplicate++;
+      } else {
+        neidentificate.push(ziStr+'('+v+')');
+      }
+    });
+
+    let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
+    if(neidentificate.length>0){
+      msg+=`\n⚠ Neidentificate (verifică manual): zilele ${neidentificate.join(', ')}`;
+    }
+    setUploadStatus(msg,'var(--grn)');
+    renderTabs(); renderTable();
+
+  }catch(err){
+    setUploadStatus('❌ Eroare: '+err.message,'var(--red)');
+    console.error(err);
+  }finally{
+    btn.disabled=false; btn.textContent='🤖 Procesează cu AI';
   }
-  res.co.forEach(d=>{gd(m,d).note='Concediu';});
-  if(res.co.length)save();
-  curM=m;renderTabs();renderTable();
-  let msg=`✅ ${c.b.name} — ${c.doc.filename}\n${applied.length} turnusuri puse în ${MO[m]} ${an}:\n${applied.join('  ')||'—'}`;
-  if(res.co.length)msg+=`\nConcediu: zilele ${res.co.join(', ')}`;
-  if(orphan.length)msg+=`\n⚠ Continuare de turnus fără zi de start în lună: ${orphan.join(', ')}`;
-  if(res.unknown.length)msg+=`\n⚠ Nepotrivite cu niciun turnus: `+res.unknown.map(u=>`${u.d} (${u.trains.join(', ')})`).join('; ');
-  return {msg,warn:!!(res.unknown.length||orphan.length),applied,co:res.co};
 }
 
 init();
