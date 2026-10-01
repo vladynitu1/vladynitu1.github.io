@@ -1328,7 +1328,7 @@ function autoTnMap(colNums,freeCols,restCols){
     if(restCols.has(n)){
       while(grp.length<2&&i+grp.length<colNums.length){
         const nx=colNums[i+grp.length];
-        if(!freeCols.has(nx)&&restCols.has(nx))grp.push(nx);else break;
+        if(!freeCols.has(nx))grp.push(nx);else break;
       }
     }
     map[++t]=grp;i+=grp.length;
@@ -1339,9 +1339,12 @@ function parseTurnusRows(rows,vx,map){
   const circRaw=findCircLabel(rows);
   const circDays=parseCirc(circRaw);
   // 1) rândul de antet cu numerele coloanelor
-  const hdr=rows.find(r=>r.items.some(i=>/Statiile/i.test(i.str))&&r.items.filter(i=>/^\d{1,2}$/.test(i.str)).length>=2);
+  const hdr=rows.find(r=>r.items.some(i=>/Statiile/i.test(i.str)));
   if(!hdr)throw new Error('Nu găsesc rândul cu numerele coloanelor (Statiile/nr.ech).');
-  const labels=hdr.items.filter(i=>/^\d{1,2}$/.test(i.str)).map(i=>({n:parseInt(i.str,10),cx:i.x+(i.w||0)/2})).sort((a,b)=>a.cx-b.cx);
+  // Numărul de coloană vine din ORDINEA de pe rând, nu din cifra scrisă acolo — unele PDF-uri au
+  // eticheta unei coloane greșit tipărită (ex. „00:00” în loc de „8”), dar poziția rămâne corectă.
+  const labelItems=hdr.items.filter(i=>!/statiile/i.test(i.str)&&i.x>hdr.items.find(x=>/statiile/i.test(x.str)).x+30);
+  const labels=labelItems.sort((a,b)=>a.x-b.x).map((i,idx)=>({n:idx+1,cx:i.x+(i.w||0)/2}));
   const {cols,method}=computeColumns(labels,vx);
   const colOf=it=>{
     const cx=it.x+(it.w||0)/2;
