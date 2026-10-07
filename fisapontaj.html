@@ -303,18 +303,19 @@ function recalcAll(){
   }));
   Object.keys(db).forEach(ms=>Object.keys(db[ms]).forEach(ds=>{
     const dd=db[ms][ds];
-    if(dd.src||(dd.overflow&&/continuare/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn}
+    if(dd.src||(dd.overflow&&/continuare/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn;db[ms][ds].supp=dd.supp}
   }));
   const acc={},acc2={};
   const festY=dt=>{const w=dt.getDay();return w===0||w===6||!!buildHols(dt.getFullYear())[`${dt.getMonth()+1}-${dt.getDate()}`]};
-  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],ol:0,oo:0,on:0,of:0})};
+  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],incKeys:[],ol:0,oo:0,on:0,of:0})};
   function addInt(m,d,a,b,kind,label){
     while(a<b){
       const off=Math.floor(a/1440),end=Math.min(b,(off+1)*1440);
       const dt=new Date(curYear,m,d+off);
       if(dt.getFullYear()>curYear+1)return;
+      if(off>0&&dt.getFullYear()===curYear){const td=(db[dt.getMonth()]||{})[dt.getDate()];if(td&&td.supp&&td.supp.includes(label+'@'+m+'-'+d)){a=end;continue}}
       const x=A(dt),len=end-a;
-      if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label))x.inc.push(label);
+      if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label)){x.inc.push(label);x.incKeys.push(label+'@'+m+'-'+d)}
       if(kind==='w'){
         let n=0;for(let t=a;t<end;t++){const r=t%1440;if(r>=1320||r<360)n++}
         x.ol+=len;x.on+=n;
@@ -341,7 +342,7 @@ function recalcAll(){
 }
 function fillDay(dd,x){
     x.wp.sort((a,b)=>a.st-b.st);x.rp.sort((a,b)=>a.st-b.st);
-    dd.tn=x.tns.join('+');dd.inc=x.inc;
+    dd.tn=x.tns.join('+');dd.inc=x.inc;dd.incKeys=x.incKeys;
     dd.prez=x.wp.length?hhmm(x.wp[0].st):'';
     dd.iesire=x.wp.length?hhmm(Math.max(...x.wp.map(p=>p.en))%1440):'';
     dd.ol=x.ol?fmtm(x.ol):'';dd.oo=x.oo?fmtm(x.oo):'';dd.on=x.ol?fmtm(x.on):'';dd.of=x.of?fmtm(x.of):'';
@@ -367,18 +368,19 @@ function writeNextYear(acc2){
   });
   try{localStorage.setItem('cfr_'+y,JSON.stringify(o))}catch(e){}
 }
-function applyTurnus(num,m,d){const dd=gd(m,d);dd.src='T'+num;dd.snap=snapOf([num]);recalcAll();save();renderTabs();renderTable()}
-function deleteDay(m,d){db[m][d]=blankDay();recalcAll();save();renderTabs();renderTable()}
+function applyTurnus(num,m,d){const dd=gd(m,d);dd.src='T'+num;dd.snap=snapOf([num]);clearSupp(m,d);recalcAll();save();renderTabs();renderTable()}
+function clearSupp(m,d){const k='@'+m+'-'+d;Object.values(db).forEach(mo=>Object.values(mo).forEach(x=>{if(x.supp)x.supp=x.supp.filter(e=>!e.endsWith(k))}))}
+function deleteDay(m,d){const dd=gd(m,d),supp=(dd.supp||[]).slice();(dd.incKeys||[]).forEach(k=>{if(!supp.includes(k))supp.push(k)});db[m][d]=blankDay();db[m][d].supp=supp;recalcAll();save();renderTabs();renderTable()}
 function applyFromInput(val,m,d){
   val=val.trim().toUpperCase();
   const dd=gd(m,d);
-  if(val===''){if(dd.src||(dd.tn&&!dd.overflow))deleteDay(m,d);return}
+  if(val===''){if(dd.tn||dd.src)deleteDay(m,d);return}
   if(val===(dd.tn||'')||val===(dd.src||''))return;
   const nums=parseSrc(val);
   if(nums){
     const inc=dd.inc||[];
     const own=nums.filter(n=>!inc.includes('T'+n));
-    dd.src=own.map(n=>'T'+n).join('+');dd.snap=own.length?snapOf(own):undefined;
+    dd.src=own.map(n=>'T'+n).join('+');clearSupp(m,d);dd.snap=own.length?snapOf(own):undefined;
     recalcAll();save();renderTabs();renderTable();
   }
   else{setF(m,d,'tn',val);renderTable()}
@@ -445,7 +447,7 @@ function renderTable(){
     tdTn.appendChild(wrap);tr.appendChild(tdTn);
 
     const tdDel=document.createElement('td');tdDel.style.width='30px';
-    if(dd.src||(dd.tn&&!dd.overflow)){const bd=document.createElement('button');bd.className='btn-del';bd.textContent='✕';bd.onclick=()=>deleteDay(m,d);tdDel.appendChild(bd)}
+    if(dd.tn||dd.src){const bd=document.createElement('button');bd.className='btn-del';bd.textContent='✕';bd.onclick=()=>deleteDay(m,d);tdDel.appendChild(bd)}
     tr.appendChild(tdDel);
 
     [{v:dd.prez,c:'pr',p:'--:--',f:'prez'},{v:dd.iesire,c:'ie',p:'--:--',f:'iesire'},
@@ -657,7 +659,7 @@ Completează TOATE zilele 1-${new Date(curYear,luna,0).getDate()}. STRICT JSON, 
       if(v==='L'||v==='LIBER')return;
       if(v==='?'||v==='NECLAR'){neid.push(zs);return}
       const nums=parseSrc(v);
-      if(nums){const dz=gd(m,zi);dz.src=nums.map(n=>'T'+n).join('+');dz.snap=snapOf(nums);aplicate++}else neid.push(zs+'('+v+')');
+      if(nums){const dz=gd(m,zi);dz.src=nums.map(n=>'T'+n).join('+');clearSupp(m,zi);dz.snap=snapOf(nums);aplicate++}else neid.push(zs+'('+v+')');
     });
     recalcAll();save();renderTabs();renderTable();
     let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
