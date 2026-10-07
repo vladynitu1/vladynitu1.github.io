@@ -282,28 +282,28 @@ function loadYear(){
 function load(){
   loadYear();updateStatusDot();
   if(ghToken){
-    loadFromGithub().then(ok=>{if(ok){loadYear();recalcAll();renderTags();renderTabs();renderTable()}});
+    loadFromGithub().then(ok=>{if(ok){loadYear();renderTags();renderTabs();renderTable()}});
   }else setSyncStatus('local','Local');
 }
 window.addEventListener('storage',e=>{if(e.key==='emx_gh_token')location.reload()});
 
 // ══ RECALCUL: împarte orele la 00:00, suportă T4+T5 ══
-function parseSrc(val){
+function snapOf(nums){const o={};nums.forEach(n=>o[n]=JSON.parse(JSON.stringify(TN[n])));return o}
+function parseSrc(val,snap){
   const parts=String(val).toUpperCase().split(/[+,;\s]+/).filter(Boolean);
   const nums=[];
-  for(const p of parts){const n=parseInt(p.replace(/T/g,''));if(!(n>=1&&TN[n]&&TN[n].segmente&&TN[n].segmente.length))return null;nums.push(n)}
+  for(const p of parts){const n=parseInt(p.replace(/T/g,''));const t=(snap&&snap[n])||TN[n];if(!(n>=1&&t&&t.segmente&&t.segmente.length))return null;nums.push(n)}
   return nums.length?nums:null;
 }
 function recalcAll(){
   const srcs=[];
   Object.keys(db).forEach(ms=>Object.keys(db[ms]).forEach(ds=>{
     const dd=db[ms][ds];
-    if(!dd.src&&dd.tn&&!dd.overflow){const n=parseSrc(dd.tn);if(n)dd.src=n.map(x=>'T'+x).join('+')}
     if(dd.src)srcs.push([+ms,+ds,dd.src]);
   }));
   Object.keys(db).forEach(ms=>Object.keys(db[ms]).forEach(ds=>{
     const dd=db[ms][ds];
-    if(dd.src||dd.overflow){const s=dd.src||'';db[ms][ds]=blankDay();db[ms][ds].src=s}
+    if(dd.src||(dd.overflow&&/continuare/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn}
   }));
   const acc={};
   const A=dt=>{const k=dt.getMonth()+'-'+dt.getDate();return acc[k]||(acc[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],ol:0,oo:0,on:0,of:0})};
@@ -324,8 +324,8 @@ function recalcAll(){
     }
   }
   srcs.forEach(([m,d,s])=>{
-    (parseSrc(s)||[]).forEach(num=>{
-      const t=TN[num];let cur=0,prevEnd=null;
+    const sn=db[m][d].snap;(parseSrc(s,sn)||[]).forEach(num=>{
+      const t=(sn&&sn[num])||TN[num];let cur=0,prevEnd=null;
       t.segmente.forEach(sg=>{
         const sM=p2m(sg.prez),eM=p2m(sg.iesire);if(sM<0||eM<0)return;
         let st=sM;while(st<cur)st+=1440;let en=eM;while(en<=st)en+=1440;
@@ -349,21 +349,21 @@ function recalcAll(){
     dd.note=x.notes.filter(Boolean).join(' + ')+(dd.overflow?' (continuare)':'');
   });
 }
-function applyTurnus(num,m,d){gd(m,d).src='T'+num;recalcAll();save();renderTabs();renderTable()}
+function applyTurnus(num,m,d){const dd=gd(m,d);dd.src='T'+num;dd.snap=snapOf([num]);recalcAll();save();renderTabs();renderTable()}
 function deleteDay(m,d){db[m][d]=blankDay();recalcAll();save();renderTabs();renderTable()}
 function applyFromInput(val,m,d){
   val=val.trim().toUpperCase();
   const dd=gd(m,d);
   if(val===''){if(dd.src||(dd.tn&&!dd.overflow))deleteDay(m,d);return}
-  if(val===(dd.src||''))return;
+  if(val===(dd.src||'')||(!dd.src&&val===(dd.tn||'')))return;
   const nums=parseSrc(val);
-  if(nums){dd.src=nums.map(n=>'T'+n).join('+');recalcAll();save();renderTabs();renderTable()}
+  if(nums){dd.src=nums.map(n=>'T'+n).join('+');dd.snap=snapOf(nums);recalcAll();save();renderTabs();renderTable()}
   else{setF(m,d,'tn',val);renderTable()}
 }
 
 // ── RENDER ──
 function init(){
-  load();recalcAll();
+  load();
   document.getElementById('yrBadge').textContent='📅 '+curYear;
   renderTags();renderTabs();renderTable();buildAddTnBox();updateStickyOffset();
 }
@@ -413,7 +413,7 @@ function renderTable(){
     const tdZ=document.createElement('td');tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;tr.appendChild(tdZ);
 
     const tdTn=document.createElement('td'),wrap=document.createElement('div');wrap.className='tn-inp-wrap';
-    const inp=document.createElement('input');inp.value=dd.src||(dd.overflow?'':dd.tn)||'';inp.placeholder='T1 / T4+T5';
+    const inp=document.createElement('input');inp.value=dd.src||dd.tn||'';
     inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur()}});
     inp.addEventListener('blur',function(){applyFromInput(this.value,m,d)});
     wrap.appendChild(inp);
@@ -429,14 +429,14 @@ function renderTable(){
      {v:dd.ol,c:'ol',p:'0:00',f:'ol',s:dd.dl},{v:dd.oo,c:'oo',p:'0:00',f:'oo',s:dd.dr},
      {v:showN,c:'on',p:'auto',f:'on',s:dd.dn},{v:showF,c:'of',p:isFestD?'auto':'-',f:'of'}].forEach(fd=>{
       const td=document.createElement('td'),i=document.createElement('input');
-      i.className='ce '+fd.c;i.value=fd.v||'';i.placeholder=fd.p;
+      i.className='ce '+fd.c;i.value=fd.v||'';
       i.addEventListener('change',function(){setF(m,d,fd.f,this.value)});
       td.appendChild(i);
       if(fd.s){const s=document.createElement('div');s.className='sub';s.textContent=fd.s;td.appendChild(s)}
       tr.appendChild(td);
     });
     const tdN=document.createElement('td'),iN=document.createElement('input');
-    iN.className='ne';iN.value=dd.note||'';iN.placeholder='mențiuni...';
+    iN.className='ne';iN.value=dd.note||'';
     iN.addEventListener('change',function(){setF(m,d,'note',this.value)});
     tdN.appendChild(iN);tr.appendChild(tdN);
     body.appendChild(tr);
@@ -471,7 +471,7 @@ function updateCards(){
 
 // ── EDITOR TURNUS ──
 function openEditor(){renderEditorList();document.getElementById('editorOverlay').classList.add('open')}
-function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');recalcAll();save();renderTags();renderTabs();renderTable()}
+function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');save();renderTags();renderTabs();renderTable()}
 let newSegs=[];
 function buildAddTnBox(){
   document.getElementById('addTnBox').innerHTML=`<div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
@@ -563,7 +563,7 @@ function openYearModal(){
 }
 function closeYearModal(){document.getElementById('yearOverlay').classList.remove('open')}
 function selectYear(y){
-  save();curYear=y;curM=0;loadYear();recalcAll();
+  save();curYear=y;curM=0;loadYear();
   document.getElementById('yrBadge').textContent='📅 '+curYear;
   closeYearModal();renderTags();renderTabs();renderTable();
 }
@@ -634,7 +634,7 @@ Completează TOATE zilele 1-${new Date(curYear,luna,0).getDate()}. STRICT JSON, 
       if(v==='L'||v==='LIBER')return;
       if(v==='?'||v==='NECLAR'){neid.push(zs);return}
       const nums=parseSrc(v);
-      if(nums){gd(m,zi).src=nums.map(n=>'T'+n).join('+');aplicate++}else neid.push(zs+'('+v+')');
+      if(nums){const dz=gd(m,zi);dz.src=nums.map(n=>'T'+n).join('+');dz.snap=snapOf(nums);aplicate++}else neid.push(zs+'('+v+')');
     });
     recalcAll();save();renderTabs();renderTable();
     let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
