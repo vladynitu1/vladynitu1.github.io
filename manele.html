@@ -305,19 +305,20 @@ function recalcAll(){
     const dd=db[ms][ds];
     if(dd.src||(dd.overflow&&/continuare/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn}
   }));
-  const acc={};
-  const A=dt=>{const k=dt.getMonth()+'-'+dt.getDate();return acc[k]||(acc[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],ol:0,oo:0,on:0,of:0})};
+  const acc={},acc2={};
+  const festY=dt=>{const w=dt.getDay();return w===0||w===6||!!buildHols(dt.getFullYear())[`${dt.getMonth()+1}-${dt.getDate()}`]};
+  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],ol:0,oo:0,on:0,of:0})};
   function addInt(m,d,a,b,kind,label){
     while(a<b){
       const off=Math.floor(a/1440),end=Math.min(b,(off+1)*1440);
       const dt=new Date(curYear,m,d+off);
-      if(dt.getFullYear()!==curYear)return;
+      if(dt.getFullYear()>curYear+1)return;
       const x=A(dt),len=end-a;
       if(!x.tns.includes(label))x.tns.push(label);
       if(kind==='w'){
         let n=0;for(let t=a;t<end;t++){const r=t%1440;if(r>=1320||r<360)n++}
         x.ol+=len;x.on+=n;
-        if(isFest(dt.getMonth(),dt.getDate()))x.of+=len;
+        if(festY(dt))x.of+=len;
         x.wp.push({st:a-off*1440,en:end-off*1440,len,n});
       }else{x.oo+=len;x.rp.push({st:a-off*1440,len})}
       a=end;
@@ -335,8 +336,10 @@ function recalcAll(){
       A(new Date(curYear,m,d)).notes.push(t.note||'');
     });
   });
-  Object.values(acc).forEach(x=>{
-    const dd=gd(x.m,x.d);
+  Object.values(acc).forEach(x=>fillDay(gd(x.m,x.d),x));
+  writeNextYear(acc2);
+}
+function fillDay(dd,x){
     x.wp.sort((a,b)=>a.st-b.st);x.rp.sort((a,b)=>a.st-b.st);
     dd.tn=x.tns.join('+');
     dd.prez=x.wp.length?hhmm(x.wp[0].st):'';
@@ -347,7 +350,22 @@ function recalcAll(){
     dd.dr=x.rp.length>1?x.rp.map(p=>fmtm(p.len)).join(' + '):'';
     dd.overflow=!dd.src;
     dd.note=x.notes.filter(Boolean).join(' + ')+(dd.overflow?' (continuare)':'');
+}
+function writeNextYear(acc2){
+  const y=curYear+1;let o=null;
+  try{o=JSON.parse(localStorage.getItem('cfr_'+y)||'null')}catch(e){}
+  const days=Object.values(acc2);
+  if(!o&&!days.length)return;
+  o=o||{db:{},TN:{}};o.db=o.db||{};
+  const J=o.db[0]=o.db[0]||{};
+  Object.keys(J).forEach(d=>{const x=J[d];if(x.overflow&&/continuare/.test(x.note||''))J[d]=blankDay()});
+  days.forEach(x=>{
+    if(x.m!==0)return;
+    const dd=J[x.d]||(J[x.d]=blankDay());
+    if(dd.src||(dd.tn&&!dd.overflow))return;
+    fillDay(dd,x);
   });
+  try{localStorage.setItem('cfr_'+y,JSON.stringify(o))}catch(e){}
 }
 function applyTurnus(num,m,d){const dd=gd(m,d);dd.src='T'+num;dd.snap=snapOf([num]);recalcAll();save();renderTabs();renderTable()}
 function deleteDay(m,d){db[m][d]=blankDay();recalcAll();save();renderTabs();renderTable()}
