@@ -307,14 +307,14 @@ function recalcAll(){
   }));
   const acc={},acc2={};
   const festY=dt=>{const w=dt.getDay();return w===0||w===6||!!buildHols(dt.getFullYear())[`${dt.getMonth()+1}-${dt.getDate()}`]};
-  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],ol:0,oo:0,on:0,of:0})};
+  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],ol:0,oo:0,on:0,of:0})};
   function addInt(m,d,a,b,kind,label){
     while(a<b){
       const off=Math.floor(a/1440),end=Math.min(b,(off+1)*1440);
       const dt=new Date(curYear,m,d+off);
       if(dt.getFullYear()>curYear+1)return;
       const x=A(dt),len=end-a;
-      if(!x.tns.includes(label))x.tns.push(label);
+      if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label))x.inc.push(label);
       if(kind==='w'){
         let n=0;for(let t=a;t<end;t++){const r=t%1440;if(r>=1320||r<360)n++}
         x.ol+=len;x.on+=n;
@@ -341,7 +341,7 @@ function recalcAll(){
 }
 function fillDay(dd,x){
     x.wp.sort((a,b)=>a.st-b.st);x.rp.sort((a,b)=>a.st-b.st);
-    dd.tn=x.tns.join('+');
+    dd.tn=x.tns.join('+');dd.inc=x.inc;
     dd.prez=x.wp.length?hhmm(x.wp[0].st):'';
     dd.iesire=x.wp.length?hhmm(Math.max(...x.wp.map(p=>p.en))%1440):'';
     dd.ol=x.ol?fmtm(x.ol):'';dd.oo=x.oo?fmtm(x.oo):'';dd.on=x.ol?fmtm(x.on):'';dd.of=x.of?fmtm(x.of):'';
@@ -373,9 +373,14 @@ function applyFromInput(val,m,d){
   val=val.trim().toUpperCase();
   const dd=gd(m,d);
   if(val===''){if(dd.src||(dd.tn&&!dd.overflow))deleteDay(m,d);return}
-  if(val===(dd.src||'')||(!dd.src&&val===(dd.tn||'')))return;
+  if(val===(dd.tn||'')||val===(dd.src||''))return;
   const nums=parseSrc(val);
-  if(nums){dd.src=nums.map(n=>'T'+n).join('+');dd.snap=snapOf(nums);recalcAll();save();renderTabs();renderTable()}
+  if(nums){
+    const inc=dd.inc||[];
+    const own=nums.filter(n=>!inc.includes('T'+n));
+    dd.src=own.map(n=>'T'+n).join('+');dd.snap=own.length?snapOf(own):undefined;
+    recalcAll();save();renderTabs();renderTable();
+  }
   else{setF(m,d,'tn',val);renderTable()}
 }
 
@@ -431,7 +436,7 @@ function renderTable(){
     const tdZ=document.createElement('td');tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;tr.appendChild(tdZ);
 
     const tdTn=document.createElement('td'),wrap=document.createElement('div');wrap.className='tn-inp-wrap';
-    const inp=document.createElement('input');inp.value=dd.src||dd.tn||'';
+    const inp=document.createElement('input');inp.value=dd.tn||dd.src||'';
     inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur()}});
     inp.addEventListener('blur',function(){applyFromInput(this.value,m,d)});
     wrap.appendChild(inp);
