@@ -125,7 +125,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
 <div class="overlay" id="preiaOverlay"><div class="modal" style="max-width:560px">
   <button class="mclose" onclick="closePreia()">✕</button>
   <h2 style="color:var(--grn)">📥 Preia din fișă</h2>
-  <p style="font-size:.72rem;color:var(--txtm);margin-bottom:10px">Compară fișa cu turnusurile din listă: cele publicate de administrator (🔒) și cele adăugate de tine.</p>
+  <p style="font-size:.72rem;color:var(--txtm);margin-bottom:10px">Dacă ai turnusuri adăugate de tine, se folosesc doar ale tale. Dacă nu ai niciunul, se folosesc cele publicate de administrator.</p>
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:10px">
     <div class="tn-field"><label>Fișa (din Fișa de lucru)</label><select class="fld" id="preiaDoc"></select></div>
     <div class="tn-field"><label>Luna (1-12)</label><input class="fld" id="preiaLuna" type="number" min="1" max="12"></div>
@@ -206,8 +206,9 @@ const YEAR_MIN=2024,YEAR_MAX=2035;
 const _today=new Date();
 let curYear=_today.getFullYear(),curM=_today.getMonth();
 let db={},TN={},SHARED={};
-const isShared=k=>!ghToken&&Object.prototype.hasOwnProperty.call(SHARED,String(k));
-function mergeShared(){if(!ghToken)TN={...TN,...SHARED}}
+const isShared=()=>false;
+const inShared=k=>!ghToken&&Object.prototype.hasOwnProperty.call(SHARED,String(k));
+function mergeShared(){}
 function localTN(){if(ghToken)return TN;const L={};Object.keys(TN).forEach(k=>{if(!isShared(k))L[k]=TN[k]});return L}
 const MO=['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
 const DZ=['Dum','Lun','Mar','Mie','Joi','Vin','Sâm'];
@@ -246,7 +247,7 @@ function updateStatusDot(){
 }
 function save(){
   try{localStorage.setItem('cfr_'+curYear,JSON.stringify({db,TN:localTN()}));localStorage.setItem('cfr_yr',String(curYear))}catch(e){}
-  if(ghToken){const j=JSON.stringify(Object.keys(TN).map(k=>[k,TN[k].segmente,TN[k].note]));if(j!==lastSharedJson&&Object.keys(TN).length){lastSharedJson=j;clearTimeout(pubT);pubT=setTimeout(publishSharedTN,3000)}}
+  schedulePublish();
   if(ghToken){setSyncStatus('syncing','Se salvează...');clearTimeout(syncTimeout);syncTimeout=setTimeout(saveToGithub,2000)}
   else setSyncStatus('local','Local');
 }
@@ -392,7 +393,7 @@ function applyFromInput(val,m,d){
 
 // ── RENDER ──
 function init(){
-  load();loadShared();
+  load();loadShared();setTimeout(schedulePublish,5000);
   document.getElementById('yrBadge').textContent='📅 '+curYear;
   renderTags();renderTabs();renderTable();buildAddTnBox();updateStickyOffset();
 }
@@ -403,11 +404,14 @@ function updateStickyOffset(){
 window.addEventListener('resize',updateStickyOffset);window.addEventListener('load',updateStickyOffset);
 function renderTags(){
   const w=document.getElementById('tagList');w.innerHTML='';
-  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
-    const sp=document.createElement('span');sp.className='tag'+(+k===12?' t12':'');
-    const note=(TN[k].note||'').trim();
-    sp.textContent=`T${k}`+(note?` (${note})`:'')+(isShared(k)?' 🔒':'');w.appendChild(sp);
+  const add=(src,cls)=>Object.keys(src).sort((a,b)=>+a-+b).forEach(k=>{
+    const sp=document.createElement('span');sp.className='tag'+cls;
+    const note=(src[k].note||'').trim();sp.textContent=`T${k}`+(note?` (${note})`:'');w.appendChild(sp);
   });
+  const lab=t=>{const e=document.createElement('div');e.style.cssText='width:100%;font-size:.62rem;color:var(--txtd);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px';e.textContent=t;w.appendChild(e)};
+  const sh=ghToken?{}:SHARED;
+  if(Object.keys(sh).length){lab('🔒 Exemplu — turnusuri publicate de administrator');add(sh,' t12');if(Object.keys(TN).length)lab('Turnusurile tale')}
+  add(TN,'');
   updateStickyOffset();
 }
 function renderTabs(){
@@ -541,7 +545,7 @@ function saveNewTN(){
   const segs=newSegs.filter(s=>s.prez&&s.iesire);
   if(!num||num<1){pv.style.color='var(--red)';pv.textContent='❌ Cod invalid! Ex: T13';return}
   if(!segs.length){pv.style.color='var(--red)';pv.textContent='❌ Adaugă cel puțin un segment!';return}
-  if(isShared(num)){pv.style.color='var(--red)';pv.textContent='❌ T'+num+' este un turnus publicat, îl poate modifica doar administratorul. Alege alt cod.';return}
+  if(inShared(num)){pv.style.color='var(--red)';pv.textContent='❌ T'+num+' există deja printre turnusurile publicate de administrator. Alege alt cod (ex: T'+(Math.max(0,...Object.keys(SHARED).map(Number),...Object.keys(TN).map(Number))+1)+').';return}
   TN[num]={segmente:segs,note:document.getElementById('nNote').value};
   save();renderEditorList();renderTags();
   document.getElementById('nCode').value='';document.getElementById('nNote').value='';
@@ -736,6 +740,12 @@ function splitBlocksStructured(rows){
 
 const SITE={o:'vladynitu1',r:'vladynitu1.github.io',b:'main'};
 const SHARED_PATH='data/turnusuri-partajate.json';
+function schedulePublish(){
+  if(!ghToken||!Object.keys(TN).length)return;
+  const j=JSON.stringify(Object.keys(TN).map(k=>[k,TN[k].segmente,TN[k].note]));
+  if(j===lastSharedJson)return;
+  lastSharedJson=j;clearTimeout(pubT);pubT=setTimeout(publishSharedTN,3000);
+}
 async function loadShared(){
   const sh=await ghRaw(SHARED_PATH);
   if(sh&&sh.TN){
@@ -750,7 +760,7 @@ async function publishSharedTN(){
   const u=`https://api.github.com/repos/${SITE.o}/${SITE.r}/contents/${SHARED_PATH}`;
   try{
     let sha;const g=await fetch(u+'?ref='+SITE.b+'&_='+Date.now(),{headers:ghHeaders()});
-    if(g.ok)sha=(await g.json()).sha;else if(g.status!==404){setSyncStatus('err','Publicare turnusuri: eroare '+g.status);return}
+    if(g.ok){const gj=await g.json();sha=gj.sha;try{if(JSON.stringify(JSON.parse(b64Dec(gj.content)).TN)===JSON.stringify(clean)){setSyncStatus('ok','Turnusuri publicate');return}}catch(e){}}else if(g.status!==404){setSyncStatus('err','Publicare turnusuri: eroare '+g.status);return}
     const body={message:'Turnusuri partajate',branch:SITE.b,content:b64Enc(JSON.stringify({TN:clean,updated:new Date().toISOString()}))};
     if(sha)body.sha=sha;
     const r=await fetch(u,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
@@ -868,9 +878,11 @@ async function preiaNume(name){
   if(!c.length){setPreiaStatus('❌ Nu găsesc numele "'+name+'" în fișă.','var(--red)');return}
   c.sort((a,b)=>Math.abs(normS(a.name).length-normS(name).length)-Math.abs(normS(b.name).length-normS(name).length));
   if(!ghToken&&!Object.keys(SHARED).length)await loadShared();
-  if(!Object.keys(TN).length){setPreiaStatus('❌ Nu există turnusuri. Adaugă-le din ⚙ Turnus-uri.','var(--red)');return}
-  const r=importBlock(c[0],luna);
-  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite: ${Object.keys(TN).length} (publicate + ale tale).`;
+  const saved=TN,useSh=!ghToken&&!Object.keys(TN).length,nUsed=Object.keys(useSh?SHARED:TN).length;
+  if(useSh)TN={...SHARED};
+  if(!Object.keys(TN).length){TN=saved;setPreiaStatus('❌ Nu există turnusuri. Adaugă-le din ⚙ Turnus-uri.','var(--red)');return}
+  let r;try{r=importBlock(c[0],luna,()=>{TN=saved})}finally{TN=saved}
+  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite: ${nUsed} (${useSh?'publicate de administrator':'ale tale'}).`;
   if(c.length>1)msg+=`\nℹ Am mai găsit și: ${c.slice(1).map(x=>x.name).join(', ')}`;
   if(r.neid.length)msg+=`\n⚠ Zile fără turnus potrivit (verifică manual): ${r.neid.join(', ')}`;
   setPreiaStatus(msg);
