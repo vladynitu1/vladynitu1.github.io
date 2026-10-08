@@ -64,7 +64,7 @@ tr.rWkWork .dn{color:var(--red)}tr.rHolWork .dn{color:var(--yel)}
 .tbadge{display:inline-block;background:var(--acc2);border:1px solid var(--acc);border-radius:4px;padding:1px 5px;font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--acc);margin-left:3px}
 .tbadge.tov{background:rgba(255,107,61,.1);border-color:var(--grn);color:var(--grn);font-size:.6rem}
 .tn-inp-wrap{display:flex;align-items:center;white-space:nowrap}
-.tn-inp-wrap input{width:70px;background:var(--surf2);border:1px solid var(--bord2);border-radius:4px;color:var(--acc);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;padding:3px 4px;text-align:center}
+.tn-inp-wrap input{width:96px;background:var(--surf2);border:1px solid var(--bord2);border-radius:4px;color:var(--acc);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;padding:3px 4px;text-align:center}
 .btn-del{background:var(--red2);border:1px solid var(--red);border-radius:4px;color:var(--red);cursor:pointer;padding:3px 7px;font-weight:700}
 tr.totrow td{background:var(--surf3)!important;border-top:2px solid var(--bord2);font-weight:700;font-family:'Rajdhani',sans-serif;font-size:.8rem;padding:9px 5px}
 tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
@@ -118,23 +118,21 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
   <div class="hdr-right">
     <button class="yr-badge" id="yrBadge" onclick="openYearModal()">📅 2026</button>
     <button class="btn btn-o" onclick="openEditor()">⚙ Turnus-uri</button>
-    <button class="btn btn-g" onclick="openUpload()">📋 Încarcă Fișă</button>
+    <button class="btn btn-g" onclick="openPreia()">📥 Preia din fișă</button>
   </div>
 </div>
 
-<div class="overlay" id="uploadOverlay"><div class="modal" style="max-width:520px">
-  <button class="mclose" onclick="closeUpload()">✕</button>
-  <h2 style="color:var(--grn)">📋 Încarcă Fișă de Lucru</h2>
-  <p style="font-size:.8rem;color:var(--txtm);margin-bottom:12px">Încarcă poza cu fișa lunară. Scrie numele exact ca în fișă și luna. AI-ul completează pontajul.</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <div class="tn-field"><label>Numele tău (din fișă)</label><input class="fld" id="uploadNume" value="Nitu Ionut"></div>
-    <div class="tn-field"><label>Luna (1-12)</label><input class="fld" id="uploadLuna" type="number" min="1" max="12"></div>
+<div class="overlay" id="preiaOverlay"><div class="modal" style="max-width:560px">
+  <button class="mclose" onclick="closePreia()">✕</button>
+  <h2 style="color:var(--grn)">📥 Preia din fișă</h2>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:10px">
+    <div class="tn-field"><label>Fișa (din Fișa de lucru)</label><select class="fld" id="preiaDoc"></select></div>
+    <div class="tn-field"><label>Luna (1-12)</label><input class="fld" id="preiaLuna" type="number" min="1" max="12"></div>
   </div>
-  <div onclick="document.getElementById('uploadFileIn').click()" style="border:2px dashed var(--bord2);border-radius:10px;padding:26px;text-align:center;cursor:pointer;margin-bottom:10px;color:var(--grn)">📸 CLICK PENTRU POZĂ</div>
-  <input type="file" id="uploadFileIn" accept="image/*" style="display:none" onchange="onUploadFile(event)">
-  <img id="uploadPreview" style="display:none;max-width:100%;max-height:150px;border-radius:8px;margin-bottom:10px">
-  <div id="uploadStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.73rem;margin-bottom:10px;max-height:160px;overflow-y:auto;white-space:pre-wrap"></div>
-  <div style="display:flex;gap:8px"><button class="btn btn-g" id="uploadBtn" onclick="runUploadAI()" disabled>🤖 Procesează cu AI</button><button class="btn btn-s" onclick="closeUpload()">Anulează</button></div>
+  <div class="tn-field" style="margin-bottom:8px"><label>Adaugă nume (cum apare în fișă)</label>
+    <div style="display:flex;gap:6px"><input class="fld" id="preiaNume" placeholder="Ex: NITU IONUT"><button class="btn btn-s" onclick="addPreiaName()">+ Adaugă</button></div></div>
+  <div id="preiaNames" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+  <div id="preiaStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.73rem;max-height:200px;overflow-y:auto;white-space:pre-wrap"></div>
 </div></div>
 
 <div class="infobox"><div class="tags" id="tagList"></div></div>
@@ -303,18 +301,19 @@ function recalcAll(){
   }));
   Object.keys(db).forEach(ms=>Object.keys(db[ms]).forEach(ds=>{
     const dd=db[ms][ds];
-    if(dd.src||(dd.overflow&&/continuare/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn}
+    if(dd.src||(dd.overflow&&/continuare/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn;db[ms][ds].supp=dd.supp}
   }));
   const acc={},acc2={};
   const festY=dt=>{const w=dt.getDay();return w===0||w===6||!!buildHols(dt.getFullYear())[`${dt.getMonth()+1}-${dt.getDate()}`]};
-  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],ol:0,oo:0,on:0,of:0})};
+  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],incKeys:[],ol:0,oo:0,on:0,of:0})};
   function addInt(m,d,a,b,kind,label){
     while(a<b){
       const off=Math.floor(a/1440),end=Math.min(b,(off+1)*1440);
       const dt=new Date(curYear,m,d+off);
       if(dt.getFullYear()>curYear+1)return;
+      if(off>0&&dt.getFullYear()===curYear){const td=(db[dt.getMonth()]||{})[dt.getDate()];if(td&&td.supp&&td.supp.includes(label+'@'+m+'-'+d)){a=end;continue}}
       const x=A(dt),len=end-a;
-      if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label))x.inc.push(label);
+      if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label)){x.inc.push(label);x.incKeys.push(label+'@'+m+'-'+d)}
       if(kind==='w'){
         let n=0;for(let t=a;t<end;t++){const r=t%1440;if(r>=1320||r<360)n++}
         x.ol+=len;x.on+=n;
@@ -341,7 +340,7 @@ function recalcAll(){
 }
 function fillDay(dd,x){
     x.wp.sort((a,b)=>a.st-b.st);x.rp.sort((a,b)=>a.st-b.st);
-    dd.tn=x.tns.join('+');dd.inc=x.inc;
+    dd.tn=x.tns.join('+');dd.inc=x.inc;dd.incKeys=x.incKeys;
     dd.prez=x.wp.length?hhmm(x.wp[0].st):'';
     dd.iesire=x.wp.length?hhmm(Math.max(...x.wp.map(p=>p.en))%1440):'';
     dd.ol=x.ol?fmtm(x.ol):'';dd.oo=x.oo?fmtm(x.oo):'';dd.on=x.ol?fmtm(x.on):'';dd.of=x.of?fmtm(x.of):'';
@@ -367,18 +366,19 @@ function writeNextYear(acc2){
   });
   try{localStorage.setItem('cfr_'+y,JSON.stringify(o))}catch(e){}
 }
-function applyTurnus(num,m,d){const dd=gd(m,d);dd.src='T'+num;dd.snap=snapOf([num]);recalcAll();save();renderTabs();renderTable()}
-function deleteDay(m,d){db[m][d]=blankDay();recalcAll();save();renderTabs();renderTable()}
+function applyTurnus(num,m,d){const dd=gd(m,d);dd.src='T'+num;dd.snap=snapOf([num]);clearSupp(m,d);recalcAll();save();renderTabs();renderTable()}
+function clearSupp(m,d){const k='@'+m+'-'+d;Object.values(db).forEach(mo=>Object.values(mo).forEach(x=>{if(x.supp)x.supp=x.supp.filter(e=>!e.endsWith(k))}))}
+function deleteDay(m,d){const dd=gd(m,d),supp=(dd.supp||[]).slice();(dd.incKeys||[]).forEach(k=>{if(!supp.includes(k))supp.push(k)});db[m][d]=blankDay();db[m][d].supp=supp;recalcAll();save();renderTabs();renderTable()}
 function applyFromInput(val,m,d){
   val=val.trim().toUpperCase();
   const dd=gd(m,d);
-  if(val===''){if(dd.src||(dd.tn&&!dd.overflow))deleteDay(m,d);return}
+  if(val===''){if(dd.tn||dd.src)deleteDay(m,d);return}
   if(val===(dd.tn||'')||val===(dd.src||''))return;
   const nums=parseSrc(val);
   if(nums){
     const inc=dd.inc||[];
     const own=nums.filter(n=>!inc.includes('T'+n));
-    dd.src=own.map(n=>'T'+n).join('+');dd.snap=own.length?snapOf(own):undefined;
+    dd.src=own.map(n=>'T'+n).join('+');clearSupp(m,d);dd.snap=own.length?snapOf(own):undefined;
     recalcAll();save();renderTabs();renderTable();
   }
   else{setF(m,d,'tn',val);renderTable()}
@@ -436,7 +436,7 @@ function renderTable(){
     const tdZ=document.createElement('td');tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;tr.appendChild(tdZ);
 
     const tdTn=document.createElement('td'),wrap=document.createElement('div');wrap.className='tn-inp-wrap';
-    const inp=document.createElement('input');inp.value=dd.tn||dd.src||'';
+    const inp=document.createElement('input');inp.value=dd.tn||dd.src||'';inp.placeholder='Ex: T1+T2';
     inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur()}});
     inp.addEventListener('blur',function(){applyFromInput(this.value,m,d)});
     wrap.appendChild(inp);
@@ -445,7 +445,7 @@ function renderTable(){
     tdTn.appendChild(wrap);tr.appendChild(tdTn);
 
     const tdDel=document.createElement('td');tdDel.style.width='30px';
-    if(dd.src||(dd.tn&&!dd.overflow)){const bd=document.createElement('button');bd.className='btn-del';bd.textContent='✕';bd.onclick=()=>deleteDay(m,d);tdDel.appendChild(bd)}
+    if(dd.tn||dd.src){const bd=document.createElement('button');bd.className='btn-del';bd.textContent='✕';bd.onclick=()=>deleteDay(m,d);tdDel.appendChild(bd)}
     tr.appendChild(tdDel);
 
     [{v:dd.prez,c:'pr',p:'--:--',f:'prez'},{v:dd.iesire,c:'ie',p:'--:--',f:'iesire'},
@@ -596,75 +596,222 @@ function renderHolPreview(y){
   .forEach(e=>{const div=document.createElement('div');div.className='hol-row';div.innerHTML=`<span class="hol-date">${String(e.da).padStart(2,'0')}.${String(e.mo).padStart(2,'0')}.${y}</span><span>${e.v}</span>`;list.appendChild(div)});
 }
 
-// ── UPLOAD FIȘĂ + AI ──
-let uploadImageB64=null;
-function openUpload(){document.getElementById('uploadLuna').value=curM+1;document.getElementById('uploadOverlay').classList.add('open')}
-function closeUpload(){document.getElementById('uploadOverlay').classList.remove('open')}
-function onUploadFile(e){
-  const f=e.target.files[0];e.target.value='';if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    uploadImageB64=ev.target.result.split(',')[1];
-    const p=document.getElementById('uploadPreview');p.src=ev.target.result;p.style.display='block';
-    document.getElementById('uploadBtn').disabled=false;setUploadStatus('✓ Poza încărcată. Apasă "Procesează cu AI".');
-  };
-  r.readAsDataURL(f);
+// ── PREIA DIN FIȘĂ (citește fișele din Fișa de lucru + turnusurile adăugate) ──
+function rowsToText(rows){
+  return rows.map(r => r.items.map(i=>i.str).join(' ')).join('\n');
 }
-function setUploadStatus(msg,color){const el=document.getElementById('uploadStatus');el.style.display='block';el.style.color=color||'var(--grn)';el.textContent=msg}
-async function runUploadAI(){
-  if(!uploadImageB64){alert('Încarcă o poză mai întâi!');return}
-  const nume=document.getElementById('uploadNume').value.trim(),luna=parseInt(document.getElementById('uploadLuna').value);
-  if(!nume){alert('Scrie numele tău!');return}
+
+function splitBlocksStructured(rows){
+  const blocks = [];
+  let current = null;
+
+  function isHeaderRow(items){
+    const strs = items.map(i=>i.str);
+    return strs.includes('Data') && strs.filter(s=>/^\d{1,2}$/.test(s)).length >= 15;
+  }
+  function isTimeRow(items){
+    const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
+    return items.length > 0 && (timeLike / items.length) > 0.5;
+  }
+  function isCoStartRow(items){
+  const strs = items.map(i=>i.str);
+  return (strs.includes('inceput') && strs.includes('luna')) ||
+    strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
+}
+
+  rows.forEach(row=>{
+    if(isHeaderRow(row.items)){
+      if(current) blocks.push(current);
+      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str))
+        .map(i=>({ x: i.x, w: i.w, str: i.str, day: parseInt(i.str, 10) }))
+        .filter(i=>i.day >= 1 && i.day <= 31);
+      current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
+    } else if(current){
+      current.allRows.push(row);
+      if(!isTimeRow(row.items) && !isCoStartRow(row.items)){
+        current.codeRows.push(row);
+      }
+    }
+  });
+  if(current) blocks.push(current);
+
+  return blocks.map((b, idx)=>{
+    const colX = b.dayTokens.map(t=>t.x + (t.w||0)/2);
+    const colDay = b.dayTokens.map(t=>t.day);
+    const n = colX.length;
+    let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
+
+    const dayCodes = {};
+    for(let d=1; d<=31; d++) dayCodes[d] = [];
+
+    const allText = rowsToText(b.allRows);
+    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU','TL','CM','VPP','SMM']);
+    function isAllCapsCode(t){
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
+    }
+    function isLabelToken(t){
+      if(NON_NAME.has(t)) return true;
+      if(isAllCapsCode(t)) return true;
+      const words = t.split(/\s+/).filter(Boolean);
+      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
+    }
+    function firstNameToken(tokens){
+      for(const t of tokens){
+        if(/\d/.test(t)) continue;
+        if(isLabelToken(t)) continue;
+        if(t.length < 2) continue;
+        return t;
+      }
+      return '';
+    }
+    const nameColMaxX = (n > 1 && colX.length) ? (colX[0] - gap * 0.6) : 115;
+    function isNameFragment(t){
+      if(!t) return false;
+      if(/\d/.test(t)) return false;
+      const words = t.split(/\s+/).filter(Boolean);
+      if(words.length > 0 && words.every(w => NON_NAME.has(w))) return false;
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length >= 1;
+    }
+    let roleRowIdx = b.allRows.length;
+    for(let i=0;i<b.allRows.length;i++){
+      const rowText = b.allRows[i].items.map(it=>it.str).join(' ');
+      const isRoleRow = /Sef\s*tren/i.test(rowText) || /Mecanic/i.test(rowText) || /bilete/i.test(rowText);
+      if(isRoleRow){ roleRowIdx = i; break; }
+    }
+    let festiveRowIdx = -1;
+    for(let i=0;i<roleRowIdx;i++){
+      if(b.allRows[i].items.some(it=>it.str === 'Festive')){ festiveRowIdx = i; break; }
+    }
+    const surnameFrags = [], firstnameFrags = [];
+    for(let i=0;i<roleRowIdx;i++){
+      const frags = b.allRows[i].items.filter(it=>it.x < nameColMaxX).map(it=>it.str).filter(isNameFragment);
+      if(frags.length === 0) continue;
+      if(festiveRowIdx === -1 || i <= festiveRowIdx) surnameFrags.push(...frags);
+      else firstnameFrags.push(...frags);
+    }
+    const surname = surnameFrags.join('');
+    const firstname = firstnameFrags.join('');
+    const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
+
+    let role = 'Necunoscut';
+    if(/Sef\s*tren/i.test(allText)) role = 'Șef tren';
+    else if(/V\s*bilete\s*II/i.test(allText)) role = 'Vânzător bilete II';
+    else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
+    else if(/Mecanic/i.test(allText)) role = 'Mecanic';
+
+    const excludeTokens = new Set([surname, firstname, ...surnameFrags, ...firstnameFrags, 'Festive'].filter(Boolean));
+
+    if(n > 1){
+      const maxGapAllowed = gap * 0.75;
+      b.codeRows.forEach(row=>{
+        row.items.forEach(item=>{
+          if(excludeTokens.has(item.str)) return;
+          const x = item.x + (item.w||0)/2;
+          let bestDay = -1, bestDist = Infinity;
+          for(let k=0;k<n;k++){
+            const dist = Math.abs(x - colX[k]);
+            if(dist < bestDist){ bestDist = dist; bestDay = colDay[k]; }
+          }
+          if(bestDay === -1 || bestDist > maxGapAllowed) return;
+          dayCodes[bestDay].push(item.str);
+        });
+      });
+    }
+
+    return { id: idx, name, role, dayCodes, text: allText };
+  }).filter(b => b.text.trim().length > 0);
+}
+
+
+const SITE={o:'vladynitu1',r:'vladynitu1.github.io',b:'main'};
+async function ghRaw(path){
+  const u=`https://api.github.com/repos/${SITE.o}/${SITE.r}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${SITE.b}`;
+  const h={Accept:'application/vnd.github.raw'};if(ghToken)h.Authorization='Bearer '+ghToken;
+  try{const r=await fetch(u,{cache:'no-store',headers:h});if(r.status===404)return null;if(r.ok)return JSON.parse(await r.text())}catch(e){}
+  try{const r=await fetch(`https://raw.githubusercontent.com/${SITE.o}/${SITE.r}/${SITE.b}/${path}?t=${Date.now()}`,{cache:'no-store'});if(r.ok)return await r.json()}catch(e){}
+  return null;
+}
+const normS=s=>(s||'').toLowerCase().replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/[șş]/g,'s').replace(/[țţ]/g,'t').replace(/\s+/g,' ').trim();
+const trainsOf=a=>(a||[]).filter(t=>/^\d{3,6}(\/\d+)?$/.test(t));
+const flatOf=t=>String(t.note||'').split(/[\s\/]+/).filter(x=>/^\d/.test(x));
+function findTurnus(cells,d,n){
+  let best=null;
+  Object.keys(TN).forEach(k=>{
+    const fl=flatOf(TN[k]);if(!fl.length)return;
+    let acc=[],len=0;
+    for(let x=d;x<=n&&acc.length<fl.length;x++){
+      if(!cells[x]||!cells[x].length)return;
+      acc=acc.concat(cells[x]);len++;
+      const rem=fl.slice();if(acc.length>fl.length||!acc.every(t=>{const i=rem.indexOf(t);if(i<0)return false;rem.splice(i,1);return true}))return;
+    }
+    if(acc.length===fl.length&&(!best||len>best.len))best={k:+k,len};
+  });
+  return best;
+}
+function importBlock(b,luna){
+  const m=luna-1,n=new Date(curYear,luna,0).getDate(),cells={};
+  for(let d=1;d<=n;d++)cells[d]=trainsOf(b.dayCodes[d]);
+  let ok=0;const neid=[],lib=[];
+  for(let d=1;d<=n;){
+    const dd=gd(m,d),codes=(b.dayCodes[d]||[]).map(t=>t.toUpperCase());
+    if(cells[d].length){
+      const f=findTurnus(cells,d,n);
+      if(f){dd.src='T'+f.k;dd.snap=snapOf([f.k]);clearSupp(m,d);ok++;d+=f.len;continue}
+      neid.push(d+' ('+cells[d].join(' ')+')');
+    }else if(codes.includes('CO')){if(!dd.src&&!dd.tn)dd.note='Concediu'}
+    else if(codes.includes('TL')){if(!dd.src&&!dd.tn)dd.note='TL'}
+    d++;
+  }
+  curM=m;recalcAll();save();renderTabs();renderTable();
+  return{ok,neid};
+}
+function setPreiaStatus(msg,c){const e=document.getElementById('preiaStatus');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=msg}
+function getNames(){try{const a=JSON.parse(localStorage.getItem('pontaj_names')||'null');if(Array.isArray(a))return a}catch(e){}return['NITU IONUT']}
+function setNames(a){try{localStorage.setItem('pontaj_names',JSON.stringify(a))}catch(e){}}
+function renderPreiaNames(){
+  const w=document.getElementById('preiaNames');w.innerHTML='';
+  getNames().forEach((nm,i)=>{
+    const r=document.createElement('div');r.style.cssText='display:flex;gap:6px;align-items:center';
+    const t=document.createElement('span');t.style.cssText='flex:1;font-weight:600';t.textContent=nm;
+    const p=document.createElement('button');p.className='btn btn-g btn-sm';p.textContent='Preia';p.onclick=()=>preiaNume(nm);
+    const x=document.createElement('button');x.className='btn btn-r btn-sm';x.textContent='✕';x.onclick=()=>{const a=getNames();a.splice(i,1);setNames(a);renderPreiaNames()};
+    r.append(t,p,x);w.appendChild(r);
+  });
+}
+function addPreiaName(){
+  const i=document.getElementById('preiaNume'),v=i.value.trim().toUpperCase();if(!v)return;
+  const a=getNames();if(!a.includes(v))a.push(v);setNames(a);i.value='';renderPreiaNames();
+}
+async function openPreia(){
+  document.getElementById('preiaLuna').value=curM+1;renderPreiaNames();
+  document.getElementById('preiaOverlay').classList.add('open');
+  const sel=document.getElementById('preiaDoc');sel.innerHTML='<option>Se încarcă...</option>';
+  const idx=await ghRaw('data/mecanici/index.json');
+  if(!Array.isArray(idx)||!idx.length){sel.innerHTML='<option value="">Nu am găsit fișe</option>';return}
+  idx.sort((a,b)=>String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
+  sel.innerHTML='';idx.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.filename+' ('+String(d.uploadedAt).slice(0,10)+')';o.dataset.fn=d.filename;sel.appendChild(o)});
+  const g=MO.findIndex(x=>normS(sel.options[0].dataset.fn).includes(normS(x)));if(g>=0)document.getElementById('preiaLuna').value=g+1;
+}
+function closePreia(){document.getElementById('preiaOverlay').classList.remove('open')}
+async function preiaNume(name){
+  const id=document.getElementById('preiaDoc').value,luna=parseInt(document.getElementById('preiaLuna').value);
+  if(!id){alert('Alege o fișă!');return}
   if(!luna||luna<1||luna>12){alert('Luna invalidă!');return}
-  const btn=document.getElementById('uploadBtn');btn.disabled=true;btn.textContent='⏳ Procesez...';
-  setUploadStatus('🤖 Trimit fișa la AI... 10-20 secunde...','var(--yel)');
-  let tnInfo='';
-  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{const t=TN[k];tnInfo+=`T${k}: note="${t.note||''}" | ore: ${(t.segmente||[]).map(s=>`${s.prez}→${s.iesire}`).join(' | ')}\n`});
-  const prompt=`Ești expert în citirea fișelor de lucru CFR România.
-Analizează imaginea și găsește rândul pentru angajatul: "${nume}"
-
-REGULA DECODARE TRENURI:
-- 2 cifre (ex: 27, 32) → 102XX (10227, 10232)
-- 3 cifre (ex: 201, 119) → 10XXX (10201, 10119)
-- 4 cifre rămân ca atare sau cu prefix R (Regie)
-- "Pl vest" = Piața Vest, "Grivita" = Grivița, "Gr Nord" = Gara Nord (locații, nu trenuri)
-- "/" între numere = două trenuri diferite (27/32 = 10227 și 10232)
-- "co" = concediu, "L" = liber
-
-TURNUSURI DISPONIBILE:
-${tnInfo}
-SARCINA:
-1. Găsește rândul "${nume}". Coloanele 1,2,3...30 sunt zilele lunii ${luna}.
-2. Pentru fiecare zi citește trenurile/codurile din celulă.
-3. Identifică turnusul T1-T12 comparând trenurile cu cele din turnusuri.
-4. Returnează DOAR JSON valid:
-{"zile":{"1":"T3","2":"T1","3":null,"4":"CO","5":"T7"}}
-"T1"-"T12" = turnus, null = liber, "CO" = concediu, "?" = neclar. Dacă într-o zi sunt două turnusuri scrie "T4+T5".
-Completează TOATE zilele 1-${new Date(curYear,luna,0).getDate()}. STRICT JSON, fără markdown.`;
-  try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:uploadImageB64}},{type:'text',text:prompt}]}]})});
-    const data=await resp.json();
-    if(data.error){setUploadStatus('Eroare API: '+data.error.message,'var(--red)');return}
-    const clean=(data.content||[]).map(x=>x.text||'').join('').replace(/```json|```/g,'').trim();
-    let parsed;
-    try{parsed=JSON.parse(clean)}catch(e){const mm=clean.match(/\{[\s\S]*\}/);if(mm)parsed=JSON.parse(mm[0]);else throw new Error('JSON invalid: '+clean.substring(0,200))}
-    const zile=parsed.zile||parsed;let aplicate=0;const neid=[];const m=luna-1;
-    Object.entries(zile).forEach(([zs,val])=>{
-      const zi=parseInt(zs);if(!zi||zi<1||zi>31||!val||val==='null')return;
-      const v=String(val).trim().toUpperCase();
-      if(v==='CO'||v==='CONCEDIU'){gd(m,zi).note='Concediu';aplicate++;return}
-      if(v==='L'||v==='LIBER')return;
-      if(v==='?'||v==='NECLAR'){neid.push(zs);return}
-      const nums=parseSrc(v);
-      if(nums){const dz=gd(m,zi);dz.src=nums.map(n=>'T'+n).join('+');dz.snap=snapOf(nums);aplicate++}else neid.push(zs+'('+v+')');
-    });
-    recalcAll();save();renderTabs();renderTable();
-    let msg=`✅ Completat! ${aplicate} zile aplicate în ${MO[luna-1]} ${curYear}.`;
-    if(neid.length)msg+=`\n⚠ Neidentificate (verifică manual): ${neid.join(', ')}`;
-    setUploadStatus(msg);
-  }catch(err){setUploadStatus('❌ Eroare: '+err.message,'var(--red)')}
-  finally{btn.disabled=false;btn.textContent='🤖 Procesează cu AI'}
+  if(!Object.keys(TN).length){setPreiaStatus('❌ Nu ai turnusuri adăugate. Adaugă-le din ⚙ Turnus-uri.','var(--red)');return}
+  setPreiaStatus('⏳ Citesc fișa...','var(--yel)');
+  const data=await ghRaw('data/mecanici/'+id+'.json');
+  if(!data||!data.rows){setPreiaStatus('❌ Nu am putut citi fișa.','var(--red)');return}
+  const q=normS(name).split(' ');
+  const c=splitBlocksStructured(data.rows).filter(b=>{const w=normS(b.name).split(' ');return q.every(x=>w.includes(x))});
+  if(!c.length){setPreiaStatus('❌ Nu găsesc numele "'+name+'" în fișă.','var(--red)');return}
+  c.sort((a,b)=>Math.abs(normS(a.name).length-normS(name).length)-Math.abs(normS(b.name).length-normS(name).length));
+  const r=importBlock(c[0],luna);
+  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.`;
+  if(c.length>1)msg+=`\nℹ Am mai găsit și: ${c.slice(1).map(x=>x.name).join(', ')}`;
+  if(r.neid.length)msg+=`\n⚠ Zile fără turnus potrivit (verifică manual): ${r.neid.join(', ')}`;
+  setPreiaStatus(msg);
 }
 
 init();
