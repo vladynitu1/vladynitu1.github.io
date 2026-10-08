@@ -206,6 +206,9 @@ const YEAR_MIN=2024,YEAR_MAX=2035;
 const _today=new Date();
 let curYear=_today.getFullYear(),curM=_today.getMonth();
 let db={},TN={},SHARED={};
+const lbl=k=>/^\d+$/.test(String(k))?'T'+k:String(k);
+const keyCmp=(a,b)=>{const x=/^\d+$/.test(a),y=/^\d+$/.test(b);return x&&y?+a-+b:x?-1:y?1:a<b?-1:a>b?1:0};
+function normCode(v){v=String(v||'').trim().toUpperCase();if(/^T?\d+$/.test(v)){const n=parseInt(v.replace('T',''));return n>=1?String(n):''}return /^[A-Z]{1,6}$/.test(v)&&v!=='T'?v:''}
 const isShared=()=>false;
 const inShared=k=>!ghToken&&Object.prototype.hasOwnProperty.call(SHARED,String(k));
 function mergeShared(){}
@@ -297,7 +300,7 @@ function snapOf(nums){const o={};nums.forEach(n=>o[n]=JSON.parse(JSON.stringify(
 function parseSrc(val,snap){
   const parts=String(val).toUpperCase().split(/[+,;\s]+/).filter(Boolean);
   const nums=[];
-  for(const p of parts){const n=parseInt(p.replace(/T/g,''));const t=(snap&&snap[n])||TN[n];if(!(n>=1&&t&&t.segmente&&t.segmente.length))return null;nums.push(n)}
+  for(const p of parts){const n=normCode(p);const t=n&&((snap&&snap[n])||TN[n]);if(!(t&&t.segmente&&t.segmente.length))return null;nums.push(n)}
   return nums.length?nums:null;
 }
 function recalcAll(){
@@ -337,8 +340,8 @@ function recalcAll(){
       t.segmente.forEach(sg=>{
         const sM=p2m(sg.prez),eM=p2m(sg.iesire);if(sM<0||eM<0)return;
         let st=sM;while(st<cur)st+=1440;let en=eM;while(en<=st)en+=1440;
-        if(prevEnd!==null&&st>prevEnd)addInt(m,d,prevEnd+sh,st+sh,'r','T'+num);
-        addInt(m,d,st+sh,en+sh,'w','T'+num);prevEnd=en;cur=en;
+        if(prevEnd!==null&&st>prevEnd)addInt(m,d,prevEnd+sh,st+sh,'r',lbl(num));
+        addInt(m,d,st+sh,en+sh,'w',lbl(num));prevEnd=en;cur=en;
       });
       A(new Date(curYear,m,d)).notes.push(t.note||'');
     });
@@ -374,7 +377,7 @@ function writeNextYear(acc2){
   });
   try{localStorage.setItem('cfr_'+y,JSON.stringify(o))}catch(e){}
 }
-function applyTurnus(num,m,d){const dd=gd(m,d);dd.src='T'+num;dd.snap=snapOf([num]);clearSupp(m,d);recalcAll();save();renderTabs();renderTable()}
+function applyTurnus(num,m,d){const dd=gd(m,d);dd.src=lbl(num);dd.snap=snapOf([num]);clearSupp(m,d);recalcAll();save();renderTabs();renderTable()}
 function clearSupp(m,d){const k='@'+m+'-'+d;Object.values(db).forEach(mo=>Object.values(mo).forEach(x=>{if(x.supp)x.supp=x.supp.filter(e=>!e.endsWith(k))}))}
 function deleteDay(m,d){const dd=gd(m,d),supp=(dd.supp||[]).slice();(dd.incKeys||[]).forEach(k=>{if(!supp.includes(k))supp.push(k)});db[m][d]=blankDay();db[m][d].supp=supp;recalcAll();save();renderTabs();renderTable()}
 function applyFromInput(val,m,d){
@@ -385,8 +388,8 @@ function applyFromInput(val,m,d){
   const nums=parseSrc(val);
   if(nums){
     const inc=dd.inc||[];
-    const own=nums.filter(n=>!inc.includes('T'+n));
-    dd.src=own.map(n=>'T'+n).join('+');clearSupp(m,d);dd.snap=own.length?snapOf(own):undefined;
+    const own=nums.filter(n=>!inc.includes(lbl(n)));
+    dd.src=own.map(lbl).join('+');clearSupp(m,d);dd.snap=own.length?snapOf(own):undefined;
     recalcAll();save();renderTabs();renderTable();
   }
   else{setF(m,d,'tn',val);renderTable()}
@@ -405,9 +408,9 @@ function updateStickyOffset(){
 window.addEventListener('resize',updateStickyOffset);window.addEventListener('load',updateStickyOffset);
 function renderTags(){
   const w=document.getElementById('tagList');w.innerHTML='';
-  const add=(src,cls)=>Object.keys(src).sort((a,b)=>+a-+b).forEach(k=>{
+  const add=(src,cls)=>Object.keys(src).sort(keyCmp).forEach(k=>{
     const sp=document.createElement('span');sp.className='tag'+cls;
-    const note=(src[k].note||'').trim();sp.textContent=`T${k}`+(note?` (${note})`:'');w.appendChild(sp);
+    const note=(src[k].note||'').trim();sp.textContent=lbl(k)+(note?` (${note})`:'');w.appendChild(sp);
   });
   const lab=t=>{const e=document.createElement('div');e.style.cssText='width:100%;font-size:.62rem;color:var(--txtd);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px';e.textContent=t;w.appendChild(e)};
   const sh=ghToken?{}:SHARED;
@@ -447,7 +450,7 @@ function renderTable(){
     const tdZ=document.createElement('td');tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;tr.appendChild(tdZ);
 
     const tdTn=document.createElement('td'),wrap=document.createElement('div');wrap.className='tn-inp-wrap';
-    const inp=document.createElement('input');inp.value=dd.tn||dd.src||'';inp.placeholder='Ex: T1+T2';
+    const inp=document.createElement('input');inp.value=dd.tn||dd.src||'';inp.placeholder='Ex: T1+T2 / CO';
     inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur()}});
     inp.addEventListener('blur',function(){applyFromInput(this.value,m,d)});
     wrap.appendChild(inp);
@@ -512,7 +515,7 @@ function buildAddTnBox(){
     <div style="font-family:Rajdhani,sans-serif;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">+ Adaugă Turnus Nou</div>
     <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Introdu prezentarea și ieșirea pentru fiecare segment. Orele, odihna și orele de noapte se calculează automat, pe segmente.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
-      <div class="tn-field" style="width:80px"><label>Cod turnus</label><input id="nCode" placeholder="T13"></div>
+      <div class="tn-field" style="width:80px"><label>Cod turnus</label><input id="nCode" placeholder="T13 / CO / CM"></div>
       <div class="tn-field" style="flex:1;min-width:200px"><label>Notă / Trenuri</label><input id="nNote" placeholder="10245→10251"></div>
     </div>
     <div id="nSegsWrap"></div>
@@ -542,29 +545,29 @@ function renderNewSegs(){
 function addNewSeg(){newSegs.push({prez:'',iesire:''});renderNewSegs()}
 function saveNewTN(){
   const pv=document.getElementById('nCalcPreview');
-  const num=parseInt(document.getElementById('nCode').value.replace(/[Tt]/g,''));
+  const num=normCode(document.getElementById('nCode').value);
   const segs=newSegs.filter(s=>s.prez&&s.iesire);
-  if(!num||num<1){pv.style.color='var(--red)';pv.textContent='❌ Cod invalid! Ex: T13';return}
+  if(!num){pv.style.color='var(--red)';pv.textContent='❌ Cod invalid! Ex: T13, CO, CM';return}
   if(!segs.length){pv.style.color='var(--red)';pv.textContent='❌ Adaugă cel puțin un segment!';return}
   TN[num]={segmente:segs,note:document.getElementById('nNote').value};
   save();renderEditorList();renderTags();
   document.getElementById('nCode').value='';document.getElementById('nNote').value='';
   newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];renderNewSegs();
-  pv.style.color='var(--grn)';pv.textContent=`✅ T${num} salvat!`;
+  pv.style.color='var(--grn)';pv.textContent='✅ '+lbl(num)+' salvat!';
 }
 function renderEditorList(){
   const w=document.getElementById('tnList');w.innerHTML='';
-  Object.keys(TN).sort((a,b)=>+a-+b).forEach(k=>{
+  Object.keys(TN).sort(keyCmp).forEach(k=>{
     const t=TN[k],div=document.createElement('div');div.className='tn-item';div.id='tni_'+k;
-    let h=`<div class="tn-item-hdr"><span class="tn-num">T${k}</span><span style="font-size:.68rem;color:var(--txtm);flex:1">${t.note||''}</span><button class="btn btn-r btn-sm" onclick="delTN(${k})">✕ Șterge</button></div>`;
+    let h=`<div class="tn-item-hdr"><span class="tn-num">${lbl(k)}</span><span style="font-size:.68rem;color:var(--txtm);flex:1">${t.note||''}</span><button class="btn btn-r btn-sm" onclick="delTN('${k}')">✕ Șterge</button></div>`;
     (t.segmente||[]).forEach((seg,i)=>{
       if(i>0){const p=t.segmente[i-1];h+=`<div class="seg-block dorm"><h5>🌙 Dormitor ${i}: ${p.iesire} → ${seg.prez} = ${fmtm(diffm(p.iesire,seg.prez))} (noapte: ${fmtm(nightMins(p.iesire,seg.prez))})</h5></div>`}
       h+=`<div class="seg-block"><h5>Segment ${i+1} — ${fmtm(diffm(seg.prez,seg.iesire))} lucrate</h5><div class="fields-row">
-        <div class="tn-field"><label>Prezentare</label><input value="${seg.prez||''}" onchange="TN[${k}].segmente[${i}].prez=this.value;updateTNCalc(${k});save()"></div>
-        <div class="tn-field"><label>Ieșire</label><input value="${seg.iesire||''}" onchange="TN[${k}].segmente[${i}].iesire=this.value;updateTNCalc(${k});save()"></div></div></div>`;
+        <div class="tn-field"><label>Prezentare</label><input value="${seg.prez||''}" onchange="TN['${k}'].segmente[${i}].prez=this.value;updateTNCalc('${k}');save()"></div>
+        <div class="tn-field"><label>Ieșire</label><input value="${seg.iesire||''}" onchange="TN['${k}'].segmente[${i}].iesire=this.value;updateTNCalc('${k}');save()"></div></div></div>`;
     });
-    h+=`<div class="seg-actions"><button class="btn btn-s btn-sm" onclick="addSegToTN(${k})">+ Segment</button><button class="btn btn-r btn-sm" onclick="removeLastSeg(${k})">- Segment</button></div>
-      <div class="tn-field" style="margin-top:6px"><label>Notă / Trenuri</label><input value="${t.note||''}" onchange="TN[${k}].note=this.value;save()"></div>
+    h+=`<div class="seg-actions"><button class="btn btn-s btn-sm" onclick="addSegToTN('${k}')">+ Segment</button><button class="btn btn-r btn-sm" onclick="removeLastSeg('${k}')">- Segment</button></div>
+      <div class="tn-field" style="margin-top:6px"><label>Notă / Trenuri</label><input value="${t.note||''}" onchange="TN['${k}'].note=this.value;save()"></div>
       <div class="calc-note" id="calc_${k}">${calcTxt(calcTurnusAuto(t.segmente||[]))}</div>`;
     div.innerHTML=h;
     if(isShared(k)){div.querySelectorAll('input').forEach(i=>i.disabled=true);div.querySelectorAll('button').forEach(b=>b.remove());div.querySelector('.tn-num').textContent+=' 🔒'}
@@ -577,7 +580,7 @@ function removeLastSeg(k){if(isShared(k))return;if(TN[k].segmente&&TN[k].segment
 function delTN(k){if(isShared(k))return;
   const btn=document.querySelector(`#tni_${k} .btn-r`);
   if(btn&&btn.dataset.confirm!=='1'){btn.dataset.confirm='1';btn.textContent='Confirmi ✕?';setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='✕ Șterge'}},3000);return}
-  delete TN[k];save();renderEditorList();renderTags();showEditorMsg(`T${k} șters.`);
+  delete TN[k];save();renderEditorList();renderTags();showEditorMsg(lbl(k)+' șters.');
 }
 function resetTN(){
   const btn=document.getElementById('resetTNBtn');
@@ -778,7 +781,7 @@ const normS=s=>(s||'').toLowerCase().replace(/[ăâ]/g,'a').replace(/î/g,'i').r
 const trainsOf=a=>(a||[]).filter(t=>/^\d{3,6}(\/\d+)?$/.test(t));
 const flatOf=t=>String(t.note||'').split(/[\s\/]+/).filter(x=>/^\d/.test(x));
 function solveCells(cells,n){
-  const keys=Object.keys(TN).map(k=>({k:+k,fl:flatOf(TN[k]),zl:((TN[k].segmente||[]).some(g=>p2m(g.prez)>=0&&p2m(g.iesire)>=0)?calcTurnusAuto(TN[k].segmente).zile:3)})).filter(x=>x.fl.length).sort((x,y)=>y.fl.length-x.fl.length);
+  const keys=Object.keys(TN).map(k=>({k:/^\d+$/.test(k)?+k:k,fl:flatOf(TN[k]),zl:((TN[k].segmente||[]).some(g=>p2m(g.prez)>=0&&p2m(g.iesire)>=0)?calcTurnusAuto(TN[k].segmente).zile:3)})).filter(x=>x.fl.length).sort((x,y)=>y.fl.length-x.fl.length);
   function plans(rem,d,fl,zl,cb){
     let stop=false;
     (function go(o,left,used){
@@ -828,17 +831,19 @@ function importBlock(b,luna,restore){
   let ok=0;
   Object.keys(by).forEach(d=>{
     const ks=by[d].sort((x,y)=>x-y),dd=gd(m,+d);
-    dd.src=ks.map(k=>'T'+k).join('+');dd.snap=snapOf(ks);clearSupp(m,+d);ok+=ks.length;
+    dd.src=ks.map(lbl).join('+');dd.snap=snapOf(ks);clearSupp(m,+d);ok+=ks.length;
   });
   for(let d=1;d<=n;d++){
     if(cells[d].length)continue;
     const dd=gd(m,d),codes=(b.dayCodes[d]||[]).map(t=>t.toUpperCase());
-    if(!dd.src&&!dd.tn){if(codes.includes('CO'))dd.note='Concediu';else if(codes.includes('TL'))dd.note='TL'}
+    const hit=codes.find(c=>/^[A-Z]{1,6}$/.test(c)&&TN[c]&&TN[c].segmente&&TN[c].segmente.length);
+    if(hit&&!dd.src){dd.src=hit;dd.snap=snapOf([hit]);clearSupp(m,d);ok++;by[d]=[hit];continue}
+    if(!dd.src&&!dd.tn){if(codes.includes('CO'))dd.note='Concediu';else if(codes.includes('CM'))dd.note='CM';else if(codes.includes('TL'))dd.note='TL'}
   }
   if(restore)restore();
   curM=m;recalcAll();save();renderTabs();renderTable();
   const lines=[];
-  for(let d=1;d<=n;d++)if(cells[d].length)lines.push(String(d).padStart(2,'0')+': '+cells[d].join(' ')+' → '+(by[d]?by[d].map(k=>'T'+k).join('+'):'(continuare / neidentificat)'));
+  for(let d=1;d<=n;d++)if(cells[d].length||(by[d]&&by[d].some(k=>typeof k==='string')))lines.push(String(d).padStart(2,'0')+': '+(cells[d].length?cells[d].join(' '):'cod')+' → '+(by[d]?by[d].map(lbl).join('+'):'(continuare / neidentificat)'));
   return{ok,neid:sol.unid,lines};
 }
 function setPreiaStatus(msg,c){const e=document.getElementById('preiaStatus');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=msg}
