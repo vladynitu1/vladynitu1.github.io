@@ -308,21 +308,22 @@ function recalcAll(){
   }));
   Object.keys(db).forEach(ms=>Object.keys(db[ms]).forEach(ds=>{
     const dd=db[ms][ds];
-    if(dd.src||(dd.overflow&&/continuare/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn;db[ms][ds].supp=dd.supp}
+    if(dd.src||(dd.overflow&&/continuare|început/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn;db[ms][ds].supp=dd.supp}
   }));
   const acc={},acc2={};
   const festY=dt=>{const w=dt.getDay();return w===0||w===6||!!buildHols(dt.getFullYear())[`${dt.getMonth()+1}-${dt.getDate()}`]};
-  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],incKeys:[],ol:0,oo:0,on:0,of:0})};
+  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],incKeys:[],pre:false,ol:0,oo:0,on:0,of:0})};
   function addInt(m,d,a,b,kind,label){
     while(a<b){
       const off=Math.floor(a/1440),end=Math.min(b,(off+1)*1440);
       const dt=new Date(curYear,m,d+off);
       if(dt.getFullYear()>curYear+1)return;
+      if(dt.getFullYear()<curYear){a=end;continue}
       if(off>0&&dt.getFullYear()===curYear){const td=(db[dt.getMonth()]||{})[dt.getDate()];if(td&&td.supp&&td.supp.includes(label+'@'+m+'-'+d)){a=end;continue}}
-      const x=A(dt),len=end-a;
+      const x=A(dt),len=end-a;if(off<0)x.pre=true;
       if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label)){x.inc.push(label);x.incKeys.push(label+'@'+m+'-'+d)}
       if(kind==='w'){
-        let n=0;for(let t=a;t<end;t++){const r=t%1440;if(r>=1320||r<360)n++}
+        let n=0;for(let t=a;t<end;t++){const r=((t%1440)+1440)%1440;if(r>=1320||r<360)n++}
         x.ol+=len;x.on+=n;
         if(festY(dt))x.of+=len;
         x.wp.push({st:a-off*1440,en:end-off*1440,len,n});
@@ -332,12 +333,12 @@ function recalcAll(){
   }
   srcs.forEach(([m,d,s])=>{
     const sn=db[m][d].snap;(parseSrc(s,sn)||[]).forEach(num=>{
-      const t=(sn&&sn[num])||TN[num];let cur=0,prevEnd=null;
+      const t=(sn&&sn[num])||TN[num];let cur=0,prevEnd=null;const sh=p2m(t.segmente[0].prez)>=1380?-1440:0;
       t.segmente.forEach(sg=>{
         const sM=p2m(sg.prez),eM=p2m(sg.iesire);if(sM<0||eM<0)return;
         let st=sM;while(st<cur)st+=1440;let en=eM;while(en<=st)en+=1440;
-        if(prevEnd!==null&&st>prevEnd)addInt(m,d,prevEnd,st,'r','T'+num);
-        addInt(m,d,st,en,'w','T'+num);prevEnd=en;cur=en;
+        if(prevEnd!==null&&st>prevEnd)addInt(m,d,prevEnd+sh,st+sh,'r','T'+num);
+        addInt(m,d,st+sh,en+sh,'w','T'+num);prevEnd=en;cur=en;
       });
       A(new Date(curYear,m,d)).notes.push(t.note||'');
     });
@@ -355,7 +356,7 @@ function fillDay(dd,x){
     dd.dn=x.wp.length>1?x.wp.map(p=>fmtm(p.n)).join(' + '):'';
     dd.dr=x.rp.length>1?x.rp.map(p=>fmtm(p.len)).join(' + '):'';
     dd.overflow=!dd.src;
-    dd.note=x.notes.filter(Boolean).join(' + ')+(dd.overflow?' (continuare)':'');
+    dd.pre=x.pre&&!x.inc.length;dd.note=x.notes.filter(Boolean).join(' + ')+(dd.overflow?(dd.pre?' (început)':' (continuare)'):'');
 }
 function writeNextYear(acc2){
   const y=curYear+1;let o=null;
@@ -364,7 +365,7 @@ function writeNextYear(acc2){
   if(!o&&!days.length)return;
   o=o||{db:{},TN:{}};o.db=o.db||{};
   const J=o.db[0]=o.db[0]||{};
-  Object.keys(J).forEach(d=>{const x=J[d];if(x.overflow&&/continuare/.test(x.note||''))J[d]=blankDay()});
+  Object.keys(J).forEach(d=>{const x=J[d];if(x.overflow&&/continuare|început/.test(x.note||''))J[d]=blankDay()});
   days.forEach(x=>{
     if(x.m!==0)return;
     const dd=J[x.d]||(J[x.d]=blankDay());
@@ -451,7 +452,7 @@ function renderTable(){
     inp.addEventListener('blur',function(){applyFromInput(this.value,m,d)});
     wrap.appendChild(inp);
     if(dd.tn){const b=document.createElement('span');b.className='tbadge';b.textContent=dd.tn;wrap.appendChild(b)}
-    if(dd.overflow){const o=document.createElement('span');o.className='tbadge tov';o.textContent='zi2';wrap.appendChild(o)}
+    if(dd.overflow){const o=document.createElement('span');o.className='tbadge tov';o.textContent=dd.pre?'zi1':'zi2';wrap.appendChild(o)}
     tdTn.appendChild(wrap);tr.appendChild(tdTn);
 
     const tdDel=document.createElement('td');tdDel.style.width='30px';
@@ -821,7 +822,7 @@ function solveCells(cells,n){
 function importBlock(b,luna,restore){
   const m=luna-1,n=new Date(curYear,luna,0).getDate(),cells={};
   for(let d=1;d<=n;d++)cells[d]=trainsOf(b.dayCodes[d]);
-  for(let d=1;d<=n;d++){const o=gd(m,d);if(o.src||(o.overflow&&/continuare/.test(o.note||''))){db[m][d]=blankDay();db[m][d].supp=o.supp}}
+  for(let d=1;d<=n;d++){const o=gd(m,d);if(o.src||(o.overflow&&/continuare|început/.test(o.note||''))){db[m][d]=blankDay();db[m][d].supp=o.supp}}
   const sol=solveCells(cells,n),by={};
   sol.res.forEach(r=>{(by[r.d]=by[r.d]||[]).push(r.k)});
   let ok=0;
