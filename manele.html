@@ -125,7 +125,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
 <div class="overlay" id="preiaOverlay"><div class="modal" style="max-width:560px">
   <button class="mclose" onclick="closePreia()">✕</button>
   <h2 style="color:var(--grn)">📥 Preia din fișă</h2>
-  <p style="font-size:.72rem;color:var(--txtm);margin-bottom:10px">Dacă ai turnusuri adăugate de tine, se folosesc doar ale tale. Dacă nu ai niciunul, se folosesc cele publicate de administrator.</p>
+  <p style="font-size:.72rem;color:var(--txtm);margin-bottom:10px">Se folosesc turnusurile publicate de administrator. Cele adăugate de tine cu același cod (ex: T1) le înlocuiesc doar la tine.</p>
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:10px">
     <div class="tn-field"><label>Fișa (din Fișa de lucru)</label><select class="fld" id="preiaDoc"></select></div>
     <div class="tn-field"><label>Luna (1-12)</label><input class="fld" id="preiaLuna" type="number" min="1" max="12"></div>
@@ -133,7 +133,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
   <div class="tn-field" style="margin-bottom:8px"><label>Adaugă nume (cum apare în fișă)</label>
     <div style="display:flex;gap:6px"><input class="fld" id="preiaNume" placeholder="Ex: NITU IONUT"><button class="btn btn-s" onclick="addPreiaName()">+ Adaugă</button></div></div>
   <div id="preiaNames" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
-  <div id="preiaStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.73rem;max-height:200px;overflow-y:auto;white-space:pre-wrap"></div>
+  <div id="preiaStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.73rem;max-height:260px;overflow-y:auto;white-space:pre-wrap"></div>
 </div></div>
 
 <div class="infobox"><div class="tags" id="tagList"></div></div>
@@ -545,7 +545,6 @@ function saveNewTN(){
   const segs=newSegs.filter(s=>s.prez&&s.iesire);
   if(!num||num<1){pv.style.color='var(--red)';pv.textContent='❌ Cod invalid! Ex: T13';return}
   if(!segs.length){pv.style.color='var(--red)';pv.textContent='❌ Adaugă cel puțin un segment!';return}
-  if(inShared(num)){pv.style.color='var(--red)';pv.textContent='❌ T'+num+' există deja printre turnusurile publicate de administrator. Alege alt cod (ex: T'+(Math.max(0,...Object.keys(SHARED).map(Number),...Object.keys(TN).map(Number))+1)+').';return}
   TN[num]={segmente:segs,note:document.getElementById('nNote').value};
   save();renderEditorList();renderTags();
   document.getElementById('nCode').value='';document.getElementById('nNote').value='';
@@ -822,6 +821,7 @@ function solveCells(cells,n){
 function importBlock(b,luna,restore){
   const m=luna-1,n=new Date(curYear,luna,0).getDate(),cells={};
   for(let d=1;d<=n;d++)cells[d]=trainsOf(b.dayCodes[d]);
+  for(let d=1;d<=n;d++){const o=gd(m,d);if(o.src||(o.overflow&&/continuare/.test(o.note||''))){db[m][d]=blankDay();db[m][d].supp=o.supp}}
   const sol=solveCells(cells,n),by={};
   sol.res.forEach(r=>{(by[r.d]=by[r.d]||[]).push(r.k)});
   let ok=0;
@@ -836,7 +836,9 @@ function importBlock(b,luna,restore){
   }
   if(restore)restore();
   curM=m;recalcAll();save();renderTabs();renderTable();
-  return{ok,neid:sol.unid};
+  const lines=[];
+  for(let d=1;d<=n;d++)if(cells[d].length)lines.push(String(d).padStart(2,'0')+': '+cells[d].join(' ')+' → '+(by[d]?by[d].map(k=>'T'+k).join('+'):'(continuare / neidentificat)'));
+  return{ok,neid:sol.unid,lines};
 }
 function setPreiaStatus(msg,c){const e=document.getElementById('preiaStatus');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=msg}
 function getNames(){try{const a=JSON.parse(localStorage.getItem('pontaj_names')||'null');if(Array.isArray(a))return a}catch(e){}return['NITU IONUT']}
@@ -878,12 +880,14 @@ async function preiaNume(name){
   if(!c.length){setPreiaStatus('❌ Nu găsesc numele "'+name+'" în fișă.','var(--red)');return}
   c.sort((a,b)=>Math.abs(normS(a.name).length-normS(name).length)-Math.abs(normS(b.name).length-normS(name).length));
   if(!ghToken&&!Object.keys(SHARED).length)await loadShared();
-  const saved=TN,useSh=!ghToken&&!Object.keys(TN).length,nUsed=Object.keys(useSh?SHARED:TN).length;
-  if(useSh)TN={...SHARED};
-  if(!Object.keys(TN).length){TN=saved;setPreiaStatus('❌ Nu există turnusuri. Adaugă-le din ⚙ Turnus-uri.','var(--red)');return}
+  const saved=TN;
+  if(!ghToken)TN={...SHARED,...TN};
+  const nUsed=Object.keys(TN).length;
+  if(!nUsed){TN=saved;setPreiaStatus('❌ Nu există turnusuri. Adaugă-le din ⚙ Turnus-uri.','var(--red)');return}
   let r;try{r=importBlock(c[0],luna,()=>{TN=saved})}finally{TN=saved}
-  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite: ${nUsed} (${useSh?'publicate de administrator':'ale tale'}).`;
+  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite: ${nUsed} (${ghToken?'ale tale':'publicate de administrator + ale tale; la același cod se folosește al tău'}).`;
   if(c.length>1)msg+=`\nℹ Am mai găsit și: ${c.slice(1).map(x=>x.name).join(', ')}`;
+  msg+='\n\nCitit din fișă:\n'+r.lines.join('\n');
   if(r.neid.length)msg+=`\n⚠ Zile fără turnus potrivit (verifică manual): ${r.neid.join(', ')}`;
   setPreiaStatus(msg);
 }
