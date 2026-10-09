@@ -164,9 +164,23 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
   <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-g" id="yrConfirmBtn">✓ Selectează</button><button class="btn btn-s" onclick="closeYearModal()">Anulează</button></div>
 </div></div>
 
+<div class="overlay" id="impOverlay" style="z-index:320"><div class="modal" style="max-width:640px">
+  <button class="mclose" onclick="closeImport()">✕</button>
+  <h2 style="color:var(--grn)">📄 Import turnusuri</h2>
+  <p style="font-size:.74rem;color:var(--txtm);margin-bottom:10px">Alege PDF-ul (sau poza) cu turnusurile. Citesc coloanele din rândul „Statiile/nr.ech", prezentarea, remizarea și trenurile de pe fiecare coloană.</p>
+  <input type="file" id="impFile" accept="application/pdf,image/*" class="fld" style="margin-bottom:8px">
+  <div style="display:grid;grid-template-columns:3fr 1fr;gap:8px;margin-bottom:8px">
+    <div class="tn-field"><label>Grupare coloane (; între turnusuri, + sau 2-4 între coloane; coloanele libere se sar)</label><input class="fld" id="impGrup"></div>
+    <div class="tn-field"><label>Primul cod</label><input class="fld" id="impStart" type="number" min="1" value="1"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn btn-o" onclick="runImport()">🔍 Citește</button><button class="btn btn-g" id="impSave" onclick="saveImport()" disabled>✓ Adaugă în turnusuri</button></div>
+  <div id="impPrev" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.7rem;max-height:300px;overflow:auto;white-space:pre-wrap"></div>
+</div></div>
+
 <div class="overlay" id="editorOverlay"><div class="modal">
   <button class="mclose" onclick="closeEditor()">✕</button>
   <h2>⚙ Editor Turnus-uri</h2>
+  <div id="impWrap" style="display:none;margin-bottom:10px"><button class="btn btn-o" onclick="openImport()">📄 Import turnusuri (PDF / poză)</button></div>
   <div id="addTnBox"></div>
   <div class="tn-list" id="tnList"></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap">
@@ -519,7 +533,7 @@ function updateCards(){
 }
 
 // ── EDITOR TURNUS ──
-function openEditor(){renderEditorList();document.getElementById('editorOverlay').classList.add('open')}
+function openEditor(){document.getElementById('impWrap').style.display=ghToken?'block':'none';renderEditorList();document.getElementById('editorOverlay').classList.add('open')}
 function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');save();renderTags();renderTabs();renderTable()}
 let newSegs=[];
 function buildAddTnBox(){
@@ -900,6 +914,122 @@ async function preiaNume(name){
   msg+='\n\nCitit din fișă:\n'+r.lines.join('\n');
   if(r.neid.length)msg+=`\n⚠ Zile fără turnus potrivit (verifică manual): ${r.neid.join(', ')}`;
   setPreiaStatus(msg);
+}
+
+// ── IMPORT TURNUSURI din PDF / poză (doar cu token) ──
+function impSplit(items){
+  const out=[];
+  items.forEach(it=>{
+    const s=(it.s||'').trim();if(!s)return;
+    const parts=s.split(/\s+/);
+    if(parts.length===1){out.push({s,x:it.x,w:it.w,y:it.y});return}
+    let off=0;
+    parts.forEach(p=>{const i=s.indexOf(p,off);off=i+p.length;out.push({s:p,x:it.x+it.w*i/s.length,w:it.w*p.length/s.length,y:it.y})});
+  });
+  return out;
+}
+function impMerge(a){
+  const v=a.slice().sort((p,q)=>Math.abs(p.y-q.y)<0.6?p.x-q.x:p.y-q.y),o=[];
+  v.forEach(it=>{
+    const l=o[o.length-1];
+    if(l&&Math.abs(l.y-it.y)<0.6&&/^[\d*]+$/.test(l.s)&&/^[\d*]+$/.test(it.s)&&it.x-(l.x+l.w)<0.8&&it.x-(l.x+l.w)>-0.8){l.s+=it.s;l.w=it.x+it.w-l.x}
+    else o.push({...it});
+  });
+  return o;
+}
+function impGroups(txt,cols){
+  const g=[];
+  String(txt||'').split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).forEach(part=>{
+    const nums=[];
+    part.split('+').forEach(t=>{t=t.trim();const r=t.match(/^(\d+)\s*-\s*(\d+)$/);if(r){for(let i=+r[1];i<=+r[2];i++)nums.push(i)}else if(/^\d+$/.test(t))nums.push(+t)});
+    if(nums.length)g.push(nums);
+  });
+  if(!g.length||g.flat().some(n=>!cols.includes(n)))return Object.assign(cols.map(c=>[c]),{fb:true});
+  return g;
+}
+function parseTurnusItems(items0,grupare,tol,opts){
+  tol=tol||2.5;
+  const items=(opts&&opts.img)?impSplit(items0):impMerge(impSplit(items0));
+  const lab=n=>items.find(i=>i.s.toLowerCase().startsWith(n));
+  const lP=lab('prezentare'),lR=lab('remizare'),lH=lab('statiile');
+  if(!lP||!lR||!lH)return{err:'Nu găsesc rândurile „Statiile/nr.ech", „Prezentare" și „Remizare" în document.'};
+  const labRight=Math.max(...items.filter(i=>Math.abs(i.y-lH.y)<tol&&i.x<lH.x+lH.w+1).map(i=>i.x+i.w));
+  let pn=0;const hdr=items.filter(i=>/^(\d{1,2}|\d\d:\d\d)$/.test(i.s)&&Math.abs(i.y-lH.y)<tol+1&&i.x>labRight).sort((a,b)=>a.x-b.x).map(i=>{const n=/^\d{1,2}$/.test(i.s)?+i.s:pn+1;pn=n;return{n,c:i.x+i.w/2}});
+  if(!hdr.length)return{err:'Nu găsesc numerele coloanelor (1, 2, 3...).'};
+  const bord=[labRight+6];
+  hdr.forEach((h,i)=>{let r=2*h.c-bord[i];const nx=hdr[i+1]?hdr[i+1].c-1:1e9;r=Math.min(Math.max(r,h.c+1),nx);bord.push(r)});
+  const colOf=x=>{for(let i=0;i<hdr.length;i++)if(x>=bord[i]&&x<bord[i+1])return hdr[i].n;return null};
+  const isT=s=>/^\d{1,2}:\d{2}$/.test(s);
+  const prez=items.filter(i=>(isT(i.s)||/^#+$/.test(i.s))&&Math.abs(i.y-lP.y)<tol).map(i=>({x:i.x+i.w/2,t:isT(i.s)?i.s.padStart(5,'0'):''})).sort((a,b)=>a.x-b.x);
+  const rem=items.filter(i=>isT(i.s)&&Math.abs(i.y-lR.y)<tol).map(i=>({x:i.x+i.w/2,t:i.s.padStart(5,'0')})).sort((a,b)=>a.x-b.x);
+  const trains=items.filter(i=>/^\d{5,6}\*?$/.test(i.s)&&i.y>lH.y+tol&&i.y<lP.y-tol&&i.x+i.w/2<bord[bord.length-1]).map(i=>({x:i.x+i.w/2,s:i.s.replace('*','')}));
+  const segs=prez.map(p=>{const r=rem.find(q=>q.x>p.x+6);return{x:p.x,prez:p.t,iesire:r?r.t:'',col:colOf(p.x),tr:[]}});
+  const cols=hdr.map(h=>h.n);
+  const groups=impGroups(grupare,cols);
+  const res=[];
+  groups.forEach(g=>{
+    const sg=segs.filter(s=>g.includes(s.col)).sort((a,b)=>a.x-b.x);
+    if(!sg.length)return;
+    trains.filter(t=>g.includes(colOf(t.x))).forEach(t=>{let k=0;sg.forEach((s,i)=>{if(t.x>=s.x-10)k=i});sg[k].tr.push(t)});
+    sg.forEach(s=>s.tr.sort((a,b)=>a.x-b.x));
+    for(let i=sg.length-1;i>0;i--)if(!sg[i].tr.length&&sg[i-1].tr.length>1)sg[i].tr.unshift(sg[i-1].tr.pop());
+    res.push({cols:g,segmente:sg.map(s=>({prez:s.prez,iesire:s.iesire})),note:sg.map(s=>s.tr.map(t=>t.s).join(' ')).join(' / ')});
+  });
+  return{turnuri:res,cols,fb:!!groups.fb};
+}
+
+function impScript(u){return new Promise((ok,no)=>{if(document.querySelector('script[src="'+u+'"]'))return ok();const e=document.createElement('script');e.src=u;e.onload=ok;e.onerror=()=>no(new Error('Nu pot încărca '+u));document.head.appendChild(e)})}
+async function impPdfItems(file){
+  await impScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const tc=await (await pdf.getPage(1)).getTextContent();
+  return tc.items.map(i=>({s:i.str,x:i.transform[4],y:-i.transform[5],w:i.width}));
+}
+async function impImgItems(file){
+  await impScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+  const r=await Tesseract.recognize(file,'eng');
+  const ws=r.data.words||[],h=ws.map(w=>w.bbox.y1-w.bbox.y0).sort((a,b)=>a-b);
+  return{items:ws.map(w=>({s:w.text,x:w.bbox.x0,y:(w.bbox.y0+w.bbox.y1)/2,w:w.bbox.x1-w.bbox.x0})),tol:Math.max(3,(h[h.length>>1]||8)*0.6)};
+}
+const IMP_PRESETS={'1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16':'1; 2+3+4; 5; 6+7; 8+9; 10; 11; 12+13; 14; 15','1,2,3,4,5,6,7,8,9':'1; 2+3; 4+5; 6; 7; 8+9'};
+function impMap(){let m={};try{m=JSON.parse(localStorage.getItem('turnus_grupari')||'{}')}catch(e){}return{...IMP_PRESETS,...m}}
+let impRes=null;
+function setImp(m,c){const e=document.getElementById('impPrev');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=m}
+function openImport(){
+  if(!ghToken)return;
+  let g='';try{g=localStorage.getItem('turnus_grupare')||''}catch(e){}
+  document.getElementById('impGrup').value=g||'1; 2+3+4; 5; 6+7; 8+9; 10; 11; 12+13; 14; 15';
+  document.getElementById('impStart').value=1;document.getElementById('impSave').disabled=true;
+  document.getElementById('impPrev').style.display='none';impRes=null;
+  document.getElementById('impOverlay').classList.add('open');
+}
+function closeImport(){document.getElementById('impOverlay').classList.remove('open')}
+async function runImport(){
+  const f=document.getElementById('impFile').files[0];
+  if(!f){alert('Alege un PDF sau o poză!');return}
+  const gr=document.getElementById('impGrup').value,st=parseInt(document.getElementById('impStart').value)||1;
+  try{localStorage.setItem('turnus_grupare',gr)}catch(e){}
+  setImp('⏳ Citesc fișierul...','var(--yel)');document.getElementById('impSave').disabled=true;impRes=null;
+  try{
+    let it;
+    if(/pdf/i.test(f.type)||/\.pdf$/i.test(f.name))it={items:await impPdfItems(f)};
+    else{it=await impImgItems(f);it.opts={img:true}}
+    const P=g=>parseTurnusItems(it.items,g,it.tol,it.opts);
+    let r=P(gr);
+    if(r.cols&&r.fb){const mp=impMap(),k=r.cols.join(',');if(mp[k]){gr=mp[k];document.getElementById('impGrup').value=gr;r=P(gr)}}
+    if(r.cols&&!r.fb){const mp=impMap();mp[r.cols.join(',')]=gr;try{localStorage.setItem('turnus_grupari',JSON.stringify(mp))}catch(e){}}
+    if(r.err){setImp('❌ '+r.err,'var(--red)');return}
+    if(!r.turnuri.length){setImp('❌ Nu am găsit turnusuri. Verifică gruparea coloanelor.','var(--red)');return}
+    impRes=r.turnuri.map((t,i)=>({code:String(st+i),...t}));
+    setImp('Coloane găsite: '+r.cols.join(', ')+'\n\n'+impRes.map(t=>'T'+t.code+(TN[t.code]?' (înlocuiește)':'')+'  coloane '+t.cols.join('+')+'\n   '+t.segmente.map(g=>(g.prez||'?')+'→'+(g.iesire||'?')).join(', ')+'\n   '+t.note).join('\n\n')+(r.fb?'\n\n⚠ Gruparea scrisă nu se potrivește cu coloanele găsite — am pus fiecare coloană separat. Scrie gruparea și apasă din nou „Citește".':'')+(impRes.some(t=>t.segmente.some(g=>!g.prez||!g.iesire))?'\n\n⚠ Unde vezi „?" ora nu s-a putut citi (în PDF e ####). Completează-o în editor după salvare.':'')+'\n\nVerifică, apoi apasă „Adaugă în turnusuri".');
+    document.getElementById('impSave').disabled=false;
+  }catch(e){setImp('❌ Eroare: '+e.message,'var(--red)')}
+}
+function saveImport(){
+  if(!impRes||!ghToken)return;
+  impRes.forEach(t=>{TN[t.code]={segmente:t.segmente,note:t.note}});
+  save();renderEditorList();renderTags();closeImport();showEditorMsg(impRes.length+' turnusuri adăugate din import.');impRes=null;
 }
 
 init();
