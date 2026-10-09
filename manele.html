@@ -171,7 +171,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
   <input type="file" id="impFile" accept="application/pdf,image/*" class="fld" style="margin-bottom:8px">
   <div style="display:grid;grid-template-columns:3fr 1fr;gap:8px;margin-bottom:8px">
     <div class="tn-field"><label>Grupare coloane (; între turnusuri, + sau 2-4 între coloane; coloanele libere se sar)</label><input class="fld" id="impGrup"></div>
-    <div class="tn-field"><label>Primul cod</label><input class="fld" id="impStart" type="number" min="1" value="1"></div>
+    <div class="tn-field"><label>Primul cod</label><input class="fld" id="impStart" type="number" min="1" value="1" oninput="this.dataset.m=1"></div>
   </div>
   <div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn btn-o" onclick="runImport()">🔍 Citește</button><button class="btn btn-g" id="impSave" onclick="saveImport()" disabled>✓ Adaugă în turnusuri</button></div>
   <div id="impPrev" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.7rem;max-height:300px;overflow:auto;white-space:pre-wrap"></div>
@@ -994,13 +994,14 @@ async function impImgItems(file){
 }
 const IMP_PRESETS={'1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16':'1; 2+3+4; 5; 6+7; 8+9; 10; 11; 12+13; 14; 15','1,2,3,4,5,6,7,8,9':'1; 2+3; 4+5; 6; 7; 8+9'};
 function impMap(){let m={};try{m=JSON.parse(localStorage.getItem('turnus_grupari')||'{}')}catch(e){}return{...IMP_PRESETS,...m}}
+function nextFreeCode(){const n=Object.keys(TN).filter(k=>/^\d+$/.test(k)).map(Number);return n.length?Math.max(...n)+1:1}
 let impRes=null;
 function setImp(m,c){const e=document.getElementById('impPrev');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=m}
 function openImport(){
   if(!ghToken)return;
   let g='';try{g=localStorage.getItem('turnus_grupare')||''}catch(e){}
   document.getElementById('impGrup').value=g||'1; 2+3+4; 5; 6+7; 8+9; 10; 11; 12+13; 14; 15';
-  document.getElementById('impStart').value=1;document.getElementById('impSave').disabled=true;
+  const se=document.getElementById('impStart');se.dataset.m='';se.value=nextFreeCode();document.getElementById('impSave').disabled=true;
   document.getElementById('impPrev').style.display='none';impRes=null;
   document.getElementById('impOverlay').classList.add('open');
 }
@@ -1008,7 +1009,7 @@ function closeImport(){document.getElementById('impOverlay').classList.remove('o
 async function runImport(){
   const f=document.getElementById('impFile').files[0];
   if(!f){alert('Alege un PDF sau o poză!');return}
-  const gr=document.getElementById('impGrup').value,st=parseInt(document.getElementById('impStart').value)||1;
+  const gr=document.getElementById('impGrup').value,se=document.getElementById('impStart'),st=se.dataset.m?(parseInt(se.value)||1):nextFreeCode();se.value=st;
   try{localStorage.setItem('turnus_grupare',gr)}catch(e){}
   setImp('⏳ Citesc fișierul...','var(--yel)');document.getElementById('impSave').disabled=true;impRes=null;
   try{
