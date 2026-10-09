@@ -130,9 +130,8 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
     <div class="tn-field"><label>Fișa (din Fișa de lucru)</label><select class="fld" id="preiaDoc"></select></div>
     <div class="tn-field"><label>Luna (1-12)</label><input class="fld" id="preiaLuna" type="number" min="1" max="12"></div>
   </div>
-  <div class="tn-field" style="margin-bottom:8px"><label>Adaugă nume (cum apare în fișă)</label>
-    <div style="display:flex;gap:6px"><input class="fld" id="preiaNume" placeholder="Ex: NITU IONUT"><button class="btn btn-s" onclick="addPreiaName()">+ Adaugă</button></div></div>
-  <div id="preiaNames" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+  <div class="tn-field" style="margin-bottom:10px"><label>Nume (cum apare în fișă)</label><input class="fld" id="preiaNume" placeholder="Ex: NITU IONUT"></div>
+  <button class="btn btn-g" style="margin-bottom:10px;width:100%;justify-content:center" onclick="preiaOre()">📥 Preia orele</button>
   <div id="preiaStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.73rem;max-height:260px;overflow-y:auto;white-space:pre-wrap"></div>
 </div></div>
 
@@ -147,6 +146,8 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
   <div class="card n"><div class="l">Normă Lună</div><div class="cv" id="cNorma">0:00</div><small id="cNormaZile"></small></div>
   <div class="card g" id="cardSupl"><div class="l">Ore Suplimentare</div><div class="cv" id="cSupl">0:00</div><small id="cSuplNote">față de normă</small></div>
 </div>
+
+<div class="cards" id="cardsCodes"></div>
 
 <div class="legend"><span style="color:var(--red)">■ Weekend</span><span style="color:var(--yel)">■ Zi liberă</span><span style="color:var(--grn)">■ Lucrat</span></div>
 
@@ -315,7 +316,7 @@ function recalcAll(){
   }));
   const acc={},acc2={};
   const festY=dt=>{const w=dt.getDay();return w===0||w===6||!!buildHols(dt.getFullYear())[`${dt.getMonth()+1}-${dt.getDate()}`]};
-  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],incKeys:[],pre:false,ol:0,oo:0,on:0,of:0})};
+  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],incKeys:[],pre:false,xc:{},ol:0,oo:0,on:0,of:0})};
   function addInt(m,d,a,b,kind,label){
     while(a<b){
       const off=Math.floor(a/1440),end=Math.min(b,(off+1)*1440);
@@ -327,8 +328,9 @@ function recalcAll(){
       if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label)){x.inc.push(label);x.incKeys.push(label+'@'+m+'-'+d)}
       if(kind==='w'){
         let n=0;for(let t=a;t<end;t++){const r=((t%1440)+1440)%1440;if(r>=1320||r<360)n++}
-        x.ol+=len;x.on+=n;
-        if(festY(dt))x.of+=len;
+        const fs_=festY(dt);x.ol+=len;x.on+=n;
+        if(fs_)x.of+=len;
+        if(!/^T\d+$/.test(label)){const c=x.xc[label]||(x.xc[label]={ol:0,on:0,of:0});c.ol+=len;c.on+=n;if(fs_)c.of+=len}
         x.wp.push({st:a-off*1440,en:end-off*1440,len,n});
       }else{x.oo+=len;x.rp.push({st:a-off*1440,len})}
       a=end;
@@ -351,7 +353,7 @@ function recalcAll(){
 }
 function fillDay(dd,x){
     x.wp.sort((a,b)=>a.st-b.st);x.rp.sort((a,b)=>a.st-b.st);
-    dd.tn=x.tns.join('+');dd.inc=x.inc;dd.incKeys=x.incKeys;
+    dd.tn=x.tns.join('+');dd.inc=x.inc;dd.incKeys=x.incKeys;dd.xc=Object.keys(x.xc).length?x.xc:undefined;
     dd.prez=x.wp.length?hhmm(x.wp[0].st):'';
     dd.iesire=x.wp.length?hhmm(Math.max(...x.wp.map(p=>p.en))%1440):'';
     dd.ol=x.ol?fmtm(x.ol):'';dd.oo=x.oo?fmtm(x.oo):'';dd.on=x.ol?fmtm(x.on):'';dd.of=x.of?fmtm(x.of):'';
@@ -427,6 +429,11 @@ function renderTabs(){
     b.onclick=()=>{curM=i;renderTabs();renderTable()};w.appendChild(b);
   });
 }
+function xsub(dd,cc){
+  const r={ol:0,on:0,of:0,only:false},xc=dd.xc;if(!xc)return r;let so=0;
+  Object.keys(xc).forEach(c=>{const x=xc[c];r.ol+=x.ol;r.on+=x.on;r.of+=x.of;so+=x.ol;if(cc){const e=cc[c]||(cc[c]={h:0,d:0});e.h+=x.ol;e.d++}});
+  r.only=so>=Math.max(0,p2m(dd.ol));return r;
+}
 function renderTable(){
   const body=document.getElementById('tbody');body.innerHTML='';
   const m=curM,days=new Date(curYear,m+1,0).getDate(),hols=buildHols(curYear);
@@ -439,7 +446,8 @@ function renderTable(){
     let showF=dd.of;if(!showF&&isFestD&&dd.ol)showF=dd.ol;
     const pm=x=>Math.max(0,p2m(x));
     tL+=pm(dd.ol);tO+=pm(dd.oo);tN+=pm(showN);tF+=pm(showF);
-    if(dd.tn||dd.ol)zile++;
+    const xs=xsub(dd);tL-=xs.ol;tN-=xs.on;tF-=xs.of;
+    if((dd.tn||dd.ol)&&!xs.only)zile++;
     let cls='';const act=dd.tn||dd.ol;
     if(isHol&&act)cls='rHolWork';else if(isWk&&act)cls='rWkWork';else if(isHol)cls='rHol';else if(isWk)cls='rWk';else if(dd.overflow)cls='rOver';else if(act)cls='rWork';
     const tr=document.createElement('tr');if(cls)tr.className=cls;
@@ -486,17 +494,21 @@ function renderTable(){
 }
 function updateCards(){
   const m=curM,days=new Date(curYear,m+1,0).getDate(),hols=buildHols(curYear);
-  let tL=0,tO=0,tN=0,tF=0,zile=0,zl=0;
+  let tL=0,tO=0,tN=0,tF=0,zile=0,zl=0;const cc={};
   const pm=x=>Math.max(0,p2m(x));
   for(let d=1;d<=days;d++){
     const dd=gd(m,d);
     let n=dd.on;if(!n&&dd.prez&&dd.iesire){const nm=nightMins(dd.prez,dd.iesire);if(nm>0)n=fmtm(nm)}
     let f=dd.of;if(!f&&isFest(m,d)&&dd.ol)f=dd.ol;
     tL+=pm(dd.ol);tO+=pm(dd.oo);tN+=pm(n);tF+=pm(f);
-    if(dd.tn||dd.ol)zile++;
+    const xs=xsub(dd,cc);tL-=xs.ol;tN-=xs.on;tF-=xs.of;
+    if((dd.tn||dd.ol)&&!xs.only)zile++;
     const dow=new Date(curYear,m,d).getDay();
     if(dow>=1&&dow<=5&&!hols[`${m+1}-${d}`])zl++;
   }
+  const NM={CO:'Concediu (CO)',CM:'Concediu medical (CM)'};
+  const cw=document.getElementById('cardsCodes');
+  if(cw){cw.innerHTML='';Object.keys(cc).sort(keyCmp).forEach(c=>{const e=document.createElement('div');e.className='card o';e.innerHTML=`<div class="l">${NM[c]||c}</div><div class="cv">${fmtm(cc[c].h)}</div><small>${cc[c].d} zile · nu intră în total</small>`;cw.appendChild(e)})}
   const norma=zl*480,supl=tL-norma;
   const set=(id,v)=>document.getElementById(id).textContent=v;
   set('cL',fmtm(tL));set('cO',fmtm(tO));set('cN',fmtm(tN));set('cF',fmtm(tF));
@@ -847,24 +859,16 @@ function importBlock(b,luna,restore){
   return{ok,neid:sol.unid,lines};
 }
 function setPreiaStatus(msg,c){const e=document.getElementById('preiaStatus');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=msg}
-function getNames(){try{const a=JSON.parse(localStorage.getItem('pontaj_names')||'null');if(Array.isArray(a))return a}catch(e){}return['NITU IONUT']}
-function setNames(a){try{localStorage.setItem('pontaj_names',JSON.stringify(a))}catch(e){}}
-function renderPreiaNames(){
-  const w=document.getElementById('preiaNames');w.innerHTML='';
-  getNames().forEach((nm,i)=>{
-    const r=document.createElement('div');r.style.cssText='display:flex;gap:6px;align-items:center';
-    const t=document.createElement('span');t.style.cssText='flex:1;font-weight:600';t.textContent=nm;
-    const p=document.createElement('button');p.className='btn btn-g btn-sm';p.textContent='Preia';p.onclick=()=>preiaNume(nm);
-    const x=document.createElement('button');x.className='btn btn-r btn-sm';x.textContent='✕';x.onclick=()=>{const a=getNames();a.splice(i,1);setNames(a);renderPreiaNames()};
-    r.append(t,p,x);w.appendChild(r);
-  });
-}
-function addPreiaName(){
-  const i=document.getElementById('preiaNume'),v=i.value.trim().toUpperCase();if(!v)return;
-  const a=getNames();if(!a.includes(v))a.push(v);setNames(a);i.value='';renderPreiaNames();
+function preiaOre(){
+  const v=document.getElementById('preiaNume').value.trim();
+  if(!v){alert('Scrie numele din fișă!');return}
+  try{localStorage.setItem('pontaj_nume',v)}catch(e){}
+  preiaNume(v);
 }
 async function openPreia(){
-  document.getElementById('preiaLuna').value=curM+1;renderPreiaNames();
+  document.getElementById('preiaLuna').value=curM+1;
+  let nm='';try{nm=localStorage.getItem('pontaj_nume')||(JSON.parse(localStorage.getItem('pontaj_names')||'[]')[0])||''}catch(e){}
+  document.getElementById('preiaNume').value=nm;
   document.getElementById('preiaOverlay').classList.add('open');
   const sel=document.getElementById('preiaDoc');sel.innerHTML='<option>Se încarcă...</option>';
   const idx=await ghRaw('data/mecanici/index.json');
