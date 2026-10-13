@@ -2,1038 +2,492 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Fișă Pontaj</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;900&family=Share+Tech+Mono&family=Exo+2:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Exo+2:wght@400;600&display=swap');
-:root{--bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;--bord:#3d1414;--bord2:#5c1c1c;--acc:#ff1f3d;--acc2:rgba(255,31,61,.14);--grn:#ff6b3d;--yel:#ffc940;--yel2:rgba(255,201,64,.12);--red:#ff2d55;--red2:rgba(255,45,85,.09);--org:#ff8c42;--org2:rgba(255,140,66,.12);--txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh}
-.app{max-width:1440px;margin:0 auto;padding:14px}
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:linear-gradient(135deg,var(--surf),var(--surf2));border:1px solid var(--bord2);border-radius:12px;margin-bottom:12px;flex-wrap:wrap;gap:10px}
-.hdr h1{font-family:'Rajdhani',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--acc);text-transform:uppercase}
-.hdr p{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--txtd);letter-spacing:2px}
-.hdr-right{display:flex;gap:7px;flex-wrap:wrap}
-.board{background:linear-gradient(135deg,#0a0303,#150606,#0a0303);border-bottom:1px solid var(--bord);padding:20px 24px 16px;position:sticky;top:0;z-index:20;margin:-14px -14px 14px;text-align:center}
-.emx-logo{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;letter-spacing:-1px;line-height:1}
-.emx-logo .e{color:var(--acc)}.emx-logo .m{color:#fff}.emx-logo .x{color:var(--grn)}
-#statusDot{font-size:.6rem;color:var(--acc);margin-left:7px;vertical-align:middle}
-#statusDot.status-connected{color:#2ed573}
-.board-sub{color:var(--txtd);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.2em;margin-top:4px}
-.page-nav{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;background:var(--surf);border:1px solid var(--bord);border-radius:10px;padding:12px;margin-bottom:14px}
-.page-nav-btn{padding:9px 16px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;color:var(--txtd);background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;text-decoration:none}
-.page-nav-btn.active{background:var(--acc);color:#050505;border-color:var(--acc)}
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;font-family:'Rajdhani',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;white-space:nowrap}
-.btn-g{background:var(--grn);color:#07090f}.btn-s{background:var(--surf3);color:var(--txt);border:1px solid var(--bord2)}
-.btn-r{background:var(--red2);color:var(--red);border:1px solid var(--red)}.btn-o{background:var(--org2);color:var(--org);border:1px solid var(--org)}
-.btn-sm{padding:4px 9px;font-size:.75rem}
-.btn:disabled{opacity:.4}
-.infobox{background:var(--surf2);border:1px solid var(--bord2);border-left:3px solid var(--acc);border-radius:8px;padding:10px 14px;margin-bottom:10px;position:sticky;top:var(--sticky-top,108px);z-index:15}
-.tags{display:flex;gap:5px;flex-wrap:wrap}
-.tag{background:var(--surf3);border:1px solid var(--bord2);border-radius:5px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--grn)}
-.tag.t12{color:var(--org);border-color:var(--org)}
-.mtabs{display:flex;gap:3px;flex-wrap:wrap;background:var(--surf);border:1px solid var(--bord);border-radius:10px;padding:5px;margin-bottom:10px}
-.mtab{padding:5px 9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:.76rem;font-weight:600;text-transform:uppercase;cursor:pointer;background:transparent;color:var(--txtd);border:1px solid transparent;position:relative}
-.mtab.act{background:var(--acc2);border-color:var(--acc);color:var(--acc)}
-.mtab .hd{position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:var(--grn)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
-.card{background:var(--surf);border:1px solid var(--bord);border-radius:10px;padding:10px 12px;border-top:2px solid var(--acc)}
-.card.g{border-top-color:var(--grn)}.card.y{border-top-color:var(--yel)}.card.o{border-top-color:var(--org)}.card.n{border-top-color:var(--txtm)}
-.card .l{font-size:.59rem;text-transform:uppercase;letter-spacing:2px;color:var(--txtd);font-family:'Rajdhani',sans-serif;font-weight:600}
-.cv{font-family:'Share Tech Mono',monospace;font-size:1.22rem;font-weight:700;color:var(--acc)}
-.card.g .cv{color:var(--grn)}.card.y .cv{color:var(--yel)}.card.o .cv{color:var(--org)}.card.n .cv{color:var(--txtm)}
-.card small{font-size:.6rem;color:var(--txtd);display:block}
-.legend{display:flex;gap:10px;font-size:.68rem;color:var(--txtd);margin-bottom:8px}
-.twrap{overflow-x:auto;border-radius:10px;border:1px solid var(--bord);background:var(--surf)}
-table.pt{width:100%;border-collapse:collapse;font-size:.74rem;min-width:940px}
-table.pt th{background:var(--surf3);color:var(--acc);font-family:'Rajdhani',sans-serif;font-size:.68rem;letter-spacing:1.2px;text-transform:uppercase;padding:8px 5px;border-bottom:2px solid var(--bord2);white-space:nowrap}
-table.pt tbody tr{border-bottom:1px solid var(--bord)}
-table.pt td{padding:4px 5px;text-align:center;vertical-align:middle;font-family:'Share Tech Mono',monospace;font-size:.72rem}
-table.pt td:first-child{text-align:left;padding-left:10px;font-family:'Exo 2',sans-serif;font-weight:600;min-width:85px}
-table.pt td:last-child{text-align:left}
-.sub{font-size:.6rem;color:var(--txtd);white-space:nowrap}
-tr.rWk td{background:var(--red2)!important}tr.rWk .dn{color:var(--red)}
-tr.rHol td{background:var(--yel2)!important}tr.rHol .dn{color:var(--yel)}
-tr.rWork td{background:rgba(255,107,61,.04)}tr.rOver td{background:rgba(255,107,61,.07)}
-tr.rWkWork td{background:rgba(255,45,85,.08)!important}tr.rHolWork td{background:rgba(255,201,64,.09)!important}
-tr.rWkWork .dn{color:var(--red)}tr.rHolWork .dn{color:var(--yel)}
-.ce{background:transparent;border:1px solid transparent;border-radius:4px;color:inherit;font-family:inherit;font-size:inherit;width:100%;text-align:center;padding:2px;min-width:44px}
-.ce:focus,.ne:focus{outline:none;border-color:var(--acc);background:var(--acc2)}
-.ce.ol{color:var(--grn);font-weight:700}.ce.on{color:var(--acc)}.ce.of{color:var(--yel)}.ce.oo{color:var(--org)}.ce.pr,.ce.ie{color:var(--txtm)}
-.ne{background:transparent;border:1px solid transparent;border-radius:4px;color:var(--txtd);font-family:'Exo 2',sans-serif;font-size:.7rem;width:100%;padding:2px 3px}
-.tbadge{display:inline-block;background:var(--acc2);border:1px solid var(--acc);border-radius:4px;padding:1px 5px;font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;color:var(--acc);margin-left:3px}
-.tbadge.tov{background:rgba(255,107,61,.1);border-color:var(--grn);color:var(--grn);font-size:.6rem}
-.tn-inp-wrap{display:flex;align-items:center;white-space:nowrap}
-.tn-inp-wrap input{width:96px;background:var(--surf2);border:1px solid var(--bord2);border-radius:4px;color:var(--acc);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;padding:3px 4px;text-align:center}
-.btn-del{background:var(--red2);border:1px solid var(--red);border-radius:4px;color:var(--red);cursor:pointer;padding:3px 7px;font-weight:700}
-tr.totrow td{background:var(--surf3)!important;border-top:2px solid var(--bord2);font-weight:700;font-family:'Rajdhani',sans-serif;font-size:.8rem;padding:9px 5px}
-tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
-.tv{color:var(--grn)}.tv.n{color:var(--acc)}.tv.f{color:var(--yel)}.tv.o{color:var(--org)}
-.overlay{display:none;position:fixed;inset:0;background:rgba(7,9,15,.92);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px}
-.overlay.open{display:flex}
-.modal{background:var(--surf2);border:1px solid var(--bord2);border-radius:14px;padding:20px;width:100%;max-width:700px;position:relative;margin:auto}
-.modal h2{font-family:'Rajdhani',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--org);text-transform:uppercase;margin-bottom:14px}
-.mclose{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--txtd);font-size:1.2rem;cursor:pointer}
-.tn-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:440px;overflow-y:auto}
-.tn-item{background:var(--surf);border:1px solid var(--bord);border-radius:9px;padding:10px 12px}
-.tn-item-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.tn-num{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--acc)}
-.seg-block{border:1px solid var(--bord);border-radius:7px;padding:8px;margin-bottom:6px}
-.seg-block h5{font-family:'Rajdhani',sans-serif;font-size:.72rem;letter-spacing:1.5px;color:var(--acc);text-transform:uppercase;margin-bottom:6px}
-.seg-block.dorm{background:rgba(255,140,66,.06)}.seg-block.dorm h5{color:var(--org);margin:0}
-.fields-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
-.tn-field{display:flex;flex-direction:column;gap:2px}
-.tn-field label{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--txtd);font-family:'Rajdhani',sans-serif}
-.tn-field input{background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.73rem;padding:4px 6px;width:100%}
-.seg-actions{display:flex;gap:5px;margin-top:6px}
-.calc-note{font-size:.65rem;color:var(--grn);font-family:'Share Tech Mono',monospace;margin-top:4px}
-.yr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}
-.yr-btn{background:var(--surf);border:1px solid var(--bord2);border-radius:8px;padding:11px 5px;font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;color:var(--txt);cursor:pointer}
-.yr-btn.cur-yr{border-color:var(--acc);color:var(--acc);background:var(--acc2)}
-.yr-badge{background:var(--acc2);border-radius:6px;padding:4px 13px;font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--acc);border:none;cursor:pointer}
-.hol-preview{background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:9px 11px;font-size:.7rem;color:var(--txtm);max-height:180px;overflow-y:auto}
-.hol-row{display:flex;gap:10px;padding:2px 0}.hol-date{color:var(--acc);font-family:'Share Tech Mono',monospace}
-.fld{background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-size:.82rem;padding:6px 9px;width:100%}
+  :root{
+    --bg:#050505;--surf:#0d0808;--surf2:#160c0c;
+    --bord:#3d1414;--bord2:#5c1c1c;
+    --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
+    --grn:#ff6b3d;
+    --org:#ff8c42;
+    --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:'Exo 2', sans-serif;
+    overflow-x:hidden; overflow-y:auto;
+    position:relative;
+  }
+  body::before{
+    content:''; position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(255,31,61,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,31,61,0.03) 1px, transparent 1px);
+    background-size:42px 42px;
+    pointer-events:none; z-index:0;
+  }
+  body::after{
+    content:''; position:fixed; inset:0;
+    background:radial-gradient(ellipse 900px 600px at 50% 40%, rgba(255,31,61,.10), transparent 65%);
+    pointer-events:none; z-index:0;
+  }
+
+  /* ================= PRELOADER ================= */
+  #preloader{
+    position:fixed; inset:0; z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--bg);
+    transition:opacity .7s ease, visibility .7s ease;
+  }
+  #preloader.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+
+  .ball-stage{
+    position:relative; width:170px; height:230px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ball{
+    width:150px; height:150px; position:relative;
+    animation: bounce 1.3s cubic-bezier(.45,0,.55,1) infinite;
+  }
+  .ball::before{
+    content:''; position:absolute; inset:-60px; z-index:0; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,31,61,.62) 0%, rgba(255,31,61,.34) 32%, rgba(255,31,61,.10) 52%, transparent 68%);
+  }
+  .ball canvas{ position:relative; z-index:1; width:150px; height:150px; display:block; }
+  .ball-shadow{
+    position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+    width:96px; height:18px; border-radius:50%;
+    background:rgba(0,0,0,.65); filter:blur(7px);
+    animation: shadowPulse 1.3s cubic-bezier(.45,0,.55,1) infinite;
+  }
+
+  @keyframes bounce{
+    0%,100%{ transform:translateY(-38px); }
+    50%{ transform:translateY(6px); }
+  }
+  @keyframes shadowPulse{
+    0%,100%{ width:64px; opacity:.35; }
+    50%{ width:100px; opacity:.7; }
+  }
+
+  .load-status{
+    margin-top:26px; display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .load-word{
+    font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:.35em;
+    text-transform:uppercase; color:var(--txtd);
+  }
+  .load-bar{
+    width:180px; height:3px; background:var(--surf2); border:1px solid var(--bord);
+    border-radius:2px; overflow:hidden;
+  }
+  .load-bar-fill{
+    height:100%; width:0%; background:linear-gradient(90deg, var(--acc), var(--grn));
+    box-shadow:0 0 10px rgba(255,31,61,.6);
+    transition:width .1s linear;
+  }
+  .load-pct{
+    font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--acc); letter-spacing:.08em;
+  }
+
+  /* ================= MAIN ================= */
+  #main{
+    position:relative; z-index:1;
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px 24px 60px; text-align:center;
+    opacity:0; transform:translateY(14px);
+    transition:opacity .8s ease, transform .8s ease;
+  }
+  #main.show{ opacity:1; transform:translateY(0); }
+
+  .logo{
+    display:flex; align-items:baseline; gap:2px; line-height:1; margin-bottom:8px;
+  }
+  .logo .e{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:var(--acc); letter-spacing:-2px; text-shadow:0 0 26px rgba(255,31,61,.6);}
+  .logo .m{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:#fff; letter-spacing:-2px; text-shadow:0 0 18px rgba(255,255,255,.35);}
+  .logo .x{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:var(--grn); letter-spacing:-2px; text-shadow:0 0 26px rgba(255,107,61,.6);}
+  .logo .dot{color:var(--acc); font-size:22px; margin-left:6px; animation:blink 1.6s infinite;}
+  .logo .dot.status-connected{ color:#2ed573; text-shadow:0 0 14px rgba(46,213,115,.9); }
+  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:.2;}}
+
+  .tagline{
+    font-family:'Share Tech Mono',monospace; font-size:11.5px; letter-spacing:.28em;
+    text-transform:uppercase; color:var(--txtd); margin-bottom:26px;
+  }
+
+  .admin-btn{
+    position:fixed; top:18px; right:18px; z-index:50;
+    padding:7px 14px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:11px;
+    letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf);
+    color:var(--txtd); cursor:pointer; transition:border-color .15s, color .15s;
+  }
+  .admin-btn:hover{ border-color:var(--acc); color:var(--acc); }
+  .admin-btn.connected{ color:var(--grn); border-color:rgba(255,107,61,.4); }
+
+  .overlay{
+    position:fixed; inset:0; z-index:200; display:none;
+    align-items:center; justify-content:center; padding:20px;
+    background:rgba(5,5,5,.85); backdrop-filter:blur(4px);
+  }
+  .overlay.open{ display:flex; }
+  .modal{
+    background:var(--surf); border:1px solid var(--bord2); border-radius:14px;
+    padding:24px; width:100%; max-width:380px; position:relative; text-align:left;
+  }
+  .modal::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:2px; border-radius:14px 14px 0 0;
+    background:linear-gradient(90deg, var(--acc), var(--grn));
+  }
+  .modal-title{
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--txt); margin-bottom:14px;
+  }
+  .modal-close{
+    position:absolute; top:12px; right:14px; background:none; border:none; color:var(--txtd);
+    font-size:18px; cursor:pointer; line-height:1;
+  }
+  .modal-close:hover{ color:var(--acc); }
+  .modal-status{
+    font-family:'Share Tech Mono',monospace; font-size:11.5px; color:var(--txtd); margin-bottom:12px;
+  }
+  .modal-status.connected{ color:var(--grn); }
+  .gh-form input{
+    width:100%; background:var(--surf2); border:1px solid var(--bord2); color:var(--txt);
+    padding:9px 10px; border-radius:6px; font-family:'Share Tech Mono',monospace; font-size:12.5px;
+    margin-bottom:12px;
+  }
+  .gh-form input:focus{ outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc2); }
+  .gh-btn{
+    padding:9px 14px; border-radius:6px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px;
+    letter-spacing:.06em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf2);
+    color:var(--txtd); cursor:pointer; transition:filter .15s, border-color .15s, color .15s; width:100%;
+  }
+  .gh-btn.primary{ background:var(--acc); color:#050505; border-color:var(--acc); margin-bottom:8px; }
+  .gh-btn:hover{ filter:brightness(1.1); }
+  .gh-btn.ghost:hover{ color:var(--acc,#ff2d55); border-color:var(--acc,#ff2d55); }
+
+  .actions{
+    display:flex; gap:18px; flex-wrap:wrap; justify-content:center; max-width:520px;
+  }
+  .action-btn{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    width:210px; padding:30px 20px;
+    background:var(--surf); border:1px solid var(--bord2); border-radius:14px;
+    text-decoration:none; color:var(--txt);
+    position:relative; overflow:hidden;
+    transition:transform .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .action-btn::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, var(--acc), var(--grn)); opacity:.85;
+  }
+  .action-btn:hover{ transform:translateY(-4px); border-color:var(--acc); background:var(--surf2); }
+  .action-icon{ font-size:30px; filter:drop-shadow(0 0 10px rgba(255,31,61,.5)); }
+  .action-title{
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; letter-spacing:.03em; text-transform:uppercase;
+  }
+  .action-sub{
+    font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--txtd); letter-spacing:.05em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ball, .ball-shadow{ animation:none !important; }
+  }
 </style>
 </head>
 <body>
-<div class="app">
 
-<div class="board">
-  <div class="emx-logo"><span class="e">E</span><span class="m">M</span><span class="x">X</span><span id="statusDot">●</span><span id="syncText" style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--txtd);margin-left:6px"></span></div>
-  <div class="board-sub">TURNUSURI ȘI PONTAJ</div>
-</div>
-
-<div class="page-nav">
-  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
-  <a href="fisalucru.html" class="page-nav-btn">📋 Fișă de lucru</a>
-  <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
-  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
-  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
-  <span class="page-nav-btn active">📅 Pontaj</span>
-</div>
-
-<div class="hdr">
-  <div><h1>Fișă Pontaj</h1><p>EVIDENȚĂ ORE • TURNUS 1–12+ • TOATE LUNILE</p></div>
-  <div class="hdr-right">
-    <button class="yr-badge" id="yrBadge" onclick="openYearModal()">📅 2026</button>
-    <button class="btn btn-o" onclick="openEditor()">⚙ Turnus-uri</button>
-    <button class="btn btn-g" onclick="openPreia()">📥 Preia din fișă</button>
+<div id="preloader">
+  <div class="ball-stage">
+    <div class="ball"><canvas id="ballCanvas" width="300" height="300"></canvas></div>
+    <div class="ball-shadow"></div>
+  </div>
+  <div class="load-status">
+    <div class="load-word">se încarcă</div>
+    <div class="load-bar"><div class="load-bar-fill" id="loadFill"></div></div>
+    <div class="load-pct" id="loadPct">0%</div>
   </div>
 </div>
 
-<div class="overlay" id="preiaOverlay"><div class="modal" style="max-width:560px">
-  <button class="mclose" onclick="closePreia()">✕</button>
-  <h2 style="color:var(--grn)">📥 Preia din fișă</h2>
-  <p style="font-size:.72rem;color:var(--txtm);margin-bottom:10px">Se folosesc turnusurile publicate de administrator. Cele adăugate de tine cu același cod (ex: T1) le înlocuiesc doar la tine.</p>
-  <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:10px">
-    <div class="tn-field"><label>Fișa (din Fișa de lucru)</label><select class="fld" id="preiaDoc"></select></div>
-    <div class="tn-field"><label>Luna (1-12)</label><input class="fld" id="preiaLuna" type="number" min="1" max="12"></div>
+<div id="main">
+  <div class="logo">
+    <span class="e">E</span><span class="m">M</span><span class="x">X</span><span class="dot" id="statusDot">●</span>
   </div>
-  <div class="tn-field" style="margin-bottom:10px"><label>Nume (cum apare în fișă)</label><input class="fld" id="preiaNume" placeholder="Ex: NITU IONUT"></div>
-  <button class="btn btn-g" style="margin-bottom:10px;width:100%;justify-content:center" onclick="preiaOre()">📥 Preia orele</button>
-  <div id="preiaStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.73rem;max-height:260px;overflow-y:auto;white-space:pre-wrap"></div>
-</div></div>
+  <div class="tagline">alege instrumentul</div>
 
-<div class="infobox"><div class="tags" id="tagList"></div></div>
-<div class="mtabs" id="mtabs"></div>
-
-<div class="cards">
-  <div class="card g"><div class="l">Ore Lucrate</div><div class="cv" id="cL">0:00</div><small id="cLz">0 zile</small></div>
-  <div class="card o"><div class="l">Odihnă Total</div><div class="cv" id="cO">0:00</div><small>dormitor</small></div>
-  <div class="card"><div class="l">Ore Noapte</div><div class="cv" id="cN">0:00</div><small>22:00–06:00</small></div>
-  <div class="card y"><div class="l">Ore Festive</div><div class="cv" id="cF">0:00</div><small>Sâm/Dum/sărbători</small></div>
-  <div class="card n"><div class="l">Normă Lună</div><div class="cv" id="cNorma">0:00</div><small id="cNormaZile"></small></div>
-  <div class="card g" id="cardSupl"><div class="l">Ore Suplimentare</div><div class="cv" id="cSupl">0:00</div><small id="cSuplNote">față de normă</small></div>
+  <div class="actions" id="actions">
+    <a href="fisalucru.html" class="action-btn">
+      <span class="action-icon">📋</span>
+      <span class="action-title">Fișă de lucru</span>
+      <span class="action-sub">program &amp; turnusuri</span>
+    </a>
+    <a href="salariu.html" class="action-btn">
+      <span class="action-icon">💰</span>
+      <span class="action-title">Calcul salariu</span>
+      <span class="action-sub">fluturaș &amp; ore</span>
+    </a>
+    <a href="intarzieri.html" class="action-btn">
+      <span class="action-icon">🚆</span>
+      <span class="action-title">Întârzieri</span>
+      <span class="action-sub">trenuri &amp; sosiri</span>
+    </a>
+    <a href="fisapontaj.html" class="action-btn">
+      <span class="action-icon">📅</span>
+      <span class="action-title">Pontaj</span>
+      <span class="action-sub">fișă de pontaj</span>
+    </a>
+    <a href="bani.html" class="action-btn" id="baniBtn" style="display:none;">
+      <span class="action-icon">💵</span>
+      <span class="action-title">Bani de luat</span>
+      <span class="action-sub">registru financiar</span>
+    </a>
+  </div>
 </div>
 
-<div class="cards" id="cardsCodes"></div>
+<button class="admin-btn" id="adminBtn">Admin</button>
 
-<div class="legend"><span style="color:var(--red)">■ Weekend</span><span style="color:var(--yel)">■ Zi liberă</span><span style="color:var(--grn)">■ Lucrat</span></div>
-
-<div class="twrap"><table class="pt">
-  <thead><tr><th>Data</th><th>Zi</th><th>Turnus</th><th></th><th>Prezentare</th><th>Ieșire</th><th>Ore Lucrate</th><th>Odihnă</th><th>Ore Noapte</th><th>Ore Festive</th><th>Notă</th></tr></thead>
-  <tbody id="tbody"></tbody>
-</table></div>
-
-<div class="overlay" id="yearOverlay"><div class="modal">
-  <button class="mclose" onclick="closeYearModal()">✕</button>
-  <h2>📅 Selectează Anul</h2>
-  <div class="yr-grid" id="yrGrid"></div>
-  <div class="hol-preview"><div id="holList"></div></div>
-  <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-g" id="yrConfirmBtn">✓ Selectează</button><button class="btn btn-s" onclick="closeYearModal()">Anulează</button></div>
-</div></div>
-
-<div class="overlay" id="impOverlay" style="z-index:320"><div class="modal" style="max-width:640px">
-  <button class="mclose" onclick="closeImport()">✕</button>
-  <h2 style="color:var(--grn)">📄 Import turnusuri</h2>
-  <p style="font-size:.74rem;color:var(--txtm);margin-bottom:10px">Alege PDF-ul (sau poza) cu turnusurile. Citesc coloanele din rândul „Statiile/nr.ech", prezentarea, remizarea și trenurile de pe fiecare coloană.</p>
-  <input type="file" id="impFile" accept="application/pdf,image/*" class="fld" style="margin-bottom:8px">
-  <div style="display:grid;grid-template-columns:3fr 1fr;gap:8px;margin-bottom:8px">
-    <div class="tn-field"><label>Grupare coloane (; între turnusuri, + sau 2-4 între coloane; coloanele libere se sar)</label><input class="fld" id="impGrup"></div>
-    <div class="tn-field"><label>Primul cod</label><input class="fld" id="impStart" type="number" min="1" value="1" oninput="this.dataset.m=1"></div>
-  </div>
-  <div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn btn-o" onclick="runImport()">🔍 Citește</button><button class="btn btn-g" id="impSave" onclick="saveImport()" disabled>✓ Adaugă în turnusuri</button></div>
-  <div id="impPrev" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.7rem;max-height:300px;overflow:auto;white-space:pre-wrap"></div>
-</div></div>
-
-<div class="overlay" id="editorOverlay"><div class="modal">
-  <button class="mclose" onclick="closeEditor()">✕</button>
-  <h2>⚙ Editor Turnus-uri</h2>
-  <div id="impWrap" style="display:none;margin-bottom:10px"><button class="btn btn-o" onclick="openImport()">📄 Import turnusuri (PDF / poză)</button></div>
-  <div id="addTnBox"></div>
-  <div class="tn-list" id="tnList"></div>
-  <div style="display:flex;gap:7px;flex-wrap:wrap">
-    <button class="btn btn-s" onclick="closeEditor()">✕ Închide</button>
-    <button class="btn btn-s btn-sm" id="resetTNBtn" onclick="resetTN()">↺ Golește toate turnusurile</button>
-  </div>
-  <div id="editorMsg" style="display:none;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--grn)"></div>
-</div></div>
-
-</div>
-<script>
-// ── TIME UTILS ──
-function p2m(s){if(!s||typeof s!=='string')return -1;const r=s.trim().match(/^(\d{1,3})[:\.](\d{2})$/);return r?+r[1]*60+ +r[2]:-1}
-function fmtm(x){return(x==null||x<0)?'0:00':Math.floor(x/60)+':'+String(x%60).padStart(2,'0')}
-function hhmm(x){return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')}
-function diffm(a,b){const s=p2m(a),e=p2m(b);if(s<0||e<0)return 0;let d=e-s;if(d<0)d+=1440;return d}
-function nightMins(a,b){const s=p2m(a),e=p2m(b);if(s<0||e<0)return 0;let t=e-s;if(t<0)t+=1440;let n=0;for(let i=0;i<t;i++){const r=(s+i)%1440;if(r>=1320||r<360)n++}return n}
-
-// Calcul turnus pe segmente (cu părți separate: 5:00 + 5:00)
-function calcTurnusAuto(sg){
-  let cur=0,prev=null,ol=0,oo=0,on=0,end=0;const olp=[],oop=[],onp=[];
-  (sg||[]).forEach(s=>{
-    const a=p2m(s.prez),b=p2m(s.iesire);if(a<0||b<0)return;
-    let st=a;while(st<cur)st+=1440;let en=b;while(en<=st)en+=1440;
-    if(prev!==null&&st>prev){oo+=st-prev;oop.push(fmtm(st-prev))}
-    const n=nightMins(s.prez,s.iesire);
-    ol+=en-st;on+=n;olp.push(fmtm(en-st));onp.push(fmtm(n));prev=en;cur=en;end=en;
-  });
-  return{ol:fmtm(ol),oo:fmtm(oo),on:fmtm(on),olp:olp.join(' + '),oop:oop.join(' + '),onp:onp.join(' + '),zile:Math.max(1,Math.ceil(end/1440))};
-}
-function calcTxt(c){
-  const p=(t,x)=>x.includes('+')?` (${x})`:'';
-  return `${c.ol}${p(0,c.olp)} lucrate | ${c.oo}${p(0,c.oop)} odihnă | ${c.on}${p(0,c.onp)} noapte | ${c.zile} ${c.zile===1?'zi':'zile'}`;
-}
-
-// ── STATE ──
-const YEAR_MIN=2024,YEAR_MAX=2035;
-const _today=new Date();
-let curYear=_today.getFullYear(),curM=_today.getMonth();
-let db={},TN={},SHARED={};
-const lbl=k=>/^\d+$/.test(String(k))?'T'+k:String(k);
-const keyCmp=(a,b)=>{const x=/^\d+$/.test(a),y=/^\d+$/.test(b);return x&&y?+a-+b:x?-1:y?1:a<b?-1:a>b?1:0};
-function normCode(v){v=String(v||'').trim().toUpperCase();if(/^T?\d+$/.test(v)){const n=parseInt(v.replace('T',''));return n>=1?String(n):''}return /^[A-Z]{1,6}$/.test(v)&&v!=='T'?v:''}
-const isShared=()=>false;
-const inShared=k=>!ghToken&&Object.prototype.hasOwnProperty.call(SHARED,String(k));
-function mergeShared(){}
-function localTN(){if(ghToken)return TN;const L={};Object.keys(TN).forEach(k=>{if(!isShared(k))L[k]=TN[k]});return L}
-const MO=['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
-const DZ=['Dum','Lun','Mar','Mie','Joi','Vin','Sâm'];
-const FH={'1-1':'Anul Nou','1-2':'Anul Nou','1-24':'Ziua Unirii','5-1':'1 Mai','6-1':'Ziua Copilului','8-15':'Sf. Maria','11-30':'Sf. Andrei','12-1':'Ziua Națională','12-25':'Crăciun','12-26':'Crăciun'};
-function buildHols(y){
-  const h={...FH};
-  const a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7;
-  const em=Math.floor((d+e+114)/31),ed=((d+e+114)%31)+1;
-  const easter=new Date(y,em-1,ed+13);
-  const k=x=>`${x.getMonth()+1}-${x.getDate()}`;
-  const add=(n,name)=>{const t=new Date(easter);t.setDate(t.getDate()+n);h[k(t)]=name};
-  add(-2,'Vinerea Mare');add(0,'Paști');add(1,'Paști');add(49,'Rusalii');add(50,'Rusalii');
-  return h;
-}
-function isFest(m,d){const dow=new Date(curYear,m,d).getDay();return dow===0||dow===6||!!buildHols(curYear)[`${m+1}-${d}`]}
-const blankDay=()=>({tn:'',prez:'',iesire:'',ol:'',oo:'',on:'',of:'',note:'',overflow:false,src:'',dl:'',dr:'',dn:''});
-function gd(m,d){if(!db[m])db[m]={};if(!db[m][d])db[m][d]=blankDay();return db[m][d]}
-function setF(m,d,f,v){gd(m,d)[f]=v;save();updateCards()}
-
-// ── GITHUB SYNC ──
-const GH_USER='vladynitu1',GH_REPO='Vlad',GH_FILE='turnusuri.json';
-let ghToken=localStorage.getItem('emx_gh_token')||'';
-let syncTimeout=null,lastSharedJson='',pubT=null;
-const ghHeaders=()=>({'Authorization':'token '+ghToken,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'});
-const b64Enc=s=>btoa(unescape(encodeURIComponent(s)));
-function b64Dec(s){const raw=atob(s.replace(/\s/g,''));const b=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)b[i]=raw.charCodeAt(i);return new TextDecoder().decode(b)}
-function setSyncStatus(st,msg){
-  const el=document.getElementById('syncText');if(!el)return;
-  el.textContent=msg||'';
-  el.style.color={ok:'var(--grn)',syncing:'var(--yel)',err:'var(--red)'}[st]||'var(--txtd)';
-}
-function updateStatusDot(){
-  const dot=document.getElementById('statusDot');if(dot)dot.classList.toggle('status-connected',!!ghToken);
-  const nb=document.getElementById('navBani');if(nb&&!ghToken)nb.remove();
-  if(!ghToken)setSyncStatus('local','Fără token — local');
-}
-function save(){
-  try{localStorage.setItem('cfr_'+curYear,JSON.stringify({db,TN:localTN()}));localStorage.setItem('cfr_yr',String(curYear))}catch(e){}
-  schedulePublish();
-  if(ghToken){setSyncStatus('syncing','Se salvează...');clearTimeout(syncTimeout);syncTimeout=setTimeout(saveToGithub,2000)}
-  else setSyncStatus('local','Local');
-}
-async function saveToGithub(){
-  if(!ghToken)return;
-  const all={};
-  for(let y=YEAR_MIN;y<=YEAR_MAX;y++){try{const s=localStorage.getItem('cfr_'+y);if(s)all['cfr_'+y]=JSON.parse(s)}catch(e){}}
-  all['cfr_yr']=String(curYear);
-  try{
-    let sha='';
-    const chk=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?_=${Date.now()}`,{headers:ghHeaders()});
-    if(chk.ok){sha=(await chk.json()).sha||''}
-    else if(chk.status!==404){setSyncStatus('err','Eroare GitHub ('+chk.status+')');return}
-    const body={message:'EMX Turnusuri '+new Date().toISOString().slice(0,16).replace('T',' '),content:b64Enc(JSON.stringify(all))};
-    if(sha)body.sha=sha;
-    const r=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}`,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
-    if(r.ok)setSyncStatus('ok','Salvat pe GitHub');
-    else if(r.status===409||r.status===422){setSyncStatus('syncing','Reîncerc...');setTimeout(saveToGithub,1500)}
-    else setSyncStatus('err','Eroare GitHub ('+r.status+')');
-  }catch(e){setSyncStatus('err','Eroare: '+e.message)}
-}
-async function loadFromGithub(){
-  if(!ghToken)return false;
-  setSyncStatus('syncing','Se încarcă...');
-  try{
-    const r=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?t=${Date.now()}`,{headers:ghHeaders(),cache:'no-store'});
-    if(!r.ok){setSyncStatus(r.status===404?'local':'err',r.status===404?'Local (fișier nou)':'Eroare GitHub ('+r.status+')');return false}
-    const all=JSON.parse(b64Dec((await r.json()).content));
-    Object.entries(all).forEach(([k,v])=>{try{localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))}catch(e){}});
-    setSyncStatus('ok','Sincronizat cu GitHub');return true;
-  }catch(e){setSyncStatus('err','Eroare: '+e.message);return false}
-}
-function loadYear(){loadYear0();mergeShared()}
-function loadYear0(){
-  try{const s=localStorage.getItem('cfr_'+curYear);if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||{}}else{db={};TN={}}}catch(e){db={};TN={}}
-}
-function load(){
-  loadYear();updateStatusDot();
-  if(ghToken){
-    loadFromGithub().then(ok=>{if(ok){loadYear();renderTags();renderTabs();renderTable()}});
-  }else setSyncStatus('local','Local');
-}
-window.addEventListener('storage',e=>{if(e.key==='emx_gh_token')location.reload()});
-
-// ══ RECALCUL: împarte orele la 00:00, suportă T4+T5 ══
-function snapOf(nums){const o={};nums.forEach(n=>o[n]=JSON.parse(JSON.stringify(TN[n])));return o}
-function parseSrc(val,snap){
-  const parts=String(val).toUpperCase().split(/[+,;\s]+/).filter(Boolean);
-  const nums=[];
-  for(const p of parts){const n=normCode(p);const t=n&&((snap&&snap[n])||TN[n]);if(!(t&&t.segmente&&t.segmente.length))return null;nums.push(n)}
-  return nums.length?nums:null;
-}
-function recalcAll(){
-  const srcs=[];
-  Object.keys(db).forEach(ms=>Object.keys(db[ms]).forEach(ds=>{
-    const dd=db[ms][ds];
-    if(dd.src)srcs.push([+ms,+ds,dd.src]);
-  }));
-  Object.keys(db).forEach(ms=>Object.keys(db[ms]).forEach(ds=>{
-    const dd=db[ms][ds];
-    if(dd.src||(dd.overflow&&/continuare|început/.test(dd.note||''))){const s=dd.src||'',sn=dd.snap;db[ms][ds]=blankDay();db[ms][ds].src=s;db[ms][ds].snap=sn;db[ms][ds].supp=dd.supp}
-  }));
-  const acc={},acc2={};
-  const festY=dt=>{const w=dt.getDay();return w===0||w===6||!!buildHols(dt.getFullYear())[`${dt.getMonth()+1}-${dt.getDate()}`]};
-  const A=dt=>{const T=dt.getFullYear()===curYear?acc:acc2;const k=dt.getMonth()+'-'+dt.getDate();return T[k]||(T[k]={m:dt.getMonth(),d:dt.getDate(),tns:[],notes:[],wp:[],rp:[],inc:[],incKeys:[],pre:false,xc:{},ol:0,oo:0,on:0,of:0})};
-  function addInt(m,d,a,b,kind,label){
-    while(a<b){
-      const off=Math.floor(a/1440),end=Math.min(b,(off+1)*1440);
-      const dt=new Date(curYear,m,d+off);
-      if(dt.getFullYear()>curYear+1)return;
-      if(dt.getFullYear()<curYear){a=end;continue}
-      if(off>0&&dt.getFullYear()===curYear){const td=(db[dt.getMonth()]||{})[dt.getDate()];if(td&&td.supp&&td.supp.includes(label+'@'+m+'-'+d)){a=end;continue}}
-      const x=A(dt),len=end-a;if(off<0)x.pre=true;
-      if(!x.tns.includes(label))x.tns.push(label);if(off>0&&!x.inc.includes(label)){x.inc.push(label);x.incKeys.push(label+'@'+m+'-'+d)}
-      if(kind==='w'){
-        let n=0;for(let t=a;t<end;t++){const r=((t%1440)+1440)%1440;if(r>=1320||r<360)n++}
-        const fs_=festY(dt);x.ol+=len;x.on+=n;
-        if(fs_)x.of+=len;
-        if(!/^T\d+$/.test(label)){const c=x.xc[label]||(x.xc[label]={ol:0,on:0,of:0});c.ol+=len;c.on+=n;if(fs_)c.of+=len}
-        x.wp.push({st:a-off*1440,en:end-off*1440,len,n});
-      }else{x.oo+=len;x.rp.push({st:a-off*1440,len})}
-      a=end;
-    }
-  }
-  srcs.forEach(([m,d,s])=>{
-    const sn=db[m][d].snap;(parseSrc(s,sn)||[]).forEach(num=>{
-      const t=(sn&&sn[num])||TN[num];let cur=0,prevEnd=null;const sh=p2m(t.segmente[0].prez)>=1380?-1440:0;
-      t.segmente.forEach(sg=>{
-        const sM=p2m(sg.prez),eM=p2m(sg.iesire);if(sM<0||eM<0)return;
-        let st=sM;while(st<cur)st+=1440;let en=eM;while(en<=st)en+=1440;
-        if(prevEnd!==null&&st>prevEnd)addInt(m,d,prevEnd+sh,st+sh,'r',lbl(num));
-        addInt(m,d,st+sh,en+sh,'w',lbl(num));prevEnd=en;cur=en;
-      });
-      A(new Date(curYear,m,d)).notes.push(t.note||'');
-    });
-  });
-  Object.values(acc).forEach(x=>fillDay(gd(x.m,x.d),x));
-  writeNextYear(acc2);
-}
-function fillDay(dd,x){
-    x.wp.sort((a,b)=>a.st-b.st);x.rp.sort((a,b)=>a.st-b.st);
-    dd.tn=x.tns.join('+');dd.inc=x.inc;dd.incKeys=x.incKeys;dd.xc=Object.keys(x.xc).length?x.xc:undefined;
-    dd.prez=x.wp.length?hhmm(x.wp[0].st):'';
-    dd.iesire=x.wp.length?hhmm(Math.max(...x.wp.map(p=>p.en))%1440):'';
-    dd.ol=x.ol?fmtm(x.ol):'';dd.oo=x.oo?fmtm(x.oo):'';dd.on=x.ol?fmtm(x.on):'';dd.of=x.of?fmtm(x.of):'';
-    dd.dl=x.wp.length>1?x.wp.map(p=>fmtm(p.len)).join(' + '):'';
-    dd.dn=x.wp.length>1?x.wp.map(p=>fmtm(p.n)).join(' + '):'';
-    dd.dr=x.rp.length>1?x.rp.map(p=>fmtm(p.len)).join(' + '):'';
-    dd.overflow=!dd.src;
-    dd.pre=x.pre&&!x.inc.length;dd.note=x.notes.filter(Boolean).join(' + ')+(dd.overflow?(dd.pre?' (început)':' (continuare)'):'');
-}
-function writeNextYear(acc2){
-  const y=curYear+1;let o=null;
-  try{o=JSON.parse(localStorage.getItem('cfr_'+y)||'null')}catch(e){}
-  const days=Object.values(acc2);
-  if(!o&&!days.length)return;
-  o=o||{db:{},TN:{}};o.db=o.db||{};
-  const J=o.db[0]=o.db[0]||{};
-  Object.keys(J).forEach(d=>{const x=J[d];if(x.overflow&&/continuare|început/.test(x.note||''))J[d]=blankDay()});
-  days.forEach(x=>{
-    if(x.m!==0)return;
-    const dd=J[x.d]||(J[x.d]=blankDay());
-    if(dd.src||(dd.tn&&!dd.overflow))return;
-    fillDay(dd,x);
-  });
-  try{localStorage.setItem('cfr_'+y,JSON.stringify(o))}catch(e){}
-}
-function applyTurnus(num,m,d){const dd=gd(m,d);dd.src=lbl(num);dd.snap=snapOf([num]);clearSupp(m,d);recalcAll();save();renderTabs();renderTable()}
-function clearSupp(m,d){const k='@'+m+'-'+d;Object.values(db).forEach(mo=>Object.values(mo).forEach(x=>{if(x.supp)x.supp=x.supp.filter(e=>!e.endsWith(k))}))}
-function deleteDay(m,d){const dd=gd(m,d),supp=(dd.supp||[]).slice();(dd.incKeys||[]).forEach(k=>{if(!supp.includes(k))supp.push(k)});db[m][d]=blankDay();db[m][d].supp=supp;recalcAll();save();renderTabs();renderTable()}
-function applyFromInput(val,m,d){
-  val=val.trim().toUpperCase();
-  const dd=gd(m,d);
-  if(val===''){if(dd.tn||dd.src)deleteDay(m,d);return}
-  if(val===(dd.tn||'')||val===(dd.src||''))return;
-  const nums=parseSrc(val);
-  if(nums){
-    const inc=dd.inc||[];
-    const own=nums.filter(n=>!inc.includes(lbl(n)));
-    dd.src=own.map(lbl).join('+');clearSupp(m,d);dd.snap=own.length?snapOf(own):undefined;
-    recalcAll();save();renderTabs();renderTable();
-  }
-  else{setF(m,d,'tn',val);renderTable()}
-}
-
-// ── RENDER ──
-function init(){
-  load();loadShared();setTimeout(schedulePublish,5000);
-  document.getElementById('yrBadge').textContent='📅 '+curYear;
-  renderTags();renderTabs();renderTable();buildAddTnBox();updateStickyOffset();
-}
-function updateStickyOffset(){
-  const b=document.querySelector('.board');
-  if(b)document.documentElement.style.setProperty('--sticky-top',b.getBoundingClientRect().height+'px');
-}
-window.addEventListener('resize',updateStickyOffset);window.addEventListener('load',updateStickyOffset);
-function renderTags(){
-  const w=document.getElementById('tagList');w.innerHTML='';
-  const add=(src,cls)=>Object.keys(src).sort(keyCmp).forEach(k=>{
-    const sp=document.createElement('span');sp.className='tag'+cls;
-    const note=(src[k].note||'').trim();sp.textContent=lbl(k)+(note?` (${note})`:'');w.appendChild(sp);
-  });
-  const lab=t=>{const e=document.createElement('div');e.style.cssText='width:100%;font-size:.62rem;color:var(--txtd);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px';e.textContent=t;w.appendChild(e)};
-  const sh=ghToken?{}:SHARED;
-  if(Object.keys(sh).length){lab('🔒 Exemplu — turnusuri publicate de administrator');add(sh,' t12');if(Object.keys(TN).length)lab('Turnusurile tale')}
-  add(TN,'');
-  updateStickyOffset();
-}
-function renderTabs(){
-  const w=document.getElementById('mtabs');w.innerHTML='';
-  MO.forEach((name,i)=>{
-    const b=document.createElement('button');b.className='mtab'+(i===curM?' act':'');
-    b.textContent=name.substring(0,3).toUpperCase();
-    if(Object.values(db[i]||{}).some(x=>x.ol||x.tn)){const dot=document.createElement('span');dot.className='hd';b.appendChild(dot)}
-    b.onclick=()=>{curM=i;renderTabs();renderTable()};w.appendChild(b);
-  });
-}
-function xsub(dd,cc){
-  const r={ol:0,on:0,of:0,only:false},xc=dd.xc;if(!xc)return r;let so=0;
-  Object.keys(xc).forEach(c=>{const x=xc[c];r.ol+=x.ol;r.on+=x.on;r.of+=x.of;so+=x.ol;if(cc){const e=cc[c]||(cc[c]={h:0,d:0});e.h+=x.ol;e.d++}});
-  r.only=so>=Math.max(0,p2m(dd.ol));return r;
-}
-function renderTable(){
-  const body=document.getElementById('tbody');body.innerHTML='';
-  const m=curM,days=new Date(curYear,m+1,0).getDate(),hols=buildHols(curYear);
-  let tL=0,tO=0,tN=0,tF=0,zile=0;
-  for(let d=1;d<=days;d++){
-    const dow=new Date(curYear,m,d).getDay(),hk=`${m+1}-${d}`;
-    const isWk=dow===0||dow===6,isHol=!!hols[hk],isFestD=isWk||isHol;
-    const dd=gd(m,d);
-    let showN=dd.on;if(!showN&&dd.prez&&dd.iesire){const n=nightMins(dd.prez,dd.iesire);if(n>0)showN=fmtm(n)}
-    let showF=dd.of;if(!showF&&isFestD&&dd.ol)showF=dd.ol;
-    const pm=x=>Math.max(0,p2m(x));
-    tL+=pm(dd.ol);tO+=pm(dd.oo);tN+=pm(showN);tF+=pm(showF);
-    const xs=xsub(dd);tL-=xs.ol;tN-=xs.on;tF-=xs.of;
-    if((dd.tn||dd.ol)&&!xs.only)zile++;
-    let cls='';const act=dd.tn||dd.ol;
-    if(isHol&&act)cls='rHolWork';else if(isWk&&act)cls='rWkWork';else if(isHol)cls='rHol';else if(isWk)cls='rWk';else if(dd.overflow)cls='rOver';else if(act)cls='rWork';
-    const tr=document.createElement('tr');if(cls)tr.className=cls;
-
-    const tdD=document.createElement('td');
-    tdD.innerHTML=`<b>${String(d).padStart(2,'0')}.${String(m+1).padStart(2,'0')}</b>`+(isHol?`<span style="font-size:.56rem;color:var(--yel);margin-left:3px">${hols[hk]}</span>`:'');
-    tr.appendChild(tdD);
-    const tdZ=document.createElement('td');tdZ.innerHTML=`<span class="dn">${DZ[dow]}</span>`;tr.appendChild(tdZ);
-
-    const tdTn=document.createElement('td'),wrap=document.createElement('div');wrap.className='tn-inp-wrap';
-    const inp=document.createElement('input');inp.value=dd.tn||dd.src||'';inp.placeholder='Ex: T1+T2 / CO';
-    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur()}});
-    inp.addEventListener('blur',function(){applyFromInput(this.value,m,d)});
-    wrap.appendChild(inp);
-    if(dd.tn){const b=document.createElement('span');b.className='tbadge';b.textContent=dd.tn;wrap.appendChild(b)}
-    if(dd.overflow){const o=document.createElement('span');o.className='tbadge tov';o.textContent=dd.pre?'zi1':'zi2';wrap.appendChild(o)}
-    tdTn.appendChild(wrap);tr.appendChild(tdTn);
-
-    const tdDel=document.createElement('td');tdDel.style.width='30px';
-    if(dd.tn||dd.src){const bd=document.createElement('button');bd.className='btn-del';bd.textContent='✕';bd.onclick=()=>deleteDay(m,d);tdDel.appendChild(bd)}
-    tr.appendChild(tdDel);
-
-    [{v:dd.prez,c:'pr',p:'--:--',f:'prez'},{v:dd.iesire,c:'ie',p:'--:--',f:'iesire'},
-     {v:dd.ol,c:'ol',p:'0:00',f:'ol',s:dd.dl},{v:dd.oo,c:'oo',p:'0:00',f:'oo',s:dd.dr},
-     {v:showN,c:'on',p:'auto',f:'on',s:dd.dn},{v:showF,c:'of',p:isFestD?'auto':'-',f:'of'}].forEach(fd=>{
-      const td=document.createElement('td'),i=document.createElement('input');
-      i.className='ce '+fd.c;i.value=fd.v||'';
-      i.addEventListener('change',function(){setF(m,d,fd.f,this.value)});
-      td.appendChild(i);
-      if(fd.s){const s=document.createElement('div');s.className='sub';s.textContent=fd.s;td.appendChild(s)}
-      tr.appendChild(td);
-    });
-    const tdN=document.createElement('td'),iN=document.createElement('input');
-    iN.className='ne';iN.value=dd.note||'';
-    iN.addEventListener('change',function(){setF(m,d,'note',this.value)});
-    tdN.appendChild(iN);tr.appendChild(tdN);
-    body.appendChild(tr);
-  }
-  const tot=document.createElement('tr');tot.className='totrow';
-  const tc=document.createElement('td');tc.colSpan=6;tc.textContent=`TOTAL ${MO[m].toUpperCase()} ${curYear}`;tot.appendChild(tc);
-  [['tv',tL],['tv o',tO],['tv n',tN],['tv f',tF]].forEach(x=>{const td=document.createElement('td');td.innerHTML=`<span class="${x[0]}">${fmtm(x[1])}</span>`;tot.appendChild(td)});
-  const tz=document.createElement('td');tz.style.cssText='color:var(--txtd);font-size:.65rem';tz.textContent=zile+' zile';tot.appendChild(tz);
-  body.appendChild(tot);updateCards();
-}
-function updateCards(){
-  const m=curM,days=new Date(curYear,m+1,0).getDate(),hols=buildHols(curYear);
-  let tL=0,tO=0,tN=0,tF=0,zile=0,zl=0;const cc={};
-  const pm=x=>Math.max(0,p2m(x));
-  for(let d=1;d<=days;d++){
-    const dd=gd(m,d);
-    let n=dd.on;if(!n&&dd.prez&&dd.iesire){const nm=nightMins(dd.prez,dd.iesire);if(nm>0)n=fmtm(nm)}
-    let f=dd.of;if(!f&&isFest(m,d)&&dd.ol)f=dd.ol;
-    tL+=pm(dd.ol);tO+=pm(dd.oo);tN+=pm(n);tF+=pm(f);
-    const xs=xsub(dd,cc);tL-=xs.ol;tN-=xs.on;tF-=xs.of;
-    if((dd.tn||dd.ol)&&!xs.only)zile++;
-    const dow=new Date(curYear,m,d).getDay();
-    if(dow>=1&&dow<=5&&!hols[`${m+1}-${d}`])zl++;
-  }
-  const NM={CO:'Concediu (CO)',CM:'Concediu medical (CM)'};
-  const cw=document.getElementById('cardsCodes');
-  if(cw){cw.innerHTML='';Object.keys(cc).sort(keyCmp).forEach(c=>{const e=document.createElement('div');e.className='card o';e.innerHTML=`<div class="l">${NM[c]||c}</div><div class="cv">${fmtm(cc[c].h)}</div><small>${cc[c].d} zile · nu intră în total</small>`;cw.appendChild(e)})}
-  const norma=zl*480,supl=tL-norma;
-  const set=(id,v)=>document.getElementById(id).textContent=v;
-  set('cL',fmtm(tL));set('cO',fmtm(tO));set('cN',fmtm(tN));set('cF',fmtm(tF));
-  set('cLz',zile+' zile cu activitate');set('cNorma',fmtm(norma));set('cNormaZile',zl+' zile lucrătoare × 8h');
-  const se=document.getElementById('cSupl');
-  if(supl>=0){se.textContent='+'+fmtm(supl);se.style.color='var(--grn)';set('cSuplNote','surplus față de normă ✓')}
-  else{se.textContent='-'+fmtm(-supl);se.style.color='var(--red)';set('cSuplNote','sub normă')}
-}
-
-// ── EDITOR TURNUS ──
-function openEditor(){document.getElementById('impWrap').style.display=ghToken?'block':'none';renderEditorList();document.getElementById('editorOverlay').classList.add('open')}
-function closeEditor(){document.getElementById('editorOverlay').classList.remove('open');save();renderTags();renderTabs();renderTable()}
-let newSegs=[];
-function buildAddTnBox(){
-  document.getElementById('addTnBox').innerHTML=`<div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
-    <div style="font-family:Rajdhani,sans-serif;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">+ Adaugă Turnus Nou</div>
-    <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Introdu prezentarea și ieșirea pentru fiecare segment. Orele, odihna și orele de noapte se calculează automat, pe segmente.</p>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
-      <div class="tn-field" style="width:80px"><label>Cod turnus</label><input id="nCode" placeholder="T13 / CO / CM"></div>
-      <div class="tn-field" style="flex:1;min-width:200px"><label>Notă / Trenuri</label><input id="nNote" placeholder="10245→10251"></div>
+<div class="overlay" id="adminOverlay">
+  <div class="modal">
+    <button class="modal-close" id="adminClose">✕</button>
+    <div class="modal-title">⚙ Admin</div>
+    <div class="modal-status" id="adminStatus">🔒 Neconectat</div>
+    <div class="gh-form" id="adminForm">
+      <input type="password" id="ghTokenInput" placeholder="Token GitHub (ghp_...)" autocomplete="off">
+      <button class="gh-btn primary" id="ghConnectBtn">Conectează</button>
     </div>
-    <div id="nSegsWrap"></div>
-    <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-s btn-sm" onclick="addNewSeg()">+ Adaugă segment</button><button class="btn btn-g btn-sm" onclick="saveNewTN()">✓ Salvează turnus</button></div>
-    <div id="nCalcPreview" class="calc-note"></div></div>`;
-  newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];renderNewSegs();
-}
-function renderNewSegs(){
-  const wrap=document.getElementById('nSegsWrap');if(!wrap)return;wrap.innerHTML='';
-  newSegs.forEach((seg,i)=>{
-    if(i>0&&newSegs[i-1].iesire&&seg.prez){
-      const p=newSegs[i-1],dv=document.createElement('div');
-      dv.style.cssText='margin:2px 0 4px 76px;font-size:.65rem;color:var(--org);font-family:Share Tech Mono,monospace';
-      dv.textContent=`🌙 Dormitor: ${p.iesire}→${seg.prez} = ${fmtm(diffm(p.iesire,seg.prez))} (noapte: ${fmtm(nightMins(p.iesire,seg.prez))})`;
-      wrap.appendChild(dv);
-    }
-    const div=document.createElement('div');
-    div.style.cssText='display:flex;gap:6px;align-items:flex-end;margin-bottom:5px;flex-wrap:wrap';
-    div.innerHTML=`<span style="font-family:Rajdhani,sans-serif;font-size:.75rem;color:var(--acc);min-width:70px">Segment ${i+1}</span>
-      <div class="tn-field"><label>Prezentare</label><input style="width:80px" value="${seg.prez}" placeholder="08:00" onchange="newSegs[${i}].prez=this.value;renderNewSegs()"></div>
-      <div class="tn-field"><label>Ieșire</label><input style="width:80px" value="${seg.iesire}" placeholder="16:00" onchange="newSegs[${i}].iesire=this.value;renderNewSegs()"></div>
-      ${i>0?`<button class="btn btn-r btn-sm" onclick="newSegs.splice(${i},1);renderNewSegs()">✕</button>`:''}`;
-    wrap.appendChild(div);
-  });
-  const pv=document.getElementById('nCalcPreview');if(pv){pv.style.color='var(--grn)';pv.textContent=calcTxt(calcTurnusAuto(newSegs.filter(s=>s.prez&&s.iesire)))}
-}
-function addNewSeg(){newSegs.push({prez:'',iesire:''});renderNewSegs()}
-function saveNewTN(){
-  const pv=document.getElementById('nCalcPreview');
-  const num=normCode(document.getElementById('nCode').value);
-  const segs=newSegs.filter(s=>s.prez&&s.iesire);
-  if(!num){pv.style.color='var(--red)';pv.textContent='❌ Cod invalid! Ex: T13, CO, CM';return}
-  if(!segs.length){pv.style.color='var(--red)';pv.textContent='❌ Adaugă cel puțin un segment!';return}
-  TN[num]={segmente:segs,note:document.getElementById('nNote').value};
-  save();renderEditorList();renderTags();
-  document.getElementById('nCode').value='';document.getElementById('nNote').value='';
-  newSegs=[{prez:'',iesire:''},{prez:'',iesire:''}];renderNewSegs();
-  pv.style.color='var(--grn)';pv.textContent='✅ '+lbl(num)+' salvat!';
-}
-function renderEditorList(){
-  const w=document.getElementById('tnList');w.innerHTML='';
-  Object.keys(TN).sort(keyCmp).forEach(k=>{
-    const t=TN[k],div=document.createElement('div');div.className='tn-item';div.id='tni_'+k;
-    let h=`<div class="tn-item-hdr"><span class="tn-num">${lbl(k)}</span><span style="font-size:.68rem;color:var(--txtm);flex:1">${t.note||''}</span><button class="btn btn-r btn-sm" onclick="delTN('${k}')">✕ Șterge</button></div>`;
-    (t.segmente||[]).forEach((seg,i)=>{
-      if(i>0){const p=t.segmente[i-1];h+=`<div class="seg-block dorm"><h5>🌙 Dormitor ${i}: ${p.iesire} → ${seg.prez} = ${fmtm(diffm(p.iesire,seg.prez))} (noapte: ${fmtm(nightMins(p.iesire,seg.prez))})</h5></div>`}
-      h+=`<div class="seg-block"><h5>Segment ${i+1} — ${fmtm(diffm(seg.prez,seg.iesire))} lucrate</h5><div class="fields-row">
-        <div class="tn-field"><label>Prezentare</label><input value="${seg.prez||''}" onchange="TN['${k}'].segmente[${i}].prez=this.value;updateTNCalc('${k}');save()"></div>
-        <div class="tn-field"><label>Ieșire</label><input value="${seg.iesire||''}" onchange="TN['${k}'].segmente[${i}].iesire=this.value;updateTNCalc('${k}');save()"></div></div></div>`;
-    });
-    h+=`<div class="seg-actions"><button class="btn btn-s btn-sm" onclick="addSegToTN('${k}')">+ Segment</button><button class="btn btn-r btn-sm" onclick="removeLastSeg('${k}')">- Segment</button></div>
-      <div class="tn-field" style="margin-top:6px"><label>Notă / Trenuri</label><input value="${t.note||''}" onchange="TN['${k}'].note=this.value;save()"></div>
-      <div class="calc-note" id="calc_${k}">${calcTxt(calcTurnusAuto(t.segmente||[]))}</div>`;
-    div.innerHTML=h;
-    if(isShared(k)){div.querySelectorAll('input').forEach(i=>i.disabled=true);div.querySelectorAll('button').forEach(b=>b.remove());div.querySelector('.tn-num').textContent+=' 🔒'}
-    w.appendChild(div);
-  });
-}
-function updateTNCalc(k){const el=document.getElementById('calc_'+k);if(el)el.textContent=calcTxt(calcTurnusAuto(TN[k].segmente||[]))}
-function addSegToTN(k){if(isShared(k))return;TN[k].segmente=TN[k].segmente||[];TN[k].segmente.push({prez:'',iesire:''});save();renderEditorList()}
-function removeLastSeg(k){if(isShared(k))return;if(TN[k].segmente&&TN[k].segmente.length>1){TN[k].segmente.pop();save();renderEditorList()}}
-function delTN(k){if(isShared(k))return;
-  const btn=document.querySelector(`#tni_${k} .btn-r`);
-  if(btn&&btn.dataset.confirm!=='1'){btn.dataset.confirm='1';btn.textContent='Confirmi ✕?';setTimeout(()=>{if(btn){btn.dataset.confirm='';btn.textContent='✕ Șterge'}},3000);return}
-  delete TN[k];save();renderEditorList();renderTags();showEditorMsg(lbl(k)+' șters.');
-}
-function resetTN(){
-  const btn=document.getElementById('resetTNBtn');
-  if(btn.dataset.confirm!=='1'){btn.dataset.confirm='1';btn.textContent='Confirmi resetarea?';setTimeout(()=>{btn.dataset.confirm='';btn.textContent='↺ Golește toate turnusurile'},3000);return}
-  TN=ghToken?{}:{...SHARED};save();renderEditorList();renderTags();showEditorMsg('Toate turnusurile tale au fost golite.');
-}
-function showEditorMsg(msg){const el=document.getElementById('editorMsg');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3000)}
+    <button class="gh-btn ghost" id="ghDisconnectBtn" style="display:none;">Deconectează</button>
+  </div>
+</div>
 
-// ── YEAR MODAL ──
-function openYearModal(){
-  const grid=document.getElementById('yrGrid');grid.innerHTML='';
-  for(let y=YEAR_MIN;y<=YEAR_MAX;y++){
-    const b=document.createElement('button');b.className='yr-btn'+(y===curYear?' cur-yr':'');b.textContent=y;
-    b.onclick=()=>{renderHolPreview(y);document.querySelectorAll('.yr-btn').forEach(x=>x.classList.toggle('cur-yr',+x.textContent===y));document.getElementById('yrConfirmBtn').onclick=()=>selectYear(y)};
-    grid.appendChild(b);
+<script>
+  // ── GitHub token gate (same key used across the EMX suite) ──
+  var TOKEN_KEY = 'emx_gh_token';
+  function getToken(){ return localStorage.getItem(TOKEN_KEY) || ''; }
+  function setToken(t){ localStorage.setItem(TOKEN_KEY, t); }
+  function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
+  function hasToken(){ return !!getToken(); }
+
+  var adminBtn = document.getElementById('adminBtn');
+  var adminOverlay = document.getElementById('adminOverlay');
+  var adminStatus = document.getElementById('adminStatus');
+  var adminForm = document.getElementById('adminForm');
+  var disconnectBtn = document.getElementById('ghDisconnectBtn');
+
+  function refreshAdminUI(){
+    adminBtn.classList.toggle('connected', hasToken());
+    document.getElementById('statusDot').classList.toggle('status-connected', hasToken());
+    if(hasToken()){
+      adminStatus.textContent = '🟢 Conectat la GitHub';
+      adminStatus.classList.add('connected');
+      adminForm.style.display = 'none';
+      disconnectBtn.style.display = '';
+    } else {
+      adminStatus.textContent = '🔒 Neconectat';
+      adminStatus.classList.remove('connected');
+      adminForm.style.display = '';
+      disconnectBtn.style.display = 'none';
+    }
+    document.getElementById('baniBtn').style.display = hasToken() ? '' : 'none';
   }
-  document.getElementById('yrConfirmBtn').onclick=()=>selectYear(curYear);
-  renderHolPreview(curYear);document.getElementById('yearOverlay').classList.add('open');
-}
-function closeYearModal(){document.getElementById('yearOverlay').classList.remove('open')}
-function selectYear(y){
-  save();curYear=y;curM=0;loadYear();
-  document.getElementById('yrBadge').textContent='📅 '+curYear;
-  closeYearModal();renderTags();renderTabs();renderTable();
-}
-function renderHolPreview(y){
-  const list=document.getElementById('holList');list.innerHTML='';
-  Object.entries(buildHols(y)).map(([k,v])=>{const[mo,da]=k.split('-').map(Number);return{mo,da,v}}).sort((a,b)=>a.mo*100+a.da-b.mo*100-b.da)
-  .forEach(e=>{const div=document.createElement('div');div.className='hol-row';div.innerHTML=`<span class="hol-date">${String(e.da).padStart(2,'0')}.${String(e.mo).padStart(2,'0')}.${y}</span><span>${e.v}</span>`;list.appendChild(div)});
-}
 
-// ── PREIA DIN FIȘĂ (citește fișele din Fișa de lucru + turnusurile adăugate) ──
-function rowsToText(rows){
-  return rows.map(r => r.items.map(i=>i.str).join(' ')).join('\n');
-}
-
-function splitBlocksStructured(rows){
-  const blocks = [];
-  let current = null;
-
-  function isHeaderRow(items){
-    const strs = items.map(i=>i.str);
-    return strs.includes('Data') && strs.filter(s=>/^\d{1,2}$/.test(s)).length >= 15;
+  function openAdmin(){
+    document.getElementById('ghTokenInput').value = '';
+    refreshAdminUI();
+    adminOverlay.classList.add('open');
   }
-  function isTimeRow(items){
-    const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
-    return items.length > 0 && (timeLike / items.length) > 0.5;
+  function closeAdmin(){
+    adminOverlay.classList.remove('open');
   }
-  function isCoStartRow(items){
-  const strs = items.map(i=>i.str);
-  return (strs.includes('inceput') && strs.includes('luna')) ||
-    strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
-}
 
-  rows.forEach(row=>{
-    if(isHeaderRow(row.items)){
-      if(current) blocks.push(current);
-      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str))
-        .map(i=>({ x: i.x, w: i.w, str: i.str, day: parseInt(i.str, 10) }))
-        .filter(i=>i.day >= 1 && i.day <= 31);
-      current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
-    } else if(current){
-      current.allRows.push(row);
-      if(!isTimeRow(row.items) && !isCoStartRow(row.items)){
-        current.codeRows.push(row);
-      }
-    }
-  });
-  if(current) blocks.push(current);
-
-  return blocks.map((b, idx)=>{
-    const colX = b.dayTokens.map(t=>t.x + (t.w||0)/2);
-    const colDay = b.dayTokens.map(t=>t.day);
-    const n = colX.length;
-    let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
-
-    const dayCodes = {};
-    for(let d=1; d<=31; d++) dayCodes[d] = [];
-
-    const allText = rowsToText(b.allRows);
-    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU','TL','CM','VPP','SMM']);
-    function isAllCapsCode(t){
-      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
-    }
-    function isLabelToken(t){
-      if(NON_NAME.has(t)) return true;
-      if(isAllCapsCode(t)) return true;
-      const words = t.split(/\s+/).filter(Boolean);
-      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
-    }
-    function firstNameToken(tokens){
-      for(const t of tokens){
-        if(/\d/.test(t)) continue;
-        if(isLabelToken(t)) continue;
-        if(t.length < 2) continue;
-        return t;
-      }
-      return '';
-    }
-    const nameColMaxX = (n > 1 && colX.length) ? (colX[0] - gap * 0.6) : 115;
-    function isNameFragment(t){
-      if(!t) return false;
-      if(/\d/.test(t)) return false;
-      const words = t.split(/\s+/).filter(Boolean);
-      if(words.length > 0 && words.every(w => NON_NAME.has(w))) return false;
-      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
-      return letters.length >= 1;
-    }
-    let roleRowIdx = b.allRows.length;
-    for(let i=0;i<b.allRows.length;i++){
-      const rowText = b.allRows[i].items.map(it=>it.str).join(' ');
-      const isRoleRow = /Sef\s*tren/i.test(rowText) || /Mecanic/i.test(rowText) || /bilete/i.test(rowText);
-      if(isRoleRow){ roleRowIdx = i; break; }
-    }
-    let festiveRowIdx = -1;
-    for(let i=0;i<roleRowIdx;i++){
-      if(b.allRows[i].items.some(it=>it.str === 'Festive')){ festiveRowIdx = i; break; }
-    }
-    const surnameFrags = [], firstnameFrags = [];
-    for(let i=0;i<roleRowIdx;i++){
-      const frags = b.allRows[i].items.filter(it=>it.x < nameColMaxX).map(it=>it.str).filter(isNameFragment);
-      if(frags.length === 0) continue;
-      if(festiveRowIdx === -1 || i <= festiveRowIdx) surnameFrags.push(...frags);
-      else firstnameFrags.push(...frags);
-    }
-    const surname = surnameFrags.join('');
-    const firstname = firstnameFrags.join('');
-    const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
-
-    let role = 'Necunoscut';
-    if(/Sef\s*tren/i.test(allText)) role = 'Șef tren';
-    else if(/V\s*bilete\s*II/i.test(allText)) role = 'Vânzător bilete II';
-    else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
-    else if(/Mecanic/i.test(allText)) role = 'Mecanic';
-
-    const excludeTokens = new Set([surname, firstname, ...surnameFrags, ...firstnameFrags, 'Festive'].filter(Boolean));
-
-    if(n > 1){
-      const maxGapAllowed = gap * 0.75;
-      b.codeRows.forEach(row=>{
-        row.items.forEach(item=>{
-          if(excludeTokens.has(item.str)) return;
-          const x = item.x + (item.w||0)/2;
-          let bestDay = -1, bestDist = Infinity;
-          for(let k=0;k<n;k++){
-            const dist = Math.abs(x - colX[k]);
-            if(dist < bestDist){ bestDist = dist; bestDay = colDay[k]; }
-          }
-          if(bestDay === -1 || bestDist > maxGapAllowed) return;
-          dayCodes[bestDay].push(item.str);
-        });
+  async function connectToken(){
+    var input = document.getElementById('ghTokenInput');
+    var btn = document.getElementById('ghConnectBtn');
+    var val = input.value.trim();
+    if(!val) return;
+    btn.disabled = true; btn.textContent = 'Se verifică...';
+    try{
+      var res = await fetch('https://api.github.com/repos/vladynitu1/Vlad', {
+        headers: { 'Authorization': 'token ' + val, 'Accept': 'application/vnd.github+json' }
       });
+      if(!res.ok) throw new Error('Token invalid sau fără acces la repo.');
+      setToken(val);
+      refreshAdminUI();
+    }catch(e){
+      alert('Nu am putut conecta: ' + e.message);
     }
-
-    return { id: idx, name, role, dayCodes, text: allText };
-  }).filter(b => b.text.trim().length > 0);
-}
-
-
-const SITE={o:'vladynitu1',r:'vladynitu1.github.io',b:'main'};
-const SHARED_PATH='data/turnusuri-partajate.json';
-function schedulePublish(){
-  if(!ghToken||!Object.keys(TN).length)return;
-  const j=JSON.stringify(Object.keys(TN).map(k=>[k,TN[k].segmente,TN[k].note]));
-  if(j===lastSharedJson)return;
-  lastSharedJson=j;clearTimeout(pubT);pubT=setTimeout(publishSharedTN,3000);
-}
-async function loadShared(){
-  const sh=await ghRaw(SHARED_PATH);
-  if(sh&&sh.TN){
-    SHARED=sh.TN;mergeShared();renderTags();
-    if(document.getElementById('editorOverlay').classList.contains('open'))renderEditorList();
+    btn.disabled = false; btn.textContent = 'Conectează';
   }
-}
-async function publishSharedTN(){
-  if(!ghToken)return;
-  const clean={};Object.keys(TN).forEach(k=>{clean[k]={segmente:TN[k].segmente,note:TN[k].note||''}});
-  if(!Object.keys(clean).length)return;
-  const u=`https://api.github.com/repos/${SITE.o}/${SITE.r}/contents/${SHARED_PATH}`;
-  try{
-    let sha;const g=await fetch(u+'?ref='+SITE.b+'&_='+Date.now(),{headers:ghHeaders()});
-    if(g.ok){const gj=await g.json();sha=gj.sha;try{if(JSON.stringify(JSON.parse(b64Dec(gj.content)).TN)===JSON.stringify(clean)){setSyncStatus('ok','Turnusuri publicate');return}}catch(e){}}else if(g.status!==404){setSyncStatus('err','Publicare turnusuri: eroare '+g.status);return}
-    const body={message:'Turnusuri partajate',branch:SITE.b,content:b64Enc(JSON.stringify({TN:clean,updated:new Date().toISOString()}))};
-    if(sha)body.sha=sha;
-    const r=await fetch(u,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
-    setSyncStatus(r.ok?'ok':'err',r.ok?'Turnusuri publicate':'Publicare turnusuri: eroare '+r.status);
-  }catch(e){setSyncStatus('err','Publicare turnusuri: '+e.message)}
-}
-async function ghRaw(path){
-  const u=`https://api.github.com/repos/${SITE.o}/${SITE.r}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${SITE.b}`;
-  const h={Accept:'application/vnd.github.raw'};if(ghToken)h.Authorization='Bearer '+ghToken;
-  try{const r=await fetch(u,{cache:'no-store',headers:h});if(r.status===404)return null;if(r.ok)return JSON.parse(await r.text())}catch(e){}
-  try{const r=await fetch(`https://raw.githubusercontent.com/${SITE.o}/${SITE.r}/${SITE.b}/${path}?t=${Date.now()}`,{cache:'no-store'});if(r.ok)return await r.json()}catch(e){}
-  return null;
-}
-const normS=s=>(s||'').toLowerCase().replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/[șş]/g,'s').replace(/[țţ]/g,'t').replace(/\s+/g,' ').trim();
-const trainsOf=a=>(a||[]).filter(t=>/^\d{3,6}(\/\d+)?$/.test(t));
-const flatOf=t=>String(t.note||'').split(/[\s\/]+/).filter(x=>/^\d/.test(x));
-function solveCells(cells,n){
-  const keys=Object.keys(TN).map(k=>({k:/^\d+$/.test(k)?+k:k,fl:flatOf(TN[k]),zl:((TN[k].segmente||[]).some(g=>p2m(g.prez)>=0&&p2m(g.iesire)>=0)?calcTurnusAuto(TN[k].segmente).zile:3)})).filter(x=>x.fl.length).sort((x,y)=>y.fl.length-x.fl.length);
-  function plans(rem,d,fl,zl,cb){
-    let stop=false;
-    (function go(o,left,used){
-      if(stop)return;
-      if(!left.length){if(cb(used))stop=true;return}
-      if(o>=zl)return;const day=d+o;if(day>n)return;
-      const c=rem[day],m=c.length;
-      for(let mask=(1<<m)-1;mask>=1&&!stop;mask--){
-        const lf=left.slice(),take=[];let ok=true;
-        for(let i=0;i<m&&ok;i++)if(mask>>i&1){const j=lf.indexOf(c[i]);if(j<0)ok=false;else{lf.splice(j,1);take.push(i)}}
-        if(ok)go(o+1,lf,used.concat([{day,take}]));
-      }
-    })(0,fl,[]);
-    return stop;
-  }
-  function run(){
-    const rem=[];for(let d=1;d<=n;d++)rem[d]=cells[d].slice();
-    const res=[],unid=[];let nodes=0,best=null;
-    function dfs(d,sk){
-      if(++nodes>80000||(best&&sk>=best.sk))return false;
-      while(d<=n&&!rem[d].length)d++;
-      if(d>n){best={sk,res:res.slice(),unid:unid.slice()};return sk===0}
-      for(const t of keys){
-        const f=plans(rem,d,t.fl,t.zl,used=>{
-          const saved=used.map(u=>[u.day,rem[u.day]]);
-          used.forEach(u=>{rem[u.day]=rem[u.day].filter((_,i)=>!u.take.includes(i))});
-          res.push({d,k:t.k});
-          if(dfs(d,sk))return true;
-          res.pop();saved.forEach(x=>rem[x[0]]=x[1]);return false;
-        });
-        if(f)return true;
-      }
-      const sv=rem[d];unid.push(d+' ('+sv.join(' ')+')');rem[d]=[];
-      const r=dfs(d,sk+sv.length);unid.pop();rem[d]=sv;return r;
-    }
-    dfs(1,0);
-    return best||{res:[],unid:['toate zilele']};
-  }
-  return run();
-}
-function importBlock(b,luna,restore){
-  const m=luna-1,n=new Date(curYear,luna,0).getDate(),cells={};
-  for(let d=1;d<=n;d++)cells[d]=trainsOf(b.dayCodes[d]);
-  for(let d=1;d<=n;d++){const o=gd(m,d);if(o.src||(o.overflow&&/continuare|început/.test(o.note||''))){db[m][d]=blankDay();db[m][d].supp=o.supp}}
-  const sol=solveCells(cells,n),by={};
-  sol.res.forEach(r=>{(by[r.d]=by[r.d]||[]).push(r.k)});
-  let ok=0;
-  Object.keys(by).forEach(d=>{
-    const ks=by[d].sort((x,y)=>x-y),dd=gd(m,+d);
-    dd.src=ks.map(lbl).join('+');dd.snap=snapOf(ks);clearSupp(m,+d);ok+=ks.length;
-  });
-  for(let d=1;d<=n;d++){
-    if(cells[d].length)continue;
-    const dd=gd(m,d),codes=(b.dayCodes[d]||[]).map(t=>t.toUpperCase());
-    const hit=codes.find(c=>/^[A-Z]{1,6}$/.test(c)&&TN[c]&&TN[c].segmente&&TN[c].segmente.length);
-    if(hit&&!dd.src){dd.src=hit;dd.snap=snapOf([hit]);clearSupp(m,d);ok++;by[d]=[hit];continue}
-    if(!dd.src&&!dd.tn){if(codes.includes('CO'))dd.note='Concediu';else if(codes.includes('CM'))dd.note='CM';else if(codes.includes('TL'))dd.note='TL'}
-  }
-  if(restore)restore();
-  curM=m;recalcAll();save();renderTabs();renderTable();
-  const lines=[];
-  for(let d=1;d<=n;d++)if(cells[d].length||(by[d]&&by[d].some(k=>typeof k==='string')))lines.push(String(d).padStart(2,'0')+': '+(cells[d].length?cells[d].join(' '):'cod')+' → '+(by[d]?by[d].map(lbl).join('+'):'(continuare / neidentificat)'));
-  return{ok,neid:sol.unid,lines};
-}
-function setPreiaStatus(msg,c){const e=document.getElementById('preiaStatus');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=msg}
-function preiaOre(){
-  const v=document.getElementById('preiaNume').value.trim();
-  if(!v){alert('Scrie numele din fișă!');return}
-  try{localStorage.setItem('pontaj_nume',v)}catch(e){}
-  preiaNume(v);
-}
-async function openPreia(){
-  document.getElementById('preiaLuna').value=curM+1;
-  let nm='';try{nm=localStorage.getItem('pontaj_nume')||(JSON.parse(localStorage.getItem('pontaj_names')||'[]')[0])||''}catch(e){}
-  document.getElementById('preiaNume').value=nm;
-  document.getElementById('preiaOverlay').classList.add('open');
-  const sel=document.getElementById('preiaDoc');sel.innerHTML='<option>Se încarcă...</option>';
-  const idx=await ghRaw('data/mecanici/index.json');
-  if(!Array.isArray(idx)||!idx.length){sel.innerHTML='<option value="">Nu am găsit fișe</option>';return}
-  idx.sort((a,b)=>String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
-  sel.innerHTML='';idx.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.filename+' ('+String(d.uploadedAt).slice(0,10)+')';o.dataset.fn=d.filename;sel.appendChild(o)});
-  const g=MO.findIndex(x=>normS(sel.options[0].dataset.fn).includes(normS(x)));if(g>=0)document.getElementById('preiaLuna').value=g+1;
-}
-function closePreia(){document.getElementById('preiaOverlay').classList.remove('open')}
-async function preiaNume(name){
-  const id=document.getElementById('preiaDoc').value,luna=parseInt(document.getElementById('preiaLuna').value);
-  if(!id){alert('Alege o fișă!');return}
-  if(!luna||luna<1||luna>12){alert('Luna invalidă!');return}
-  setPreiaStatus('⏳ Citesc fișa...','var(--yel)');
-  const data=await ghRaw('data/mecanici/'+id+'.json');
-  if(!data||!data.rows){setPreiaStatus('❌ Nu am putut citi fișa.','var(--red)');return}
-  const q=normS(name).split(' ');
-  const c=splitBlocksStructured(data.rows).filter(b=>{const w=normS(b.name).split(' ');return q.every(x=>w.includes(x))});
-  if(!c.length){setPreiaStatus('❌ Nu găsesc numele "'+name+'" în fișă.','var(--red)');return}
-  c.sort((a,b)=>Math.abs(normS(a.name).length-normS(name).length)-Math.abs(normS(b.name).length-normS(name).length));
-  if(!ghToken&&!Object.keys(SHARED).length)await loadShared();
-  const saved=TN;
-  if(!ghToken)TN={...SHARED,...TN};
-  const nUsed=Object.keys(TN).length;
-  if(!nUsed){TN=saved;setPreiaStatus('❌ Nu există turnusuri. Adaugă-le din ⚙ Turnus-uri.','var(--red)');return}
-  let r;try{r=importBlock(c[0],luna,()=>{TN=saved})}finally{TN=saved}
-  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite: ${nUsed} (${ghToken?'ale tale':'publicate de administrator + ale tale; la același cod se folosește al tău'}).`;
-  if(c.length>1)msg+=`\nℹ Am mai găsit și: ${c.slice(1).map(x=>x.name).join(', ')}`;
-  msg+='\n\nCitit din fișă:\n'+r.lines.join('\n');
-  if(r.neid.length)msg+=`\n⚠ Zile fără turnus potrivit (verifică manual): ${r.neid.join(', ')}`;
-  setPreiaStatus(msg);
-}
 
-// ── IMPORT TURNUSURI din PDF / poză (doar cu token) ──
-function impSplit(items){
-  const out=[];
-  items.forEach(it=>{
-    const s=(it.s||'').trim();if(!s)return;
-    const parts=s.split(/\s+/);
-    if(parts.length===1){out.push({s,x:it.x,w:it.w,y:it.y});return}
-    let off=0;
-    parts.forEach(p=>{const i=s.indexOf(p,off);off=i+p.length;out.push({s:p,x:it.x+it.w*i/s.length,w:it.w*p.length/s.length,y:it.y})});
+  adminBtn.onclick = openAdmin;
+  document.getElementById('adminClose').onclick = closeAdmin;
+  adminOverlay.addEventListener('click', function(e){ if(e.target === adminOverlay) closeAdmin(); });
+  document.getElementById('ghConnectBtn').onclick = connectToken;
+  document.getElementById('ghTokenInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') connectToken();
   });
-  return out;
-}
-function impMerge(a){
-  const v=a.slice().sort((p,q)=>Math.abs(p.y-q.y)<0.6?p.x-q.x:p.y-q.y),o=[];
-  v.forEach(it=>{
-    const l=o[o.length-1];
-    if(l&&Math.abs(l.y-it.y)<0.6&&/^[\d*]+$/.test(l.s)&&/^[\d*]+$/.test(it.s)&&it.x-(l.x+l.w)<0.8&&it.x-(l.x+l.w)>-0.8){l.s+=it.s;l.w=it.x+it.w-l.x}
-    else o.push({...it});
-  });
-  return o;
-}
-function impGroups(txt,cols){
-  const g=[];
-  String(txt||'').split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).forEach(part=>{
-    const nums=[];
-    part.split('+').forEach(t=>{t=t.trim();const r=t.match(/^(\d+)\s*-\s*(\d+)$/);if(r){for(let i=+r[1];i<=+r[2];i++)nums.push(i)}else if(/^\d+$/.test(t))nums.push(+t)});
-    if(nums.length)g.push(nums);
-  });
-  if(!g.length||g.flat().some(n=>!cols.includes(n)))return Object.assign(cols.map(c=>[c]),{fb:true});
-  return g;
-}
-function parseTurnusItems(items0,grupare,tol,opts){
-  tol=tol||2.5;
-  const items=(opts&&opts.img)?impSplit(items0):impMerge(impSplit(items0));
-  const lab=n=>items.find(i=>i.s.toLowerCase().startsWith(n));
-  const lP=lab('prezentare'),lR=lab('remizare'),lH=lab('statiile');
-  if(!lP||!lR||!lH)return{err:'Nu găsesc rândurile „Statiile/nr.ech", „Prezentare" și „Remizare" în document.'};
-  const labRight=Math.max(...items.filter(i=>Math.abs(i.y-lH.y)<tol&&i.x<lH.x+lH.w+1).map(i=>i.x+i.w));
-  let pn=0;const hdr=items.filter(i=>/^(\d{1,2}|\d\d:\d\d)$/.test(i.s)&&Math.abs(i.y-lH.y)<tol+1&&i.x>labRight).sort((a,b)=>a.x-b.x).map(i=>{const n=/^\d{1,2}$/.test(i.s)?+i.s:pn+1;pn=n;return{n,c:i.x+i.w/2}});
-  if(!hdr.length)return{err:'Nu găsesc numerele coloanelor (1, 2, 3...).'};
-  const bord=[labRight+6];
-  hdr.forEach((h,i)=>{let r=2*h.c-bord[i];const nx=hdr[i+1]?hdr[i+1].c-1:1e9;r=Math.min(Math.max(r,h.c+1),nx);bord.push(r)});
-  const colOf=x=>{for(let i=0;i<hdr.length;i++)if(x>=bord[i]&&x<bord[i+1])return hdr[i].n;return null};
-  const isT=s=>/^\d{1,2}:\d{2}$/.test(s);
-  const prez=items.filter(i=>(isT(i.s)||/^#+$/.test(i.s))&&Math.abs(i.y-lP.y)<tol).map(i=>({x:i.x+i.w/2,t:isT(i.s)?i.s.padStart(5,'0'):''})).sort((a,b)=>a.x-b.x);
-  const rem=items.filter(i=>isT(i.s)&&Math.abs(i.y-lR.y)<tol).map(i=>({x:i.x+i.w/2,t:i.s.padStart(5,'0')})).sort((a,b)=>a.x-b.x);
-  const trains=items.filter(i=>/^\d{5,6}\*?$/.test(i.s)&&i.y>lH.y+tol&&i.y<lP.y-tol&&i.x+i.w/2<bord[bord.length-1]).map(i=>({x:i.x+i.w/2,s:i.s.replace('*','')}));
-  const segs=prez.map(p=>{const r=rem.find(q=>q.x>p.x+6);return{x:p.x,prez:p.t,iesire:r?r.t:'',col:colOf(p.x),tr:[]}});
-  const cols=hdr.map(h=>h.n);
-  const groups=impGroups(grupare,cols);
-  const res=[];
-  groups.forEach(g=>{
-    const sg=segs.filter(s=>g.includes(s.col)).sort((a,b)=>a.x-b.x);
-    if(!sg.length)return;
-    trains.filter(t=>g.includes(colOf(t.x))).forEach(t=>{let k=0;sg.forEach((s,i)=>{if(t.x>=s.x-10)k=i});sg[k].tr.push(t)});
-    sg.forEach(s=>s.tr.sort((a,b)=>a.x-b.x));
-    for(let i=sg.length-1;i>0;i--)if(!sg[i].tr.length&&sg[i-1].tr.length>1)sg[i].tr.unshift(sg[i-1].tr.pop());
-    res.push({cols:g,segmente:sg.map(s=>({prez:s.prez,iesire:s.iesire})),note:sg.map(s=>s.tr.map(t=>t.s).join(' ')).join(' / ')});
-  });
-  return{turnuri:res,cols,fb:!!groups.fb};
-}
+  disconnectBtn.onclick = function(){
+    clearToken();
+    refreshAdminUI();
+  };
 
-function impScript(u){return new Promise((ok,no)=>{if(document.querySelector('script[src="'+u+'"]'))return ok();const e=document.createElement('script');e.src=u;e.onload=ok;e.onerror=()=>no(new Error('Nu pot încărca '+u));document.head.appendChild(e)})}
-async function impPdfItems(file){
-  await impScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
-  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
-  const tc=await (await pdf.getPage(1)).getTextContent();
-  return tc.items.map(i=>({s:i.str,x:i.transform[4],y:-i.transform[5],w:i.width}));
-}
-async function impImgItems(file){
-  await impScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-  const r=await Tesseract.recognize(file,'eng');
-  const ws=r.data.words||[],h=ws.map(w=>w.bbox.y1-w.bbox.y0).sort((a,b)=>a-b);
-  return{items:ws.map(w=>({s:w.text,x:w.bbox.x0,y:(w.bbox.y0+w.bbox.y1)/2,w:w.bbox.x1-w.bbox.x0})),tol:Math.max(3,(h[h.length>>1]||8)*0.6)};
-}
-const IMP_PRESETS={'1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16':'1; 2+3+4; 5; 6+7; 8+9; 10; 11; 12+13; 14; 15','1,2,3,4,5,6,7,8,9':'1; 2+3; 4+5; 6; 7; 8+9'};
-function impMap(){let m={};try{m=JSON.parse(localStorage.getItem('turnus_grupari')||'{}')}catch(e){}return{...IMP_PRESETS,...m}}
-function nextFreeCode(){const n=Object.keys(TN).filter(k=>/^\d+$/.test(k)).map(Number);return n.length?Math.max(...n)+1:1}
-let impRes=null;
-function setImp(m,c){const e=document.getElementById('impPrev');e.style.display='block';e.style.color=c||'var(--grn)';e.textContent=m}
-function openImport(){
-  if(!ghToken)return;
-  let g='';try{g=localStorage.getItem('turnus_grupare')||''}catch(e){}
-  document.getElementById('impGrup').value=g||'1; 2+3+4; 5; 6+7; 8+9; 10; 11; 12+13; 14; 15';
-  const se=document.getElementById('impStart');se.dataset.m='';se.value=nextFreeCode();document.getElementById('impSave').disabled=true;
-  document.getElementById('impPrev').style.display='none';impRes=null;
-  document.getElementById('impOverlay').classList.add('open');
-}
-function closeImport(){document.getElementById('impOverlay').classList.remove('open')}
-async function runImport(){
-  const f=document.getElementById('impFile').files[0];
-  if(!f){alert('Alege un PDF sau o poză!');return}
-  const gr=document.getElementById('impGrup').value,se=document.getElementById('impStart'),st=se.dataset.m?(parseInt(se.value)||1):nextFreeCode();se.value=st;
-  try{localStorage.setItem('turnus_grupare',gr)}catch(e){}
-  setImp('⏳ Citesc fișierul...','var(--yel)');document.getElementById('impSave').disabled=true;impRes=null;
-  try{
-    let it;
-    if(/pdf/i.test(f.type)||/\.pdf$/i.test(f.name))it={items:await impPdfItems(f)};
-    else{it=await impImgItems(f);it.opts={img:true}}
-    const P=g=>parseTurnusItems(it.items,g,it.tol,it.opts);
-    let r=P(gr);
-    if(r.cols&&r.fb){const mp=impMap(),k=r.cols.join(',');if(mp[k]){gr=mp[k];document.getElementById('impGrup').value=gr;r=P(gr)}}
-    if(r.cols&&!r.fb){const mp=impMap();mp[r.cols.join(',')]=gr;try{localStorage.setItem('turnus_grupari',JSON.stringify(mp))}catch(e){}}
-    if(r.err){setImp('❌ '+r.err,'var(--red)');return}
-    if(!r.turnuri.length){setImp('❌ Nu am găsit turnusuri. Verifică gruparea coloanelor.','var(--red)');return}
-    impRes=r.turnuri.map((t,i)=>({code:String(st+i),...t}));
-    setImp('Coloane găsite: '+r.cols.join(', ')+'\n\n'+impRes.map(t=>'T'+t.code+(TN[t.code]?' (înlocuiește)':'')+'  coloane '+t.cols.join('+')+'\n   '+t.segmente.map(g=>(g.prez||'?')+'→'+(g.iesire||'?')).join(', ')+'\n   '+t.note).join('\n\n')+(r.fb?'\n\n⚠ Gruparea scrisă nu se potrivește cu coloanele găsite — am pus fiecare coloană separat. Scrie gruparea și apasă din nou „Citește".':'')+(impRes.some(t=>t.segmente.some(g=>!g.prez||!g.iesire))?'\n\n⚠ Unde vezi „?" ora nu s-a putut citi (în PDF e ####). Completează-o în editor după salvare.':'')+'\n\nVerifică, apoi apasă „Adaugă în turnusuri".');
-    document.getElementById('impSave').disabled=false;
-  }catch(e){setImp('❌ Eroare: '+e.message,'var(--red)')}
-}
-function saveImport(){
-  if(!impRes||!ghToken)return;
-  impRes.forEach(t=>{TN[t.code]={segmente:t.segmente,note:t.note}});
-  save();renderEditorList();renderTags();closeImport();showEditorMsg(impRes.length+' turnusuri adăugate din import.');impRes=null;
-}
-
-init();
+  refreshAdminUI();
 </script>
+
+<script>
+(function(){
+  var fill = document.getElementById('loadFill');
+  var pct = document.getElementById('loadPct');
+  var preloader = document.getElementById('preloader');
+  var main = document.getElementById('main');
+
+  var p = 0;
+  var duration = 1900; // ms
+  var start = performance.now();
+
+  function tick(now){
+    var elapsed = now - start;
+    p = Math.min(100, Math.round((elapsed / duration) * 100));
+    fill.style.width = p + '%';
+    pct.textContent = p + '%';
+    if(elapsed < duration){
+      requestAnimationFrame(tick);
+    } else {
+      finish();
+    }
+  }
+
+  function finish(){
+    preloader.classList.add('hide');
+    main.classList.add('show');
+  }
+
+  requestAnimationFrame(tick);
+})();
+</script>
+
+<script>
+// ── Sferă 3D transparentă cu margini negre (canvas, fără biblioteci) ──
+(function(){
+  var canvas = document.getElementById('ballCanvas');
+  if(!canvas) return;
+  var SIZE = 150, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var N = Math.round(SIZE * dpr);
+  canvas.width = N; canvas.height = N;
+  var ctx = canvas.getContext('2d');
+  var img = ctx.createImageData(N, N);
+  var out = img.data;
+
+  // Textură transparentă: grilă neagră + logo EMX alb cu contur negru
+  var TW = 1024, TH = 512, tex = null;
+  function buildTexture(){
+    var c = document.createElement('canvas'); c.width = TW; c.height = TH;
+    var g = c.getContext('2d');
+    g.strokeStyle = '#000'; g.lineWidth = 6;
+    for(var i = 0; i < 12; i++){ var x = i * TW / 12; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, TH); g.stroke(); }
+    for(var j = 1; j < 6; j++){ var y = j * TH / 6; g.beginPath(); g.moveTo(0, y); g.lineTo(TW, y); g.stroke(); }
+    g.font = '900 120px Rajdhani, "Arial Black", Arial, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineJoin = 'round'; g.lineWidth = 14; g.strokeStyle = '#000'; g.fillStyle = '#fff';
+    [0, TW / 2, TW].forEach(function(cx){ g.strokeText('EMX', cx, TH / 2 + 6); g.fillText('EMX', cx, TH / 2 + 6); });
+    tex = g.getImageData(0, 0, TW, TH).data;
+  }
+  buildTexture();
+  if(document.fonts && document.fonts.load){
+    document.fonts.load('900 120px Rajdhani').then(buildTexture).catch(function(){});
+  }
+
+  var R = N / 2, TILT = 0.38, cT = Math.cos(TILT), sT = Math.sin(TILT);
+  var M = N * N;
+  var lonF = new Float32Array(M), rowF = new Int16Array(M);
+  var lonB = new Float32Array(M), rowB = new Int16Array(M);
+  var tint = new Float32Array(M), rim = new Float32Array(M), spec = new Float32Array(M);
+  var mask = new Float32Array(M);
+  var L = (function(){ var v = [-0.5, 0.55, 0.67], m = Math.hypot(v[0], v[1], v[2]); return [v[0]/m, v[1]/m, v[2]/m]; })();
+  function rowOf(lat){ return Math.max(0, Math.min(TH - 1, Math.floor((0.5 - lat / Math.PI) * TH))); }
+  function smooth(a, b, v){ var t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
+
+  for(var py = 0; py < N; py++){
+    for(var px = 0; px < N; px++){
+      var k = py * N + px;
+      var x = (px + 0.5 - R) / R, y = -(py + 0.5 - R) / R;
+      var r2 = x * x + y * y, r = Math.sqrt(r2);
+      mask[k] = Math.max(0, Math.min(1, (1 - r) * R + 0.5));
+      if(r2 >= 1.02) continue;
+      var z = Math.sqrt(Math.max(0, 1 - r2));
+      // față
+      var qy = y * cT - z * sT, qz = y * sT + z * cT;
+      lonF[k] = Math.atan2(x, qz); rowF[k] = rowOf(Math.asin(Math.max(-1, Math.min(1, qy))));
+      // spate (vizibil prin transparență)
+      var by = y * cT + z * sT, bz = y * sT - z * cT;
+      lonB[k] = Math.atan2(x, bz); rowB[k] = rowOf(Math.asin(Math.max(-1, Math.min(1, by))));
+      // iluminare
+      var nl = Math.max(0, x * L[0] + y * L[1] + z * L[2]);
+      tint[k] = 0.06 + 0.16 * nl;                       // nuanță roșie foarte ușoară
+      var hx = L[0], hy = L[1], hz = L[2] + 1, hm = Math.hypot(hx, hy, hz);
+      spec[k] = Math.pow(Math.max(0, (x * hx + y * hy + z * hz) / hm), 46) * 0.85;
+      // margine neagră: întunecare spre contur + inel ferm
+      rim[k] = Math.max(Math.min(1, Math.pow(1 - z, 2.6) * 0.95), smooth(0.945, 0.985, r));
+    }
+  }
+
+  var TWO_PI = Math.PI * 2;
+  function render(angle){
+    for(var k = 0; k < M; k++){
+      var o = k * 4, m = mask[k];
+      if(m === 0){ out[o + 3] = 0; continue; }
+      var R_ = 0, G_ = 0, B_ = 0, A_ = 0, sa, t, u;
+      // 1) spate (grilă/logo, estompate)
+      u = ((lonB[k] + angle) / TWO_PI) % 1; if(u < 0) u += 1;
+      t = (rowB[k] * TW + Math.floor(u * TW)) * 4;
+      sa = tex[t + 3] / 255 * 0.38;
+      R_ = tex[t] / 255 * sa; G_ = tex[t + 1] / 255 * sa; B_ = tex[t + 2] / 255 * sa; A_ = sa;
+      // 2) nuanță roșie de sticlă
+      sa = tint[k]; var inv = 1 - sa;
+      R_ = R_ * inv + 1.0 * sa; G_ = G_ * inv + 0.12 * sa; B_ = B_ * inv + 0.24 * sa; A_ = A_ * inv + sa;
+      // 3) față (grilă neagră + logo)
+      u = ((lonF[k] + angle) / TWO_PI) % 1; if(u < 0) u += 1;
+      t = (rowF[k] * TW + Math.floor(u * TW)) * 4;
+      sa = tex[t + 3] / 255 * 0.95; inv = 1 - sa;
+      R_ = R_ * inv + tex[t] / 255 * sa; G_ = G_ * inv + tex[t + 1] / 255 * sa; B_ = B_ * inv + tex[t + 2] / 255 * sa; A_ = A_ * inv + sa;
+      // 4) margine neagră
+      sa = rim[k]; inv = 1 - sa;
+      R_ *= inv; G_ *= inv; B_ *= inv; A_ = A_ * inv + sa;
+      // 5) reflexie
+      sa = spec[k]; inv = 1 - sa;
+      R_ = R_ * inv + sa; G_ = G_ * inv + sa; B_ = B_ * inv + sa; A_ = A_ * inv + sa;
+      // ieșire (alpha nepremultiplicat), cu margine antialiasată
+      var fa = A_ * m;
+      if(fa <= 0.0005){ out[o + 3] = 0; continue; }
+      out[o]     = Math.min(255, R_ / A_ * 255);
+      out[o + 1] = Math.min(255, G_ / A_ * 255);
+      out[o + 2] = Math.min(255, B_ / A_ * 255);
+      out[o + 3] = fa * 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  render(0);
+  if(reduce) return;
+
+  var preloader = document.getElementById('preloader');
+  var t0 = performance.now(), hideAt = 0;
+  (function loop(now){
+    if(preloader.classList.contains('hide')){
+      if(!hideAt) hideAt = now;
+      if(now - hideAt > 900) return;
+    }
+    render(((now - t0) / 2600) * TWO_PI);
+    requestAnimationFrame(loop);
+  })(t0);
+})();
+</script>
+
 </body>
 </html>
