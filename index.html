@@ -51,29 +51,14 @@
     display:flex; align-items:center; justify-content:center;
   }
   .ball{
-    width:150px; height:150px; border-radius:50%;
-    position:relative;
-    background:
-      radial-gradient(circle at 32% 28%, #ff7a8f 0%, #ff1f3d 32%, #7a0f1d 68%, #1a0406 100%);
-    box-shadow:
-      0 0 40px rgba(255,31,61,.55),
-      0 0 90px rgba(255,31,61,.28),
-      inset -14px -14px 30px rgba(0,0,0,.55),
-      inset 8px 8px 18px rgba(255,255,255,.06);
-    animation: bounce 1.3s cubic-bezier(.45,0,.55,1) infinite, spin 2.6s linear infinite;
+    width:150px; height:150px; position:relative;
+    animation: bounce 1.3s cubic-bezier(.45,0,.55,1) infinite;
   }
   .ball::before{
-    content:''; position:absolute; top:16%; left:22%;
-    width:34%; height:22%; border-radius:50%;
-    background:rgba(255,255,255,.35);
-    filter:blur(4px);
+    content:''; position:absolute; inset:-60px; z-index:0; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,31,61,.62) 0%, rgba(255,31,61,.34) 32%, rgba(255,31,61,.10) 52%, transparent 68%);
   }
-  .ball-label{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-family:'Rajdhani',sans-serif; font-weight:900; font-size:28px; letter-spacing:.04em;
-    color:#fff; text-shadow:0 0 10px rgba(0,0,0,.6), 0 0 22px rgba(255,31,61,.8);
-    animation: counterspin 2.6s linear infinite reverse;
-  }
+  .ball canvas{ position:relative; z-index:1; width:150px; height:150px; display:block; }
   .ball-shadow{
     position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
     width:96px; height:18px; border-radius:50%;
@@ -84,14 +69,6 @@
   @keyframes bounce{
     0%,100%{ transform:translateY(-38px); }
     50%{ transform:translateY(6px); }
-  }
-  @keyframes spin{
-    from{ transform:rotate(0deg); }
-    to{ transform:rotate(360deg); }
-  }
-  @keyframes counterspin{
-    from{ transform:rotate(0deg); }
-    to{ transform:rotate(-360deg); }
   }
   @keyframes shadowPulse{
     0%,100%{ width:64px; opacity:.35; }
@@ -220,7 +197,7 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    .ball, .ball-shadow, .ball-label{ animation:none !important; }
+    .ball, .ball-shadow{ animation:none !important; }
   }
 </style>
 </head>
@@ -228,7 +205,7 @@
 
 <div id="preloader">
   <div class="ball-stage">
-    <div class="ball"><div class="ball-label">EMX</div></div>
+    <div class="ball"><canvas id="ballCanvas" width="300" height="300"></canvas></div>
     <div class="ball-shadow"></div>
   </div>
   <div class="load-status">
@@ -391,6 +368,124 @@
   }
 
   requestAnimationFrame(tick);
+})();
+</script>
+
+<script>
+// ── Sferă 3D transparentă cu margini negre (canvas, fără biblioteci) ──
+(function(){
+  var canvas = document.getElementById('ballCanvas');
+  if(!canvas) return;
+  var SIZE = 150, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var N = Math.round(SIZE * dpr);
+  canvas.width = N; canvas.height = N;
+  var ctx = canvas.getContext('2d');
+  var img = ctx.createImageData(N, N);
+  var out = img.data;
+
+  // Textură transparentă: grilă neagră + logo EMX alb cu contur negru
+  var TW = 1024, TH = 512, tex = null;
+  function buildTexture(){
+    var c = document.createElement('canvas'); c.width = TW; c.height = TH;
+    var g = c.getContext('2d');
+    g.strokeStyle = '#000'; g.lineWidth = 6;
+    for(var i = 0; i < 12; i++){ var x = i * TW / 12; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, TH); g.stroke(); }
+    for(var j = 1; j < 6; j++){ var y = j * TH / 6; g.beginPath(); g.moveTo(0, y); g.lineTo(TW, y); g.stroke(); }
+    g.font = '900 120px Rajdhani, "Arial Black", Arial, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineJoin = 'round'; g.lineWidth = 14; g.strokeStyle = '#000'; g.fillStyle = '#fff';
+    [0, TW / 2, TW].forEach(function(cx){ g.strokeText('EMX', cx, TH / 2 + 6); g.fillText('EMX', cx, TH / 2 + 6); });
+    tex = g.getImageData(0, 0, TW, TH).data;
+  }
+  buildTexture();
+  if(document.fonts && document.fonts.load){
+    document.fonts.load('900 120px Rajdhani').then(buildTexture).catch(function(){});
+  }
+
+  var R = N / 2, TILT = 0.38, cT = Math.cos(TILT), sT = Math.sin(TILT);
+  var M = N * N;
+  var lonF = new Float32Array(M), rowF = new Int16Array(M);
+  var lonB = new Float32Array(M), rowB = new Int16Array(M);
+  var tint = new Float32Array(M), rim = new Float32Array(M), spec = new Float32Array(M);
+  var mask = new Float32Array(M);
+  var L = (function(){ var v = [-0.5, 0.55, 0.67], m = Math.hypot(v[0], v[1], v[2]); return [v[0]/m, v[1]/m, v[2]/m]; })();
+  function rowOf(lat){ return Math.max(0, Math.min(TH - 1, Math.floor((0.5 - lat / Math.PI) * TH))); }
+  function smooth(a, b, v){ var t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
+
+  for(var py = 0; py < N; py++){
+    for(var px = 0; px < N; px++){
+      var k = py * N + px;
+      var x = (px + 0.5 - R) / R, y = -(py + 0.5 - R) / R;
+      var r2 = x * x + y * y, r = Math.sqrt(r2);
+      mask[k] = Math.max(0, Math.min(1, (1 - r) * R + 0.5));
+      if(r2 >= 1.02) continue;
+      var z = Math.sqrt(Math.max(0, 1 - r2));
+      // față
+      var qy = y * cT - z * sT, qz = y * sT + z * cT;
+      lonF[k] = Math.atan2(x, qz); rowF[k] = rowOf(Math.asin(Math.max(-1, Math.min(1, qy))));
+      // spate (vizibil prin transparență)
+      var by = y * cT + z * sT, bz = y * sT - z * cT;
+      lonB[k] = Math.atan2(x, bz); rowB[k] = rowOf(Math.asin(Math.max(-1, Math.min(1, by))));
+      // iluminare
+      var nl = Math.max(0, x * L[0] + y * L[1] + z * L[2]);
+      tint[k] = 0.06 + 0.16 * nl;                       // nuanță roșie foarte ușoară
+      var hx = L[0], hy = L[1], hz = L[2] + 1, hm = Math.hypot(hx, hy, hz);
+      spec[k] = Math.pow(Math.max(0, (x * hx + y * hy + z * hz) / hm), 46) * 0.85;
+      // margine neagră: întunecare spre contur + inel ferm
+      rim[k] = Math.max(Math.min(1, Math.pow(1 - z, 2.6) * 0.95), smooth(0.945, 0.985, r));
+    }
+  }
+
+  var TWO_PI = Math.PI * 2;
+  function render(angle){
+    for(var k = 0; k < M; k++){
+      var o = k * 4, m = mask[k];
+      if(m === 0){ out[o + 3] = 0; continue; }
+      var R_ = 0, G_ = 0, B_ = 0, A_ = 0, sa, t, u;
+      // 1) spate (grilă/logo, estompate)
+      u = ((lonB[k] + angle) / TWO_PI) % 1; if(u < 0) u += 1;
+      t = (rowB[k] * TW + Math.floor(u * TW)) * 4;
+      sa = tex[t + 3] / 255 * 0.38;
+      R_ = tex[t] / 255 * sa; G_ = tex[t + 1] / 255 * sa; B_ = tex[t + 2] / 255 * sa; A_ = sa;
+      // 2) nuanță roșie de sticlă
+      sa = tint[k]; var inv = 1 - sa;
+      R_ = R_ * inv + 1.0 * sa; G_ = G_ * inv + 0.12 * sa; B_ = B_ * inv + 0.24 * sa; A_ = A_ * inv + sa;
+      // 3) față (grilă neagră + logo)
+      u = ((lonF[k] + angle) / TWO_PI) % 1; if(u < 0) u += 1;
+      t = (rowF[k] * TW + Math.floor(u * TW)) * 4;
+      sa = tex[t + 3] / 255 * 0.95; inv = 1 - sa;
+      R_ = R_ * inv + tex[t] / 255 * sa; G_ = G_ * inv + tex[t + 1] / 255 * sa; B_ = B_ * inv + tex[t + 2] / 255 * sa; A_ = A_ * inv + sa;
+      // 4) margine neagră
+      sa = rim[k]; inv = 1 - sa;
+      R_ *= inv; G_ *= inv; B_ *= inv; A_ = A_ * inv + sa;
+      // 5) reflexie
+      sa = spec[k]; inv = 1 - sa;
+      R_ = R_ * inv + sa; G_ = G_ * inv + sa; B_ = B_ * inv + sa; A_ = A_ * inv + sa;
+      // ieșire (alpha nepremultiplicat), cu margine antialiasată
+      var fa = A_ * m;
+      if(fa <= 0.0005){ out[o + 3] = 0; continue; }
+      out[o]     = Math.min(255, R_ / A_ * 255);
+      out[o + 1] = Math.min(255, G_ / A_ * 255);
+      out[o + 2] = Math.min(255, B_ / A_ * 255);
+      out[o + 3] = fa * 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  render(0);
+  if(reduce) return;
+
+  var preloader = document.getElementById('preloader');
+  var t0 = performance.now(), hideAt = 0;
+  (function loop(now){
+    if(preloader.classList.contains('hide')){
+      if(!hideAt) hideAt = now;
+      if(now - hideAt > 900) return;
+    }
+    render(((now - t0) / 2600) * TWO_PI);
+    requestAnimationFrame(loop);
+  })(t0);
 })();
 </script>
 
