@@ -878,6 +878,32 @@ async function getAllTaggedBlocks(){
 // dormitoare / odihne). Segmentele vin din turnusurile salvate în pontaj: data/turnusuri-partajate.json
 // (note = trenurile fiecărui segment, separate prin " / ") și turnusuri.json (lista "trenuri" pe segment).
 let _turnusIdx = null;
+let _pontaj = null;   // { byYear: {2026:{TN,db}}, TN } din pontajul tău (localStorage sau repo cu token)
+async function fetchPontajRepo(){
+  try{
+    const res = await fetch('https://api.github.com/repos/vladynitu1/Vlad/contents/turnusuri.json', {
+      cache: 'no-store', headers: { Accept: 'application/vnd.github.raw', Authorization: 'Bearer ' + getToken() }
+    });
+    if(res.ok) return JSON.parse(await res.text());
+  }catch(e){}
+  return null;
+}
+async function loadPontajData(){
+  const byYear = {};
+  let gh;
+  const y0 = new Date().getFullYear();
+  for(const y of [y0, y0 - 1]){
+    let o = null;
+    try{ const raw = localStorage.getItem('cfr_' + y); if(raw) o = JSON.parse(raw); }catch(e){}
+    if((!o || !o.TN || !Object.keys(o.TN).length) && hasToken()){
+      if(gh === undefined) gh = await fetchPontajRepo();
+      if(gh && gh['cfr_' + y]) o = gh['cfr_' + y];
+    }
+    if(o && o.TN && Object.keys(o.TN).length) byYear[y] = o;
+  }
+  const first = byYear[y0] || byYear[y0 - 1] || null;
+  return first ? { byYear, TN: first.TN } : null;
+}
 const _labelCache = new WeakMap();
 const normCode = c => String(c || '').toLowerCase().replace(/[^0-9a-z]/g, '');
 async function loadTurnusIndex(){
@@ -891,6 +917,8 @@ async function loadTurnusIndex(){
       if(keys.length) mine = d[keys[keys.length - 1]].TN;
     }
   }catch(e){}
+  try{ _pontaj = await loadPontajData(); }catch(e){ _pontaj = null; }
+  if(_pontaj && _pontaj.TN) mine = _pontaj.TN;   // turnusurile din pontajul tău (cele mai noi)
   if(!shared && !mine){ // rezervă: turnusurile din pontajul de pe acest dispozitiv
     try{
       const y = new Date().getFullYear();
@@ -937,6 +965,53 @@ async function loadTurnusIndex(){
   return idx;
 }
 
+const RO_MONTHS = ['ianuarie','februarie','martie','aprilie','mai','iunie','iulie','august','septembrie','octombrie','noiembrie','decembrie'];
+function monthIndexForDoc(doc){
+  const t = normalize((doc.filename || '') + ' ' + (doc.month || ''));
+  const i = RO_MONTHS.findIndex(m => t.includes(m));
+  if(i >= 0) return i;
+  const d = new Date(doc.uploadedAt); return isNaN(d) ? null : d.getMonth();
+}
+function yearForDoc(doc){
+  const m = String((doc.filename || '') + ' ' + (doc.month || '')).match(/20\d\d/);
+  if(m) return +m[0];
+  const d = new Date(doc.uploadedAt); return isNaN(d) ? new Date().getFullYear() : d.getFullYear();
+}
+// Dacă persoana căutată e cea din pontaj, știm exact ce turnus ai în fiecare zi (db din pontaj).
+function makeHints(block){
+  const none = () => null;
+  if(!_pontaj || block._mi == null) return none;
+  let nm = '';
+  try{ nm = localStorage.getItem('pontaj_nume') || (JSON.parse(localStorage.getItem('pontaj_names') || '[]')[0]) || ''; }catch(e){}
+  const a = normalize(nm).replace(/\s+/g, ' ').trim(), b = normalize(block.name).replace(/\s+/g, ' ').trim();
+  if(!a || !b || !(a === b || a.includes(b) || b.includes(a))) return none;
+  const yr = _pontaj.byYear[block._yr]; const db = yr && yr.db;
+  if(!db) return none;
+  const mi = block._mi;
+  const labelsOf = e => (e && e.tn) ? String(e.tn).split('+').map(x => x.trim()).filter(Boolean) : [];
+  function hintsFor(d){
+    const e = db[mi] && db[mi][d];
+    const l = labelsOf(e);
+    if(l.length) return new Set(l);
+    if(e && e.prez === '00:00'){                     // continuare după miezul nopții
+      if(d > 1) return hintsFor(d - 1);
+      const pm = db[mi - 1];
+      if(pm){ const last = Math.max.apply(null, Object.keys(pm).map(Number)); return new Set(labelsOf(pm[last])); }
+    }
+    return null;
+  }
+  // trenurile unui serviciu început în ultima zi a lunii precedente și care continuă după miezul nopții
+  const pmo = db[mi - 1];
+  if(pmo){
+    const last = Math.max.apply(null, Object.keys(pmo).map(Number));
+    const e = pmo[last];
+    if(e && e.iesire === '24:00' && e.note){
+      hintsFor.carry = new Set(String(e.note).split(/[\s\/]+/).filter(x => /^\d/.test(x)).map(normCode));
+    }
+  }
+  return hintsFor;
+}
+
 // Parcurge luna unei persoane și găsește, pentru fiecare segment de turnus, PRIMUL tren din segment.
 // Un segment = un grup de trenuri consecutive din ziua persoanei care aparțin aceluiași segment de turnus
 // (într-o zi pot fi mai multe segmente, iar dormitorul le desparte). Continuarea unui segment peste
@@ -946,6 +1021,7 @@ function computeTurnusLabels(block){
   const labels = {};
   const idx = _turnusIdx;
   if(!idx){ return labels; }
+  const hintFor = makeHints(block);
   const cells = {};
   for(let d = 1; d <= 31; d++){
     cells[d] = trainCodesForDay(block, d).map(c => ({ raw: c, n: normCode(c) }))
@@ -966,6 +1042,9 @@ function computeTurnusLabels(block){
       const rem = new Set([...open.cand.trains].filter(t => !open.seen.has(t)));
       while(i < codes.length && rem.has(codes[i].n)){ open.seen.add(codes[i].n); rem.delete(codes[i].n); i++; }
     }
+    if(d === 1 && !open && hintFor.carry){          // continuare din luna precedentă: fără ore
+      while(i < codes.length && hintFor.carry.has(codes[i].n)) i++;
+    }
     if(i === 0) open = null;
     while(i < codes.length){
       const cands = idx.byCode.get(codes[i].n) || [];
@@ -975,6 +1054,8 @@ function computeTurnusLabels(block){
         while(i + run < codes.length && c.trains.has(codes[i + run].n)) run++;
         let sc = run * 10;
         // după acest segment urmează chiar segmentul următor al aceluiași turnus (aceeași variantă)
+        const hs = hintFor(d);
+        if(hs && hs.has(c.tn)) sc += 30;       // turnusul din pontaj pentru ziua asta
         const full = (run === c.trains.size);   // toate trenurile segmentului apar la persoană
         if(full) sc += 3;
         if(full && c.next){ const nx = nextCodeAfter(d, i + run); if(nx && c.next.trains.has(nx)) sc += 8; }
@@ -1081,6 +1162,7 @@ async function runTeamSearch(){
   }
 
   await loadTurnusIndex();
+  matches.forEach(t=>{ t.block._mi = monthIndexForDoc(t.doc); t.block._yr = yearForDoc(t.doc); _labelCache.delete(t.block); });
 
   function crewFor(m, d, code){
     const seen = new Set();
