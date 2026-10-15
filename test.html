@@ -919,10 +919,13 @@ async function loadTurnusIndex(){
       else if(c.segmente.length === 1) perSeg = [groups.flat()];
       if(perSeg) versions.push({ t: c, perSeg });
     });
-    versions.forEach(v=>{
+    versions.forEach((v, vi)=>{
+      const made = [];
       v.t.segmente.forEach((sg, i)=>{
         if(!sg || !sg.prez || !sg.iesire || !v.perSeg[i] || !v.perSeg[i].length) return;
-        const cand = { tn: label, idx: i, prez: sg.prez, rem: sg.iesire, trains: new Set(v.perSeg[i]) };
+        const cand = { tn: label, ver: label + '#' + vi, n: v.t.segmente.length, idx: i, prez: sg.prez, rem: sg.iesire, trains: new Set(v.perSeg[i]) };
+        if(made.length) made[made.length - 1].next = cand;
+        made.push(cand);
         cand.trains.forEach(c=>{
           if(!idx.byCode.has(c)) idx.byCode.set(c, []);
           idx.byCode.get(c).push(cand);
@@ -943,11 +946,21 @@ function computeTurnusLabels(block){
   const labels = {};
   const idx = _turnusIdx;
   if(!idx){ return labels; }
+  const cells = {};
+  for(let d = 1; d <= 31; d++){
+    cells[d] = trainCodesForDay(block, d).map(c => ({ raw: c, n: normCode(c) }))
+      .filter((c, k, arr) => k === 0 || c.n !== arr[k-1].n);
+  }
+  // următorul cod de tren al persoanei după poziția pos din ziua d (și în zilele următoare)
+  function nextCodeAfter(d, pos){
+    if(pos < cells[d].length) return cells[d][pos].n;
+    for(let dd = d + 1; dd <= 31; dd++){ if(cells[dd].length) return cells[dd][0].n; }
+    return null;
+  }
   let prevPick = null;      // ultimul segment ales (pentru consecvență între zile)
   let open = null;          // segmentul început în ziua precedentă, care poate continua
   for(let d = 1; d <= 31; d++){
-    const codes = trainCodesForDay(block, d).map(c => ({ raw: c, n: normCode(c) }))
-      .filter((c, k, arr) => k === 0 || c.n !== arr[k-1].n);
+    const codes = cells[d];
     let i = 0;
     if(open && codes.length){
       const rem = new Set([...open.cand.trains].filter(t => !open.seen.has(t)));
@@ -961,7 +974,16 @@ function computeTurnusLabels(block){
         let run = 0;
         while(i + run < codes.length && c.trains.has(codes[i + run].n)) run++;
         let sc = run * 10;
-        if(prevPick && c.tn === prevPick.tn) sc += (c.idx === prevPick.idx + 1) ? 5 : 2;
+        // după acest segment urmează chiar segmentul următor al aceluiași turnus (aceeași variantă)
+        const full = (run === c.trains.size);   // toate trenurile segmentului apar la persoană
+        if(full) sc += 3;
+        if(full && c.next){ const nx = nextCodeAfter(d, i + run); if(nx && c.next.trains.has(nx)) sc += 8; }
+        if(prevPick){
+          // următorul segment din același turnus (aceeași variantă) = continuarea firească
+          if(c.ver === prevPick.ver && c.idx === prevPick.idx + 1) sc += 6;
+          // turnusul anterior s-a terminat (ultimul segment) => urmează începutul altui turnus
+          else if(prevPick.idx === prevPick.n - 1 && c.idx === 0 && c.tn !== prevPick.tn) sc += 4;
+        }
         return { c, run, sc };
       });
       const best = Math.max.apply(null, scored.map(x => x.sc));
@@ -977,6 +999,19 @@ function computeTurnusLabels(block){
   }
   _labelCache.set(block, labels);
   return labels;
+}
+
+// Ca dayRangeLabel, dar nu lipește două zile când trenul începe în ambele un segment nou de turnus
+// (ex. 16579 în ziua 16 = un serviciu, în ziua 17 = alt serviciu): atunci fiecare zi rămâne separată.
+function dayRangeLabelSeg(block, day, code){
+  const L = computeTurnusLabels(block);
+  const n = normCode(code);
+  const has = d => (block.dayCodes[d] || []).some(c => normCode(c) === n);
+  const hasNext = has(day + 1) && !L[(day + 1) + '|' + n];
+  const hasPrev = has(day - 1) && !L[day + '|' + n];
+  if(hasNext) return day + '/' + (day + 1);
+  if(hasPrev) return (day - 1) + '/' + day;
+  return String(day);
 }
 
 function turnusTimesHtml(block, day, code){
@@ -1073,7 +1108,7 @@ async function runTeamSearch(){
       }
 
       const groupsHtml = codes.map(code=>{
-        const label = dayRangeLabel(m.block, day, code);
+        const label = dayRangeLabelSeg(m.block, day, code);
         const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
         return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + turnusTimesHtml(m.block, day, code) + '</span>' + crewFor(m, day, code) + '</div>';
       }).join('');
@@ -1093,7 +1128,7 @@ async function runTeamSearch(){
         const codesHtml = codes.map(code=>{
           const key = d + ':' + code.toLowerCase();
           if(consumedDayCode.has(key) && !computeTurnusLabels(m.block)[d + '|' + normCode(code)]) return ''; // deja afișat ca parte din perechea zilei precedente (dacă nu începe un segment nou)
-          const label = dayRangeLabel(m.block, d, code);
+          const label = dayRangeLabelSeg(m.block, d, code);
           if(label.indexOf('/') !== -1) consumedDayCode.add((d+1) + ':' + code.toLowerCase());
           const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
           return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + turnusTimesHtml(m.block, d, code) + '</span>' + crewFor(m, d, code) + '</div>';
