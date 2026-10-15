@@ -873,75 +873,115 @@ async function getAllTaggedBlocks(){
   return out;
 }
 
-// ---- Prezentare / Remizare din fișa de pontaj (turnusuri publicate de pontaj) ----
-// Pontajul publică turnusurile în data/turnusuri-partajate.json: fiecare turnus are segmente
-// (prezentare + ieșire/remizare) iar în "note" trenurile fiecărui segment, separate prin " / ".
+// ---- Prezentare / Remizare din fișa de pontaj ----
+// Orele se pun doar la PRIMUL tren din fiecare segment al turnusului (un segment = între două
+// dormitoare / odihne). Segmentele vin din turnusurile salvate în pontaj: data/turnusuri-partajate.json
+// (note = trenurile fiecărui segment, separate prin " / ") și turnusuri.json (lista "trenuri" pe segment).
 let _turnusIdx = null;
+const _labelCache = new WeakMap();
 const normCode = c => String(c || '').toLowerCase().replace(/[^0-9a-z]/g, '');
 async function loadTurnusIndex(){
   if(_turnusIdx) return _turnusIdx;
-  let TN = null;
+  let shared = null, mine = null;
+  try{ const d = await ghFetchRaw(DATA_DIR + '/turnusuri-partajate.json'); if(d && d.TN) shared = d.TN; }catch(e){}
   try{
-    const data = await ghFetchRaw(DATA_DIR + '/turnusuri-partajate.json');
-    if(data && data.TN) TN = data.TN;
+    const d = await ghFetchRaw('turnusuri.json');
+    if(d){
+      const keys = Object.keys(d).filter(k => /^cfr_\d{4}$/.test(k) && d[k] && d[k].TN).sort();
+      if(keys.length) mine = d[keys[keys.length - 1]].TN;
+    }
   }catch(e){}
-  if(!TN){ // rezervă: turnusurile din pontajul de pe acest dispozitiv
+  if(!shared && !mine){ // rezervă: turnusurile din pontajul de pe acest dispozitiv
     try{
-      for(const y of [new Date().getFullYear(), new Date().getFullYear()-1]){
-        const raw = localStorage.getItem('cfr_' + y);
-        if(raw){ const o = JSON.parse(raw); if(o && o.TN && Object.keys(o.TN).length){ TN = o.TN; break; } }
+      const y = new Date().getFullYear();
+      for(const yy of [y, y-1]){
+        const raw = localStorage.getItem('cfr_' + yy);
+        if(raw){ const o = JSON.parse(raw); if(o && o.TN && Object.keys(o.TN).length){ mine = o.TN; break; } }
       }
     }catch(e){}
   }
-  const idx = { byCode: new Map(), turnusTrains: new Map() };
-  Object.keys(TN || {}).forEach(k=>{
-    const t = TN[k] || {};
-    const segs = Array.isArray(t.segmente) ? t.segmente : [];
-    const groups = String(t.note || '').split('/').map(g => g.split(/\s+/).filter(x => /\d/.test(x)).map(normCode));
-    let perSeg = null;
-    if(segs.length && groups.length === segs.length) perSeg = groups;
-    else if(segs.length === 1) perSeg = [groups.flat()];
-    if(!perSeg) return;
+  const idx = { byCode: new Map() };
+  const keys = new Set([...Object.keys(shared || {}), ...Object.keys(mine || {})]);
+  keys.forEach(k=>{
     const label = /^\d+$/.test(k) ? 'T' + k : k;
-    const all = new Set();
-    segs.forEach((sg, i)=>{
-      if(!sg || !sg.prez || !sg.iesire) return;
-      const trains = new Set(perSeg[i]);
-      trains.forEach(c=>{
-        all.add(c);
-        if(!idx.byCode.has(c)) idx.byCode.set(c, []);
-        idx.byCode.get(c).push({ tn: label, prez: sg.prez, rem: sg.iesire, trains });
+    const versions = [];
+    const m = mine && mine[k];
+    // varianta 1: lista "trenuri" din pontajul tău, dacă are exact câte un grup pe segment
+    if(m && Array.isArray(m.segmente) && Array.isArray(m.trenuri) && m.trenuri.length === m.segmente.length && m.trenuri.every(Array.isArray)){
+      versions.push({ t: m, perSeg: m.trenuri.map(g => g.map(normCode)) });
+    }
+    // varianta 2: "note" (grupuri separate prin /) din turnusurile partajate (sau din pontaj)
+    [shared && shared[k], m].forEach(c=>{
+      if(!c || !Array.isArray(c.segmente) || !c.segmente.length) return;
+      const groups = String(c.note || '').split('/').map(g => g.split(/\s+/).filter(x => /\d/.test(x)).map(normCode));
+      let perSeg = null;
+      if(groups.length === c.segmente.length) perSeg = groups;
+      else if(c.segmente.length === 1) perSeg = [groups.flat()];
+      if(perSeg) versions.push({ t: c, perSeg });
+    });
+    versions.forEach(v=>{
+      v.t.segmente.forEach((sg, i)=>{
+        if(!sg || !sg.prez || !sg.iesire || !v.perSeg[i] || !v.perSeg[i].length) return;
+        const cand = { tn: label, idx: i, prez: sg.prez, rem: sg.iesire, trains: new Set(v.perSeg[i]) };
+        cand.trains.forEach(c=>{
+          if(!idx.byCode.has(c)) idx.byCode.set(c, []);
+          idx.byCode.get(c).push(cand);
+        });
       });
     });
-    idx.turnusTrains.set(label, all);
   });
   _turnusIdx = idx;
   return idx;
 }
 
-// Alege segmentul potrivit pentru un tren: dacă același cod apare în mai multe turnusuri,
-// câștigă segmentul/turnusul ale cărui alte trenuri le are și persoana în aceeași zi (sau zilele vecine).
-function turnusTimesHtml(block, day, code){
+// Parcurge luna unei persoane și găsește, pentru fiecare segment de turnus, PRIMUL tren din segment.
+// Un segment = un grup de trenuri consecutive din ziua persoanei care aparțin aceluiași segment de turnus
+// (într-o zi pot fi mai multe segmente, iar dormitorul le desparte). Continuarea unui segment peste
+// miezul nopții (trenurile din ziua următoare) nu mai primește ore.
+function computeTurnusLabels(block){
+  if(_labelCache.has(block)) return _labelCache.get(block);
+  const labels = {};
   const idx = _turnusIdx;
-  if(!idx) return '';
-  const cands = idx.byCode.get(normCode(code));
-  if(!cands || !cands.length) return '';
-  const today = new Set(trainCodesForDay(block, day).map(normCode));
-  const near = new Set();
-  [day-1, day, day+1].forEach(d => trainCodesForDay(block, d).forEach(c => near.add(normCode(c))));
-  const scored = cands.map(c=>{
-    let sc = 0;
-    c.trains.forEach(t => { if(today.has(t)) sc += 3; });
-    (idx.turnusTrains.get(c.tn) || new Set()).forEach(t => { if(near.has(t)) sc += 1; });
-    return { c, sc };
-  });
-  const best = Math.max.apply(null, scored.map(x => x.sc));
-  const seen = new Set(), items = [];
-  scored.filter(x => x.sc === best).forEach(x=>{
-    const key = x.c.prez + '|' + x.c.rem;
-    if(seen.has(key)) return;
-    seen.add(key); items.push(x.c);
-  });
+  if(!idx){ return labels; }
+  let prevPick = null;      // ultimul segment ales (pentru consecvență între zile)
+  let open = null;          // segmentul început în ziua precedentă, care poate continua
+  for(let d = 1; d <= 31; d++){
+    const codes = trainCodesForDay(block, d).map(c => ({ raw: c, n: normCode(c) }))
+      .filter((c, k, arr) => k === 0 || c.n !== arr[k-1].n);
+    let i = 0;
+    if(open && codes.length){
+      const rem = new Set([...open.cand.trains].filter(t => !open.seen.has(t)));
+      while(i < codes.length && rem.has(codes[i].n)){ open.seen.add(codes[i].n); rem.delete(codes[i].n); i++; }
+    }
+    if(i === 0) open = null;
+    while(i < codes.length){
+      const cands = idx.byCode.get(codes[i].n) || [];
+      if(!cands.length){ open = null; i++; continue; }
+      const scored = cands.map(c=>{
+        let run = 0;
+        while(i + run < codes.length && c.trains.has(codes[i + run].n)) run++;
+        let sc = run * 10;
+        if(prevPick && c.tn === prevPick.tn) sc += (c.idx === prevPick.idx + 1) ? 5 : 2;
+        return { c, run, sc };
+      });
+      const best = Math.max.apply(null, scored.map(x => x.sc));
+      const tops = scored.filter(x => x.sc === best);
+      const seen = new Set(), items = [];
+      tops.forEach(x=>{ const key = x.c.prez + '|' + x.c.rem; if(seen.has(key)) return; seen.add(key); items.push(x.c); });
+      const run = tops[0].run;
+      labels[d + '|' + codes[i].n] = items;
+      open = { cand: items[0], seen: new Set(codes.slice(i, i + run).map(c => c.n)) };
+      prevPick = items[0];
+      i += run;
+    }
+  }
+  _labelCache.set(block, labels);
+  return labels;
+}
+
+function turnusTimesHtml(block, day, code){
+  const items = computeTurnusLabels(block)[day + '|' + normCode(code)];
+  if(!items || !items.length) return '';
   const amb = items.length > 1;
   return items.map(c =>
     '<span class="t-times" title="Din fișa de pontaj, turnus ' + escapeHtml(c.tn) + '">Prezentare <b>' + escapeHtml(c.prez) +
@@ -961,7 +1001,7 @@ async function renderTeam(){
         '<div class="day-quick"><button class="btn ghost btn-sm" id="team-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="team-day-tomorrow" type="button">Mâine</button></div>' +
         '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
       '</div>' +
-      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna. La fiecare tren apar prezentarea și remizarea din fișa de pontaj (turnusurile salvate acolo).</div>' +
+      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna. Prezentarea și remizarea din fișa de pontaj apar la primul tren din fiecare segment de turnus (iar după dormitor, la primul tren următor).</div>' +
     '</div>' +
     '<div id="team-results"><div class="empty">Introdu numele, apoi apasă Arată programul.</div></div>';
 
@@ -1052,7 +1092,7 @@ async function runTeamSearch(){
         if(codes.length === 0) continue;
         const codesHtml = codes.map(code=>{
           const key = d + ':' + code.toLowerCase();
-          if(consumedDayCode.has(key)) return ''; // deja afișat ca parte din perechea zilei precedente
+          if(consumedDayCode.has(key) && !computeTurnusLabels(m.block)[d + '|' + normCode(code)]) return ''; // deja afișat ca parte din perechea zilei precedente (dacă nu începe un segment nou)
           const label = dayRangeLabel(m.block, d, code);
           if(label.indexOf('/') !== -1) consumedDayCode.add((d+1) + ':' + code.toLowerCase());
           const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
