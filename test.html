@@ -5,489 +5,1106 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EMX</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;900&family=Share+Tech+Mono&family=Exo+2:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
-    --bg:#050505;--surf:#0d0808;--surf2:#160c0c;
+    --bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;
     --bord:#3d1414;--bord2:#5c1c1c;
     --acc:#ff1f3d;--acc2:rgba(255,31,61,0.14);
-    --grn:#ff6b3d;
-    --org:#ff8c42;
+    --grn:#ff6b3d;--grn2:rgba(255,107,61,0.10);
+    --yel:#ffc940;--yel2:rgba(255,201,64,0.12);
+    --red:#ff2d55;--red2:rgba(255,45,85,0.09);
+    --org:#ff8c42;--org2:rgba(255,140,66,0.12);
     --txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a;
   }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html,body{height:100%;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
   body{
-    background:var(--bg); color:var(--txt);
+    background:var(--bg);
+    color:var(--txt);
     font-family:'Exo 2', sans-serif;
-    overflow-x:hidden; overflow-y:auto;
+    min-height:100vh;
+    padding-bottom:60px;
     position:relative;
   }
-  body::before{
-    content:''; position:fixed; inset:0;
-    background-image:
-      linear-gradient(rgba(255,31,61,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,31,61,0.03) 1px, transparent 1px);
-    background-size:42px 42px;
-    pointer-events:none; z-index:0;
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  h1,h2,h3,.display{font-family:'Rajdhani',sans-serif; letter-spacing:0.03em; text-transform:uppercase;}
+
+  .board{
+    border-bottom:1px solid var(--bord);
+    background:linear-gradient(135deg,#0a0303,#150606,#0a0303);
+    padding:22px 24px 18px;
+    position:sticky; top:0; z-index:20;
+    backdrop-filter:blur(6px);
+    overflow:hidden;
+    box-shadow:0 0 40px rgba(255,31,61,0.10),0 0 80px rgba(255,107,61,0.05);
   }
-  body::after{
-    content:''; position:fixed; inset:0;
-    background:radial-gradient(ellipse 900px 600px at 50% 40%, rgba(255,31,61,.10), transparent 65%);
-    pointer-events:none; z-index:0;
+  .board::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;padding:1px;background:linear-gradient(135deg,var(--acc),transparent,var(--grn),transparent,var(--acc));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .board::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,31,61,0.05),transparent);animation:hdrShine 4s infinite;pointer-events:none}
+  @keyframes hdrShine{0%{left:-100%}100%{left:200%}}
+  .board-top{display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:1;}
+  .emx-logo{display:flex; align-items:center; gap:0; line-height:1;}
+  .emx-e{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--acc);letter-spacing:-1.5px;text-shadow:0 0 24px var(--acc),0 0 48px rgba(255,31,61,0.5)}
+  .emx-m{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1.5px;text-shadow:0 0 16px rgba(255,255,255,0.4)}
+  .emx-x{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;color:var(--grn);letter-spacing:-1.5px;text-shadow:0 0 24px var(--grn),0 0 48px rgba(255,107,61,0.5)}
+  .emx-dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:blink 1.5s infinite;align-self:center}
+  .emx-dot.status-connected{ color:#2ed573; text-shadow:0 0 10px rgba(46,213,115,.85); }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+  .board-sub{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin-top:4px;}
+
+  .tabs{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; justify-content:center; position:relative; z-index:1;}
+  .tab{
+    padding:10px 16px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:600;
+    font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--txtd);
+    background:var(--surf); border:1px solid var(--bord); border-radius:6px; user-select:none;
+    transition:background .15s, color .15s;
+  }
+  .tab:hover{color:var(--txt); background:var(--surf2);}
+  .tab.active{color:#050505; background:var(--acc); border-color:var(--acc);}
+  .tab.cross{border:1px solid rgba(255,107,61,.4);}
+  .tab.cross.active{background:var(--grn); color:#050505; border-color:var(--grn);}
+  .tab.team{border:1px solid rgba(255,140,66,.4);}
+  .tab.team.active{background:var(--org); color:#050505; border-color:var(--org);}
+
+  main{max-width:1100px; margin:0 auto; padding:24px; position:relative; z-index:1;}
+
+  .card{
+    background:var(--surf); border:1px solid var(--bord); border-radius:10px; padding:18px 20px; margin-bottom:18px;
+  }
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;}
+  label{display:block; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:10px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;}
+  input[type=text], input[type=month]{
+    background:var(--surf2); border:1px solid var(--bord2); color:var(--txt); padding:9px 10px; border-radius:6px;
+    font-family:'Share Tech Mono',monospace; font-size:13px; min-width:160px;
+  }
+  input[type=text]:focus, input[type=month]:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc2);}
+  .btn{
+    background:var(--acc); color:#050505; border:none; padding:10px 18px; border-radius:6px;
+    font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; font-size:12px;
+    cursor:pointer; transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(1.1);}
+  .btn.ghost{background:transparent; border:1px solid var(--bord2); color:var(--txtd);}
+  .btn.ghost:hover{color:var(--red); border-color:var(--red);}
+  .btn.solid-green{background:var(--grn); color:#050505;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  input[type=file]{
+    font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--txtd);
+    max-width:260px;
   }
 
-  /* ================= PRELOADER ================= */
-  #preloader{
-    position:fixed; inset:0; z-index:100;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:var(--bg);
-    transition:opacity .7s ease, visibility .7s ease;
-  }
-  #preloader.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  .hint{color:var(--txtd); font-size:11px; margin-top:8px; line-height:1.5;}
+  .status{font-family:'Share Tech Mono',monospace; font-size:12px; margin-top:10px; color:var(--acc); min-height:16px;}
 
-  .ball-stage{
-    position:relative; width:170px; height:230px;
-    display:flex; align-items:center; justify-content:center;
+  .doc-list{display:flex; flex-direction:column; gap:8px;}
+  .doc-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--surf); border:1px solid var(--bord); border-radius:8px; padding:12px 16px;
+    cursor:pointer; transition:border-color .15s, background .15s;
   }
-  .ball{
-    width:150px; height:150px; position:relative;
-    animation: bounce 1.3s cubic-bezier(.45,0,.55,1) infinite;
-  }
-  .ball::before{
-    content:''; position:absolute; inset:-60px; z-index:0; pointer-events:none;
-    background:radial-gradient(circle, rgba(255,31,61,.62) 0%, rgba(255,31,61,.34) 32%, rgba(255,31,61,.10) 52%, transparent 68%);
-  }
-  .ball canvas{ position:relative; z-index:1; width:150px; height:150px; display:block; }
-  .ball-shadow{
-    position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
-    width:96px; height:18px; border-radius:50%;
-    background:rgba(0,0,0,.65); filter:blur(7px);
-    animation: shadowPulse 1.3s cubic-bezier(.45,0,.55,1) infinite;
-  }
+  .doc-item:hover{border-color:var(--acc); background:var(--surf2);}
+  .doc-name{font-weight:600; font-size:13.5px; font-family:'Exo 2',sans-serif;}
+  .doc-meta{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px; margin-top:3px;}
+  .doc-actions{display:flex; gap:8px; align-items:center;}
+  .empty{color:var(--txtd); font-size:13px; padding:20px 4px; text-align:center;}
 
-  @keyframes bounce{
-    0%,100%{ transform:translateY(-38px); }
-    50%{ transform:translateY(6px); }
-  }
-  @keyframes shadowPulse{
-    0%,100%{ width:64px; opacity:.35; }
-    50%{ width:100px; opacity:.7; }
-  }
+  .search-bar{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+  .day-quick{display:flex; gap:6px;}
+  .btn-sm{padding:9px 12px; font-size:11px;}
+  .search-note{font-size:11px; color:var(--txtd); margin-top:10px; line-height:1.5; border-left:3px solid var(--acc); padding-left:10px;}
 
-  .load-status{
-    margin-top:26px; display:flex; flex-direction:column; align-items:center; gap:10px;
+  .block{
+    background:var(--surf); border:1px solid var(--bord); border-radius:10px; margin-bottom:14px; overflow:hidden;
   }
-  .load-word{
-    font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:.35em;
-    text-transform:uppercase; color:var(--txtd);
+  .block.match{border-color:var(--acc);}
+  .block-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 16px; background:var(--surf2); border-bottom:1px solid var(--bord);
   }
-  .load-bar{
-    width:180px; height:3px; background:var(--surf2); border:1px solid var(--bord);
-    border-radius:2px; overflow:hidden;
+  .block-name{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.03em; font-size:14px; color:var(--acc);}
+  .block-role{font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--grn); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+  .block-idx{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
+  .block-body{padding:12px 16px;}
+  .day-hit{
+    display:inline-block; background:var(--surf2); border:1px solid var(--acc); color:var(--acc);
+    font-family:'Share Tech Mono',monospace; font-size:11px; padding:3px 8px; border-radius:5px; margin-bottom:8px;
   }
-  .load-bar-fill{
-    height:100%; width:0%; background:linear-gradient(90deg, var(--acc), var(--grn));
-    box-shadow:0 0 10px rgba(255,31,61,.6);
-    transition:width .1s linear;
+  .raw-text{
+    font-family:'Share Tech Mono',monospace; font-size:11.5px; line-height:1.7; white-space:pre-wrap; word-break:break-all; color:var(--txtm); max-height:220px; overflow:auto;
   }
-  .load-pct{
-    font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--acc); letter-spacing:.08em;
-  }
+  .raw-text mark{background:var(--acc); color:#050505; padding:0 2px; border-radius:2px;}
 
-  /* ================= MAIN ================= */
-  #main{
-    position:relative; z-index:1;
-    min-height:100vh;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    padding:24px 24px 60px; text-align:center;
-    opacity:0; transform:translateY(14px);
-    transition:opacity .8s ease, transform .8s ease;
-  }
-  #main.show{ opacity:1; transform:translateY(0); }
+  .back-link{color:var(--txtd); font-family:'Rajdhani',sans-serif; font-weight:600; letter-spacing:.05em; text-transform:uppercase; font-size:12px; cursor:pointer; margin-bottom:14px; display:inline-block;}
+  .back-link:hover{color:var(--acc);}
 
-  .logo{
-    display:flex; align-items:baseline; gap:2px; line-height:1; margin-bottom:8px;
-  }
-  .logo .e{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:var(--acc); letter-spacing:-2px; text-shadow:0 0 26px rgba(255,31,61,.6);}
-  .logo .m{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:#fff; letter-spacing:-2px; text-shadow:0 0 18px rgba(255,255,255,.35);}
-  .logo .x{font-family:'Rajdhani',sans-serif; font-size:clamp(52px,12vw,84px); font-weight:900; color:var(--grn); letter-spacing:-2px; text-shadow:0 0 26px rgba(255,107,61,.6);}
-  .logo .dot{color:var(--acc); font-size:22px; margin-left:6px; animation:blink 1.6s infinite;}
-  .logo .dot.status-connected{ color:#2ed573; text-shadow:0 0 14px rgba(46,213,115,.9); }
-  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:.2;}}
+  .section-title{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; color:var(--txtd); text-transform:uppercase; letter-spacing:0.1em; margin:26px 0 10px;}
 
-  .tagline{
-    font-family:'Share Tech Mono',monospace; font-size:11.5px; letter-spacing:.28em;
-    text-transform:uppercase; color:var(--txtd); margin-bottom:26px;
+  .result-card{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--surf); border:1px solid var(--bord); border-left:3px solid var(--grn);
+    border-radius:8px; padding:12px 16px; margin-bottom:8px;
   }
+  .result-name{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; color:var(--txt);}
+  .result-meta{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:3px;}
+  .result-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-size:13px; font-weight:700;}
 
-  .admin-btn{
-    position:fixed; top:18px; right:18px; z-index:50;
-    padding:7px 14px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:11px;
-    letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf);
-    color:var(--txtd); cursor:pointer; transition:border-color .15s, color .15s;
+  .person-card{
+    background:var(--surf); border:1px solid rgba(255,140,66,.35); border-radius:10px; padding:16px 18px; margin-bottom:16px;
   }
-  .admin-btn:hover{ border-color:var(--acc); color:var(--acc); }
-  .admin-btn.connected{ color:var(--grn); border-color:rgba(255,107,61,.4); }
+  .person-card .p-name{font-family:'Rajdhani',sans-serif; font-weight:800; font-size:18px; color:var(--org);}
+  .person-card .p-role{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:2px; text-transform:uppercase; letter-spacing:.06em;}
+  .train-group{background:var(--surf2); border:1px solid var(--bord); border-radius:8px; padding:10px 14px; margin-top:12px;}
+  .train-group .t-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-weight:700; font-size:13px; margin-bottom:8px; display:block;}
+  .t-times{font-family:'Share Tech Mono',monospace; font-size:11px; font-weight:400; color:var(--yel); margin-left:10px; white-space:nowrap;}
+  .t-times b{color:var(--txt); font-weight:700;}
+  .crew-row{display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; border-top:1px dashed var(--bord);}
+  .crew-row:first-of-type{border-top:none;}
+  .crew-name{color:var(--txt);}
+  .crew-role{color:var(--txtd); font-family:'Share Tech Mono',monospace; font-size:11px;}
 
-  .overlay{
-    position:fixed; inset:0; z-index:200; display:none;
-    align-items:center; justify-content:center; padding:20px;
-    background:rgba(5,5,5,.85); backdrop-filter:blur(4px);
-  }
-  .overlay.open{ display:flex; }
-  .modal{
-    background:var(--surf); border:1px solid var(--bord2); border-radius:14px;
-    padding:24px; width:100%; max-width:380px; position:relative; text-align:left;
-  }
-  .modal::before{
-    content:''; position:absolute; top:0; left:0; right:0; height:2px; border-radius:14px 14px 0 0;
-    background:linear-gradient(90deg, var(--acc), var(--grn));
-  }
-  .modal-title{
-    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16px; letter-spacing:.04em;
-    text-transform:uppercase; color:var(--txt); margin-bottom:14px;
-  }
-  .modal-close{
-    position:absolute; top:12px; right:14px; background:none; border:none; color:var(--txtd);
-    font-size:18px; cursor:pointer; line-height:1;
-  }
-  .modal-close:hover{ color:var(--acc); }
-  .modal-status{
-    font-family:'Share Tech Mono',monospace; font-size:11.5px; color:var(--txtd); margin-bottom:12px;
-  }
-  .modal-status.connected{ color:var(--grn); }
-  .gh-form input{
-    width:100%; background:var(--surf2); border:1px solid var(--bord2); color:var(--txt);
-    padding:9px 10px; border-radius:6px; font-family:'Share Tech Mono',monospace; font-size:12.5px;
-    margin-bottom:12px;
-  }
-  .gh-form input:focus{ outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc2); }
-  .gh-btn{
-    padding:9px 14px; border-radius:6px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px;
-    letter-spacing:.06em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf2);
-    color:var(--txtd); cursor:pointer; transition:filter .15s, border-color .15s, color .15s; width:100%;
-  }
-  .gh-btn.primary{ background:var(--acc); color:#050505; border-color:var(--acc); margin-bottom:8px; }
-  .gh-btn:hover{ filter:brightness(1.1); }
-  .gh-btn.ghost:hover{ color:var(--acc,#ff2d55); border-color:var(--acc,#ff2d55); }
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--bord2); border-radius:4px;}
 
-  .actions{
-    display:flex; gap:18px; flex-wrap:wrap; justify-content:center; max-width:520px;
+  .page-nav{
+    max-width:1100px; margin:16px auto 0; padding:12px 16px;
+    background:var(--surf); border:1px solid var(--bord); border-radius:10px;
+    display:flex; gap:10px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1;
   }
-  .action-btn{
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-    width:210px; padding:30px 20px;
-    background:var(--surf); border:1px solid var(--bord2); border-radius:14px;
-    text-decoration:none; color:var(--txt);
-    position:relative; overflow:hidden;
-    transition:transform .2s ease, border-color .2s ease, background .2s ease;
+  .page-nav-btn{
+    display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--txtd); background:var(--surf2); border:1px solid var(--bord2); border-radius:7px;
+    text-decoration:none; transition:background .15s,color .15s,border-color .15s;
   }
-  .action-btn::before{
-    content:''; position:absolute; top:0; left:0; right:0; height:2px;
-    background:linear-gradient(90deg, var(--acc), var(--grn)); opacity:.85;
-  }
-  .action-btn:hover{ transform:translateY(-4px); border-color:var(--acc); background:var(--surf2); }
-  .action-icon{ font-size:30px; filter:drop-shadow(0 0 10px rgba(255,31,61,.5)); }
-  .action-title{
-    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; letter-spacing:.03em; text-transform:uppercase;
-  }
-  .action-sub{
-    font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--txtd); letter-spacing:.05em;
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    .ball, .ball-shadow{ animation:none !important; }
-  }
+  .page-nav-btn:hover{color:var(--txt); border-color:var(--acc);}
+  .page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
+  .page-nav-btn.auth{border-color:rgba(255,107,61,.4);}
+  .page-nav-btn.auth.connected{color:var(--grn); border-color:rgba(255,107,61,.6);}
 </style>
 </head>
 <body>
 
-<div id="preloader">
-  <div class="ball-stage">
-    <div class="ball"><canvas id="ballCanvas" width="300" height="300"></canvas></div>
-    <div class="ball-shadow"></div>
-  </div>
-  <div class="load-status">
-    <div class="load-word">se încarcă</div>
-    <div class="load-bar"><div class="load-bar-fill" id="loadFill"></div></div>
-    <div class="load-pct" id="loadPct">0%</div>
-  </div>
-</div>
-
-<div id="main">
-  <div class="logo">
-    <span class="e">E</span><span class="m">M</span><span class="x">X</span><span class="dot" id="statusDot">●</span>
-  </div>
-  <div class="tagline">alege instrumentul</div>
-
-  <div class="actions" id="actions">
-    <a href="fisalucru.html" class="action-btn">
-      <span class="action-icon">📋</span>
-      <span class="action-title">Fișă de lucru</span>
-      <span class="action-sub">program &amp; turnusuri</span>
-    </a>
-    <a href="salariu.html" class="action-btn">
-      <span class="action-icon">💰</span>
-      <span class="action-title">Calcul salariu</span>
-      <span class="action-sub">fluturaș &amp; ore</span>
-    </a>
-    <a href="intarzieri.html" class="action-btn">
-      <span class="action-icon">🚆</span>
-      <span class="action-title">Întârzieri</span>
-      <span class="action-sub">trenuri &amp; sosiri</span>
-    </a>
-    <a href="fisapontaj.html" class="action-btn">
-      <span class="action-icon">📅</span>
-      <span class="action-title">Pontaj</span>
-      <span class="action-sub">fișă de pontaj</span>
-    </a>
-    <a href="bani.html" class="action-btn" id="baniBtn" style="display:none;">
-      <span class="action-icon">💵</span>
-      <span class="action-title">Bani de luat</span>
-      <span class="action-sub">registru financiar</span>
-    </a>
-  </div>
-</div>
-
-<button class="admin-btn" id="adminBtn">Admin</button>
-
-<div class="overlay" id="adminOverlay">
-  <div class="modal">
-    <button class="modal-close" id="adminClose">✕</button>
-    <div class="modal-title">⚙ Admin</div>
-    <div class="modal-status" id="adminStatus">🔒 Neconectat</div>
-    <div class="gh-form" id="adminForm">
-      <input type="password" id="ghTokenInput" placeholder="Token GitHub (ghp_...)" autocomplete="off">
-      <button class="gh-btn primary" id="ghConnectBtn">Conectează</button>
+<div class="board">
+  <div class="board-top">
+    <div class="emx-logo">
+      <span class="emx-e">E</span><span class="emx-m">M</span><span class="emx-x">X</span>
+      <span class="emx-dot" id="statusDot">●</span>
     </div>
-    <button class="gh-btn ghost" id="ghDisconnectBtn" style="display:none;">Deconectează</button>
+    <div class="board-sub">PROGRAM DE LUCRU</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>
+    <div class="tab" data-cat="mecanici">Mecanici</div>
+    <div class="tab cross" data-cat="cross">Cine e la trenul X?</div>
+    <div class="tab team" data-cat="team">Programul unei persoane</div>
   </div>
 </div>
 
+<div class="page-nav">
+  <a href="index.html" class="page-nav-btn">🏠 Acasă</a>
+  <span class="page-nav-btn active">📋 Fișă de lucru</span>
+  <a href="salariu.html" class="page-nav-btn">💰 Calcul salariu</a>
+  <a href="bani.html" class="page-nav-btn" id="navBani">💵 Bani de luat</a>
+  <a href="intarzieri.html" class="page-nav-btn">🚆 Întârzieri</a>
+  <a href="fisapontaj.html" class="page-nav-btn">📅 Pontaj</a>
+</div>
+
+<main id="app"></main>
+
 <script>
-  // ── GitHub token gate (same key used across the EMX suite) ──
-  var TOKEN_KEY = 'emx_gh_token';
-  function getToken(){ return localStorage.getItem(TOKEN_KEY) || ''; }
-  function setToken(t){ localStorage.setItem(TOKEN_KEY, t); }
-  function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
-  function hasToken(){ return !!getToken(); }
+const CATS = {
+  conductori: "Șefi Tren / Vânzători Bilete",
+  mecanici: "Mecanici"
+};
+let state = {
+  category: 'conductori',
+  view: 'list',
+  openDocId: null,
+  docsMeta: { conductori: [], mecanici: [] },
+  query: '',
+  dayQuery: '',
+  crossDay: '',
+  crossCode: '',
+  teamName: '',
+  teamDay: ''
+};
 
-  var adminBtn = document.getElementById('adminBtn');
-  var adminOverlay = document.getElementById('adminOverlay');
-  var adminStatus = document.getElementById('adminStatus');
-  var adminForm = document.getElementById('adminForm');
-  var disconnectBtn = document.getElementById('ghDisconnectBtn');
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  function refreshAdminUI(){
-    adminBtn.classList.toggle('connected', hasToken());
-    document.getElementById('statusDot').classList.toggle('status-connected', hasToken());
-    if(hasToken()){
-      adminStatus.textContent = '🟢 Conectat la GitHub';
-      adminStatus.classList.add('connected');
-      adminForm.style.display = 'none';
-      disconnectBtn.style.display = '';
-    } else {
-      adminStatus.textContent = '🔒 Neconectat';
-      adminStatus.classList.remove('connected');
-      adminForm.style.display = '';
-      disconnectBtn.style.display = 'none';
+// ---- Persistence on GitHub: reading is public (no token needed), writing needs a token ----
+const GH_OWNER = 'vladynitu1';
+const GH_REPO = 'vladynitu1.github.io';
+const GH_BRANCH = 'main';
+const DATA_DIR = 'data';
+const TOKEN_KEY = 'emx_gh_token';
+
+function getToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
+function hasToken(){ return !!getToken(); }
+
+function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function encodePath(path){ return path.split('/').map(encodeURIComponent).join('/'); }
+
+// Public read: goes through the GitHub API first (reflects the latest commit immediately,
+// unlike the raw.githubusercontent.com CDN which can lag a few minutes behind a write).
+// Falls back to the CDN copy only if the API call fails (e.g. rate limit) so search stays usable.
+async function ghFetchRaw(path){
+  const token = getToken();
+  const apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH;
+  try{
+    const headers = { Accept: 'application/vnd.github.raw' };
+    if(token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(apiUrl, { cache: 'no-store', headers });
+    if(res.status === 404) return null;
+    if(res.ok){
+      const text = await res.text();
+      try{ return JSON.parse(text); }catch(e){ return null; }
     }
-    document.getElementById('baniBtn').style.display = hasToken() ? '' : 'none';
-  }
+  }catch(e){ /* fall through to CDN fallback below */ }
 
-  function openAdmin(){
-    document.getElementById('ghTokenInput').value = '';
-    refreshAdminUI();
-    adminOverlay.classList.add('open');
+  try{
+    const cdnUrl = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + path + '?t=' + Date.now();
+    const res2 = await fetch(cdnUrl, { cache: 'no-store' });
+    if(res2.status === 404) return null;
+    if(!res2.ok) return null;
+    return await res2.json();
+  }catch(e2){
+    console.error('ghFetchRaw failed', path, e2);
+    return null;
   }
-  function closeAdmin(){
-    adminOverlay.classList.remove('open');
-  }
+}
 
-  async function connectToken(){
-    var input = document.getElementById('ghTokenInput');
-    var btn = document.getElementById('ghConnectBtn');
-    var val = input.value.trim();
-    if(!val) return;
-    btn.disabled = true; btn.textContent = 'Se verifică...';
-    try{
-      var res = await fetch('https://api.github.com/repos/vladynitu1/Vlad', {
-        headers: { 'Authorization': 'token ' + val, 'Accept': 'application/vnd.github+json' }
-      });
-      if(!res.ok) throw new Error('Token invalid sau fără acces la repo.');
-      setToken(val);
-      refreshAdminUI();
-    }catch(e){
-      alert('Nu am putut conecta: ' + e.message);
-    }
-    btn.disabled = false; btn.textContent = 'Conectează';
-  }
-
-  adminBtn.onclick = openAdmin;
-  document.getElementById('adminClose').onclick = closeAdmin;
-  adminOverlay.addEventListener('click', function(e){ if(e.target === adminOverlay) closeAdmin(); });
-  document.getElementById('ghConnectBtn').onclick = connectToken;
-  document.getElementById('ghTokenInput').addEventListener('keydown', function(e){
-    if(e.key === 'Enter') connectToken();
+async function ghGetSha(path, token){
+  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH, {
+    headers: token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : { Accept: 'application/vnd.github+json' }
   });
-  disconnectBtn.onclick = function(){
-    clearToken();
-    refreshAdminUI();
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('Nu am putut verifica fișierul existent pe GitHub (' + res.status + ')');
+  const data = await res.json();
+  return data.sha;
+}
+
+// Write: requires a token with write access to the repo.
+async function ghPutFile(path, obj, message){
+  const token = getToken();
+  if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
+  const sha = await ghGetSha(path, token).catch(()=>null);
+  const body = { message, content: b64EncodeUnicode(JSON.stringify(obj, null, 2)), branch: GH_BRANCH };
+  if(sha) body.sha = sha;
+  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const errText = await res.text().catch(()=>'');
+    throw new Error('Eroare la salvarea pe GitHub (' + res.status + '): ' + errText);
+  }
+  return await res.json();
+}
+
+async function ghDeleteFile(path, message){
+  const token = getToken();
+  if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
+  const sha = await ghGetSha(path, token);
+  if(!sha) return null;
+  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, sha, branch: GH_BRANCH })
+  });
+  if(!res.ok){
+    const errText = await res.text().catch(()=>'');
+    throw new Error('Eroare la ștergerea de pe GitHub (' + res.status + '): ' + errText);
+  }
+  return await res.json();
+}
+
+
+function uid(){ return 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+async function loadMeta(cat){
+  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/index.json');
+  state.docsMeta[cat] = Array.isArray(data) ? data : [];
+}
+async function saveMeta(cat){
+  await ghPutFile(DATA_DIR + '/' + cat + '/index.json', state.docsMeta[cat], 'update index ' + cat);
+}
+async function loadAllMeta(){
+  await loadMeta('conductori');
+  await loadMeta('mecanici');
+}
+
+function renderTabs(){
+  const tabsEl = document.getElementById('tabs');
+  const authed = hasToken();
+  let html = '';
+  if(authed){
+    html += '<div class="tab' + (state.category==='conductori' && state.view==='list' || (state.view==='detail'&&state.category==='conductori') ? ' active':'') + '" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>';
+    html += '<div class="tab' + (state.category==='mecanici' && (state.view==='list'||state.view==='detail') ? ' active':'') + '" data-cat="mecanici">Mecanici</div>';
+  }
+  html += '<div class="tab cross' + (state.view==='cross' ? ' active':'') + '" data-cat="cross">Cine e la trenul X?</div>';
+  html += '<div class="tab team' + (state.view==='team' ? ' active':'') + '" data-cat="team">Programul unei persoane</div>';
+  tabsEl.innerHTML = html;
+  setTabHandlers();
+  updateGhAccountBtn();
+}
+
+function setTabHandlers(){
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick = ()=>{
+      if(t.dataset.cat === 'cross'){
+        state.view = 'cross';
+        renderTabs();
+        render();
+        return;
+      }
+      if(t.dataset.cat === 'team'){
+        state.view = 'team';
+        renderTabs();
+        render();
+        return;
+      }
+      if((t.dataset.cat === 'conductori' || t.dataset.cat === 'mecanici') && !hasToken()){
+        return; // guarded: shouldn't be reachable without a token, but double-check
+      }
+      state.category = t.dataset.cat;
+      state.view='list'; state.openDocId=null; state.query=''; state.dayQuery='';
+      renderTabs();
+      render();
+    };
+  });
+}
+
+// ---- Positioned PDF extraction: keeps x per token so day-columns can be reconstructed ----
+async function extractPdfRows(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const allRows = [];
+  const ROW_TOLERANCE = 2;
+  for(let p=1;p<=pdf.numPages;p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items
+      .map(item => ({ x: item.transform[4], y: item.transform[5], w: item.width || 0, str: item.str.trim() }))
+      .filter(i => i.str.length > 0);
+    items.sort((a,b) => b.y - a.y || a.x - b.x);
+    let clusters = [];
+    let current = null;
+    items.forEach(it=>{
+      if(current && Math.abs(it.y - current.refY) <= ROW_TOLERANCE){
+        current.items.push(it);
+      } else {
+        if(current) clusters.push(current);
+        current = { refY: it.y, items: [it] };
+      }
+    });
+    if(current) clusters.push(current);
+    clusters.forEach(c=>{
+      const sorted = c.items.slice().sort((a,b)=>a.x-b.x);
+      allRows.push({ y: c.refY, items: sorted.map(i=>({x:i.x, w:i.w, str:i.str})) });
+    });
+  }
+  return allRows;
+}
+
+function rowsToText(rows){
+  return rows.map(r => r.items.map(i=>i.str).join(' ')).join('\n');
+}
+
+// ---- Split positioned rows into per-employee blocks, with a day->codes map ----
+function splitBlocksStructured(rows){
+  const blocks = [];
+  let current = null;
+
+  function isHeaderRow(items){
+    const strs = items.map(i=>i.str);
+    return strs.includes('Data') && strs.filter(s=>/^\d{1,2}$/.test(s)).length >= 15;
+  }
+  function isTimeRow(items){
+    const timeLike = items.filter(i=>/^\d{1,2}:\d{2}$/.test(i.str) || /^\d::\d{2}$/.test(i.str)).length;
+    return items.length > 0 && (timeLike / items.length) > 0.5;
+  }
+  function isCoStartRow(items){
+  const strs = items.map(i=>i.str);
+  return (strs.includes('inceput') && strs.includes('luna')) ||
+    strs.some(s => /inceput/i.test(s) && /luna/i.test(s));
+}
+
+  rows.forEach(row=>{
+    if(isHeaderRow(row.items)){
+      if(current) blocks.push(current);
+      const dayTokens = row.items.filter(i=>/^\d{1,2}$/.test(i.str))
+        .map(i=>({ x: i.x, w: i.w, str: i.str, day: parseInt(i.str, 10) }))
+        .filter(i=>i.day >= 1 && i.day <= 31);
+      current = { headerRow: row, dayTokens, codeRows: [], allRows: [] };
+    } else if(current){
+      current.allRows.push(row);
+      if(!isTimeRow(row.items) && !isCoStartRow(row.items)){
+        current.codeRows.push(row);
+      }
+    }
+  });
+  if(current) blocks.push(current);
+
+  return blocks.map((b, idx)=>{
+    const colX = b.dayTokens.map(t=>t.x + (t.w||0)/2);
+    const colDay = b.dayTokens.map(t=>t.day);
+    const n = colX.length;
+    let gap = n > 1 ? (colX[n-1] - colX[0]) / (n-1) : 20;
+
+    const dayCodes = {};
+    for(let d=1; d<=31; d++) dayCodes[d] = [];
+
+    const allText = rowsToText(b.allRows);
+    const NON_NAME = new Set(['efect','Serv','Prenume','Nume','Data','ore','Total','crt','Nr','Sc','ASC','Reg','Reg.','Auto','Festive','Mecanic','Sef','tren','bilete','V','CO','L','ITS','SSM','SU','TL','CM','VPP','SMM']);
+    function isAllCapsCode(t){
+      // Codurile SCURTE din grafic (TL, CO, L, CM, R etc.) sunt scrise doar cu MAJUSCULE și au
+      // cel mult 2 litere. Codurile mai lungi, tot cu majuscule (SSM, VPP, ASC, ITS, SMM...), sunt
+      // cunoscute și adăugate explicit în NON_NAME mai sus, nu mai sunt „ghicite" după lungime.
+      // NU mai tratăm orice token 100% majuscul ca fiind cod, indiferent de lungime, pentru că în
+      // unele fișiere (ex. Brasov-Bucuresti, Cluj) și NUMELE angajaților sunt scrise integral cu
+      // MAJUSCULE (ex. "RADU", "NELUTA", "CHIFOR", "SUCEAVA", "POPA", "TUDORACHE") — un prag de
+      // lungime le desparte corect de coduri, pentru că niciun nume real din aceste fișiere nu are
+      // 1-2 litere.
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length > 0 && letters.length <= 2 && letters === letters.toUpperCase();
+    }
+    function isLabelToken(t){
+      if(NON_NAME.has(t)) return true;
+      if(isAllCapsCode(t)) return true;
+      const words = t.split(/\s+/).filter(Boolean);
+      return words.length > 0 && words.every(w => NON_NAME.has(w) || isAllCapsCode(w));
+    }
+    function firstNameToken(tokens){
+      for(const t of tokens){
+        if(/\d/.test(t)) continue;
+        if(isLabelToken(t)) continue;
+        if(t.length < 2) continue;
+        return t;
+      }
+      return '';
+    }
+    // Numele lungi (ex. "RADULESCU", "CRISTIAN") depășesc lățimea celulei din PDF și
+    // se rup pe o a doua linie fizică ("RADUL" / "ESCU"), care ajunge într-un rând
+    // (y-cluster) DIFERIT de restul rândului (codurile zilnice + "Festive"/orele totale).
+    // Vechea logică citea un singur rând (cel cu "Festive") și lua doar fragmentul rămas
+    // acolo — de-asta ieșeau nume ca "CRISTI" sau "ESCU CRISTI" în loc de "RADULESCU CRISTIAN".
+    // Noua logică scanează coloana Nume/Prenume (imediat la stânga zilei 1) pe toate
+    // rândurile blocului, de la început până la rândul de rol ("Sef tren"/"Mecanic"/"V bilete"),
+    // și reasamblează fragmentele în ordine: tot ce e până la (și inclusiv) rândul cu "Festive"
+    // e numele de familie, tot ce urmează e prenumele. Fragmentele se lipesc fără spațiu,
+    // pentru că o linie ruptă e continuarea aceluiași cuvânt, nu un cuvânt nou.
+    const nameColMaxX = (n > 1 && colX.length) ? (colX[0] - gap * 0.6) : 115;
+    function isNameFragment(t){
+      if(!t) return false;
+      if(/\d/.test(t)) return false;
+      // Respinge etichete cunoscute, inclusiv varianta combinată "Serv efect" (eticheta
+      // verticală a coloanei apare uneori ca un singur token cu spațiu, alteori ca două
+      // separate) — dar NU folosim isAllCapsCode aici, ca să nu respingem un fragment de
+      // nume legitim de 2 litere (ex. "AN" din "CRISTIAN").
+      const words = t.split(/\s+/).filter(Boolean);
+      if(words.length > 0 && words.every(w => NON_NAME.has(w))) return false;
+      const letters = t.replace(/[^a-zA-ZăâîșțĂÂÎȘȚ]/g, '');
+      return letters.length >= 1;
+    }
+    let roleRowIdx = b.allRows.length;
+    for(let i=0;i<b.allRows.length;i++){
+      // Verificăm textul ÎNTREGULUI rând, nu doar tokenii individuali: în funcție de PDF,
+      // "Sef tren" / "V bilete II" pot ieși ca un singur token combinat SAU ca tokeni separați
+      // ("Sef" + "tren"), iar o verificare doar pe tokeni exacți ratează varianta combinată.
+      const rowText = b.allRows[i].items.map(it=>it.str).join(' ');
+      const isRoleRow = /Sef\s*tren/i.test(rowText) || /Mecanic/i.test(rowText) || /bilete/i.test(rowText);
+      if(isRoleRow){ roleRowIdx = i; break; }
+    }
+    let festiveRowIdx = -1;
+    for(let i=0;i<roleRowIdx;i++){
+      if(b.allRows[i].items.some(it=>it.str === 'Festive')){ festiveRowIdx = i; break; }
+    }
+    const surnameFrags = [], firstnameFrags = [];
+    for(let i=0;i<roleRowIdx;i++){
+      const frags = b.allRows[i].items.filter(it=>it.x < nameColMaxX).map(it=>it.str).filter(isNameFragment);
+      if(frags.length === 0) continue;
+      if(festiveRowIdx === -1 || i <= festiveRowIdx) surnameFrags.push(...frags);
+      else firstnameFrags.push(...frags);
+    }
+    const surname = surnameFrags.join('');
+    const firstname = firstnameFrags.join('');
+    const name = (surname || firstname) ? (surname + ' ' + firstname).trim() : ('Bloc ' + (idx+1) + ' (nume neidentificat)');
+
+    let role = 'Necunoscut';
+    if(/Sef\s*tren/i.test(allText)) role = 'Șef tren';
+    else if(/V\s*bilete\s*II/i.test(allText)) role = 'Vânzător bilete II';
+    else if(/V\s*bilete\s*I\b/i.test(allText)) role = 'Vânzător bilete I';
+    else if(/Mecanic/i.test(allText)) role = 'Mecanic';
+
+    const excludeTokens = new Set([surname, firstname, ...surnameFrags, ...firstnameFrags, 'Festive'].filter(Boolean));
+
+    if(n > 1){
+      const maxGapAllowed = gap * 0.75;
+      b.codeRows.forEach(row=>{
+        row.items.forEach(item=>{
+          if(excludeTokens.has(item.str)) return;
+          const x = item.x + (item.w||0)/2;
+          let bestDay = -1, bestDist = Infinity;
+          for(let k=0;k<n;k++){
+            const dist = Math.abs(x - colX[k]);
+            if(dist < bestDist){ bestDist = dist; bestDay = colDay[k]; }
+          }
+          if(bestDay === -1 || bestDist > maxGapAllowed) return;
+          dayCodes[bestDay].push(item.str);
+        });
+      });
+    }
+
+    return { id: idx, name, role, dayCodes, text: allText };
+  }).filter(b => b.text.trim().length > 0);
+}
+
+async function handleUpload(cat, file, month){
+  const statusEl = document.getElementById('upload-status');
+  if(!hasToken()){ statusEl.textContent = 'Ai nevoie de un token GitHub pentru a încărca fișiere.'; return; }
+  if(!file){ statusEl.textContent = 'Alege un fișier PDF.'; return; }
+  statusEl.textContent = 'Se extrage textul din PDF...';
+  try{
+    const rows = await extractPdfRows(file);
+    const id = uid();
+    statusEl.textContent = 'Se urcă pe GitHub...';
+    await ghPutFile(DATA_DIR + '/' + cat + '/' + id + '.json', { rows }, 'add doc ' + file.name);
+    const meta = { id, filename: file.name, month: month || '', uploadedAt: new Date().toISOString() };
+    state.docsMeta[cat].unshift(meta);
+    await saveMeta(cat);
+    statusEl.textContent = 'Salvat pe GitHub: ' + file.name;
+    render();
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = 'Eroare: ' + e.message;
+  }
+}
+
+async function deleteDoc(cat, id){
+  if(!hasToken()){ alert('Ai nevoie de un token GitHub pentru a șterge fișiere.'); return; }
+  if(!confirm('Ștergi definitiv acest program?')) return;
+  const statusEl = document.getElementById('upload-status');
+  if(statusEl) statusEl.textContent = 'Se șterge de pe GitHub...';
+  try{
+    await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.json', 'delete doc ' + id);
+    state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
+    await saveMeta(cat);
+    delete _blocksCache[cat + ':' + id];
+    if(state.openDocId===id){ state.view='list'; state.openDocId=null; }
+    if(statusEl) statusEl.textContent = 'Șters.';
+    render();
+  }catch(e){
+    console.error(e);
+    alert('Eroare la ștergere: ' + e.message);
+    if(statusEl) statusEl.textContent = 'Eroare la ștergere.';
+  }
+}
+
+function normalize(s){
+  return (s||'').toLowerCase()
+    .replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/ș/g,'s').replace(/ț/g,'t');
+}
+
+function todayDayOfMonth(){ return new Date().getDate(); }
+function tomorrowDayOfMonth(){ const d = new Date(); d.setDate(d.getDate()+1); return d.getDate(); }
+
+function trainCodesForDay(block, day){
+  return (block.dayCodes[day] || []).filter(tok => /\d/.test(tok));
+}
+
+// Trenurile de noapte apar uneori cu același cod atât în ziua X cât și în ziua X+1 (pleacă
+// seara, ajunge după miezul nopții). Aici detectăm asta ca să putem afișa "ziua 3/4" în loc
+// de o singură zi, care ar fi înșelătoare pentru un tren de noapte.
+function dayRangeLabel(block, day, code){
+  const norm = c => (c||'').toLowerCase();
+  const hasNext = (block.dayCodes[day+1] || []).some(c => norm(c) === norm(code));
+  const hasPrev = (block.dayCodes[day-1] || []).some(c => norm(c) === norm(code));
+  if(hasNext) return day + '/' + (day+1);
+  if(hasPrev) return (day-1) + '/' + day;
+  return String(day);
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+function highlight(text, query){
+  if(!query) return escapeHtml(text);
+  const esc = escapeHtml(text);
+  const safeQ = query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return esc.replace(new RegExp('('+safeQ+')','gi'), '<mark>$1</mark>');
+}
+
+const _blocksCache = {};
+async function getBlocksForDoc(cat, id){
+  const cacheKey = cat + ':' + id;
+  if(_blocksCache[cacheKey]) return _blocksCache[cacheKey];
+  const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/' + id + '.json');
+  const rows = data && Array.isArray(data.rows) ? data.rows : [];
+  if(!rows.length) return [];
+  const blocks = splitBlocksStructured(rows);
+  _blocksCache[cacheKey] = blocks;
+  return blocks;
+}
+
+async function renderDetail(cat, doc){
+  const container = document.getElementById('app');
+  container.innerHTML = '<span class="back-link" id="back-btn">&larr; înapoi la listă</span>' +
+    '<h2 style="margin:4px 0 2px;">' + escapeHtml(doc.filename) + '</h2>' +
+    '<div class="doc-meta" style="margin-bottom:16px;">' + CATS[cat] + (doc.month ? ' · ' + escapeHtml(doc.month) : '') + ' · încărcat ' + new Date(doc.uploadedAt).toLocaleDateString('ro-RO') + '</div>' +
+    '<div class="card">' +
+      '<div class="search-bar">' +
+        '<div><label>Cod (ex. 16565)</label><input type="text" id="q-code" placeholder="cod / nume" value="' + escapeHtml(state.query) + '"></div>' +
+        '<div><label>Zi (1-31, opțional)</label><input type="text" id="q-day" placeholder="ex. 15" value="' + escapeHtml(state.dayQuery) + '" style="min-width:80px;"></div>' +
+        '<div class="day-quick"><button class="btn ghost btn-sm" id="q-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="q-day-tomorrow" type="button">Mâine</button></div>' +
+        '<button class="btn" id="search-btn">Caută</button>' +
+        '<button class="btn ghost" id="clear-btn">Șterge filtrul</button>' +
+      '</div>' +
+      '<div class="search-note">Dacă pui și ziua, verificăm exact codul din ziua respectivă (poziția e reconstruită din PDF); fără zi, căutăm codul oriunde în program.</div>' +
+    '</div>' +
+    '<div id="blocks-container"><div class="empty">Se procesează...</div></div>';
+
+  document.getElementById('back-btn').onclick = ()=>{ state.view='list'; state.openDocId=null; render(); };
+
+  const blocks = await getBlocksForDoc(cat, doc.id);
+
+  document.getElementById('search-btn').onclick = ()=>{
+    state.query = document.getElementById('q-code').value.trim();
+    state.dayQuery = document.getElementById('q-day').value.trim();
+    renderBlocks(blocks);
   };
+  document.getElementById('q-day-today').onclick = ()=>{
+    document.getElementById('q-day').value = String(todayDayOfMonth());
+    document.getElementById('search-btn').click();
+  };
+  document.getElementById('q-day-tomorrow').onclick = ()=>{
+    document.getElementById('q-day').value = String(tomorrowDayOfMonth());
+    document.getElementById('search-btn').click();
+  };
+  document.getElementById('clear-btn').onclick = ()=>{
+    state.query=''; state.dayQuery='';
+    document.getElementById('q-code').value='';
+    document.getElementById('q-day').value='';
+    renderBlocks(blocks);
+  };
+  ['q-code','q-day'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown', e=>{
+      if(e.key==='Enter') document.getElementById('search-btn').click();
+    });
+  });
 
-  refreshAdminUI();
-</script>
+  renderBlocks(blocks);
+}
 
-<script>
-(function(){
-  var fill = document.getElementById('loadFill');
-  var pct = document.getElementById('loadPct');
-  var preloader = document.getElementById('preloader');
-  var main = document.getElementById('main');
+function renderBlocks(blocks){
+  const holder = document.getElementById('blocks-container');
+  const q = state.query.trim();
+  const day = parseInt(state.dayQuery.trim(), 10);
+  const hasDay = !isNaN(day) && day >= 1 && day <= 31;
 
-  var p = 0;
-  var duration = 1900; // ms
-  var start = performance.now();
+  let list = blocks;
+  let dayHitMap = {};
 
-  function tick(now){
-    var elapsed = now - start;
-    p = Math.min(100, Math.round((elapsed / duration) * 100));
-    fill.style.width = p + '%';
-    pct.textContent = p + '%';
-    if(elapsed < duration){
-      requestAnimationFrame(tick);
-    } else {
-      finish();
+  if(hasDay && q){
+    list = blocks.filter(b => (b.dayCodes[day]||[]).some(c => c.toLowerCase() === q.toLowerCase() || c.toLowerCase().includes(q.toLowerCase())));
+    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
+  } else if(q){
+    list = blocks.filter(b => b.text.toLowerCase().includes(q.toLowerCase()) || b.name.toLowerCase().includes(q.toLowerCase()));
+  } else if(hasDay){
+    list = blocks.filter(b => (b.dayCodes[day]||[]).length > 0);
+    list.forEach(b=>{ dayHitMap[b.id] = (b.dayCodes[day]||[]).join(', '); });
+  }
+
+  if(list.length === 0){
+    holder.innerHTML = '<div class="empty">Niciun rezultat.</div>';
+    return;
+  }
+
+  holder.innerHTML = '<div class="section-title">' + list.length + ' rezultat(e)</div>' +
+    list.map((b, i) => {
+      const dayHit = dayHitMap[b.id] ? '<div class="day-hit">Ziua ' + day + ': ' + escapeHtml(dayHitMap[b.id]) + '</div>' : '';
+      return '<div class="block ' + (q||hasDay ? 'match':'') + '">' +
+        '<div class="block-head"><div><div class="block-name">' + escapeHtml(b.name) + '</div><div class="block-role">' + escapeHtml(b.role) + '</div></div><div class="block-idx">#' + (i+1) + '</div></div>' +
+        '<div class="block-body">' + dayHit + '<div class="raw-text">' + highlight(b.text, q) + '</div></div>' +
+      '</div>';
+    }).join('');
+}
+
+function renderList(){
+  const container = document.getElementById('app');
+  const cat = state.category;
+  const docs = state.docsMeta[cat] || [];
+
+  container.innerHTML =
+    '<h2 style="margin:0 0 4px;">' + CATS[cat] + '</h2>' +
+    '<div class="card">' +
+      '<div class="row">' +
+        '<div><label>Fișier PDF</label><input type="file" id="file-input" accept="application/pdf"></div>' +
+        '<div><label>Lună / an (etichetă)</label><input type="text" id="month-input" placeholder="ex. Iulie 2026"></div>' +
+        '<button class="btn" id="upload-btn">Încarcă</button>' +
+      '</div>' +
+      '<div class="hint">Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile, apoi se urcă pe GitHub (repo public) — nu se mai salvează local.</div>' +
+      '<div class="status" id="upload-status"></div>' +
+    '</div>' +
+    '<div class="section-title">Programe salvate</div>' +
+    '<div class="doc-list" id="doc-list">' +
+      (docs.length === 0 ? '<div class="empty">Niciun program încărcat încă pentru această categorie.</div>' :
+        docs.map(d =>
+          '<div class="doc-item" data-id="' + d.id + '">' +
+            '<div><div class="doc-name">' + escapeHtml(d.filename) + '</div>' +
+            '<div class="doc-meta">' + (d.month ? escapeHtml(d.month) + ' · ' : '') + 'încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</div></div>' +
+            '<div class="doc-actions"><button class="btn ghost" data-del="' + d.id + '">Șterge</button></div>' +
+          '</div>'
+        ).join('')
+      ) +
+    '</div>';
+
+  document.getElementById('upload-btn').onclick = ()=>{
+    const file = document.getElementById('file-input').files[0];
+    const month = document.getElementById('month-input').value.trim();
+    handleUpload(cat, file, month);
+  };
+  document.querySelectorAll('.doc-item').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('[data-del]')) return;
+      state.view='detail';
+      state.openDocId = el.dataset.id;
+      state.query=''; state.dayQuery='';
+      render();
+    });
+  });
+  document.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      deleteDoc(cat, btn.dataset.del);
+    });
+  });
+}
+
+async function renderCross(){
+  const container = document.getElementById('app');
+  container.innerHTML =
+    '<h2 style="margin:0 0 4px;">Cine e la trenul X?</h2>' +
+    '<div class="doc-meta" style="margin-bottom:16px;">Caută o zi și un cod de tren — primești toți oamenii (mecanic, șef tren, vânzător bilete) găsiți în ziua respectivă cu codul respectiv, din toate fișierele salvate.</div>' +
+    '<div class="card">' +
+      '<div class="search-bar">' +
+        '<div><label>Zi (1-31)</label><input type="text" id="cross-day" placeholder="ex. 15" value="' + escapeHtml(state.crossDay) + '" style="min-width:80px;"></div>' +
+        '<div class="day-quick"><button class="btn ghost btn-sm" id="cross-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="cross-day-tomorrow" type="button">Mâine</button></div>' +
+        '<div><label>Cod tren</label><input type="text" id="cross-code" placeholder="ex. 16565" value="' + escapeHtml(state.crossCode) + '"></div>' +
+        '<button class="btn solid-green" id="cross-btn">Caută trenul</button>' +
+      '</div>' +
+      '<div class="search-note">Se caută în toate fișierele din ambele categorii, folosind poziția reconstruită a coloanelor de zile din fiecare PDF.</div>' +
+    '</div>' +
+    '<div id="cross-results"><div class="empty">Introdu ziua și codul, apoi apasă Caută trenul.</div></div>';
+
+  document.getElementById('cross-btn').onclick = async ()=>{
+    state.crossDay = document.getElementById('cross-day').value.trim();
+    state.crossCode = document.getElementById('cross-code').value.trim();
+    await runCrossSearch();
+  };
+  document.getElementById('cross-day-today').onclick = async ()=>{
+    document.getElementById('cross-day').value = String(todayDayOfMonth());
+    await document.getElementById('cross-btn').onclick();
+  };
+  document.getElementById('cross-day-tomorrow').onclick = async ()=>{
+    document.getElementById('cross-day').value = String(tomorrowDayOfMonth());
+    await document.getElementById('cross-btn').onclick();
+  };
+  ['cross-day','cross-code'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown', e=>{
+      if(e.key==='Enter') document.getElementById('cross-btn').click();
+    });
+  });
+}
+
+async function runCrossSearch(){
+  const holder = document.getElementById('cross-results');
+  const day = parseInt(state.crossDay, 10);
+  const code = state.crossCode.toLowerCase();
+  if(isNaN(day) || day < 1 || day > 31 || !code){
+    holder.innerHTML = '<div class="empty">Completează ziua (1-31) și codul.</div>';
+    return;
+  }
+  holder.innerHTML = '<div class="empty">Se caută în toate fișierele...</div>';
+
+  const results = [];
+  for(const cat of Object.keys(CATS)){
+    const docs = state.docsMeta[cat] || [];
+    for(const d of docs){
+      const blocks = await getBlocksForDoc(cat, d.id);
+      blocks.forEach(b=>{
+        const codes = b.dayCodes[day] || [];
+        const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
+        if(hit){
+          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit, dayLabel: dayRangeLabel(b, day, hit) });
+        }
+      });
     }
   }
 
-  function finish(){
-    preloader.classList.add('hide');
-    main.classList.add('show');
+  if(results.length === 0){
+    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu codul „' + escapeHtml(state.crossCode) + '” în ziua ' + day + '.</div>';
+    return;
   }
 
-  requestAnimationFrame(tick);
+  holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + '</div>' +
+    results.map(r => {
+      const span = r.dayLabel && r.dayLabel.indexOf('/') !== -1
+        ? ' <span style="color:var(--grn); font-weight:600;">(ziua ' + escapeHtml(r.dayLabel) + ')</span>'
+        : '';
+      return '<div class="result-card">' +
+        '<div><div class="result-name">' + escapeHtml(r.name) + span + '</div>' +
+        '<div class="result-meta">' + escapeHtml(r.role) + ' · ' + escapeHtml(r.category) + ' · ' + escapeHtml(r.file) + '</div></div>' +
+        '<div class="result-code">' + escapeHtml(r.code) + '</div>' +
+      '</div>';
+    }).join('');
+}
+
+async function getAllTaggedBlocks(){
+  const out = [];
+  for(const cat of Object.keys(CATS)){
+    const docs = state.docsMeta[cat] || [];
+    for(const d of docs){
+      const blocks = await getBlocksForDoc(cat, d.id);
+      blocks.forEach(b => out.push({ block: b, cat, doc: d }));
+    }
+  }
+  return out;
+}
+
+// ---- Prezentare / Remizare din fișa de pontaj (turnusuri publicate de pontaj) ----
+// Pontajul publică turnusurile în data/turnusuri-partajate.json: fiecare turnus are segmente
+// (prezentare + ieșire/remizare) iar în "note" trenurile fiecărui segment, separate prin " / ".
+let _turnusIdx = null;
+const normCode = c => String(c || '').toLowerCase().replace(/[^0-9a-z]/g, '');
+async function loadTurnusIndex(){
+  if(_turnusIdx) return _turnusIdx;
+  let TN = null;
+  try{
+    const data = await ghFetchRaw(DATA_DIR + '/turnusuri-partajate.json');
+    if(data && data.TN) TN = data.TN;
+  }catch(e){}
+  if(!TN){ // rezervă: turnusurile din pontajul de pe acest dispozitiv
+    try{
+      for(const y of [new Date().getFullYear(), new Date().getFullYear()-1]){
+        const raw = localStorage.getItem('cfr_' + y);
+        if(raw){ const o = JSON.parse(raw); if(o && o.TN && Object.keys(o.TN).length){ TN = o.TN; break; } }
+      }
+    }catch(e){}
+  }
+  const idx = { byCode: new Map(), turnusTrains: new Map() };
+  Object.keys(TN || {}).forEach(k=>{
+    const t = TN[k] || {};
+    const segs = Array.isArray(t.segmente) ? t.segmente : [];
+    const groups = String(t.note || '').split('/').map(g => g.split(/\s+/).filter(x => /\d/.test(x)).map(normCode));
+    let perSeg = null;
+    if(segs.length && groups.length === segs.length) perSeg = groups;
+    else if(segs.length === 1) perSeg = [groups.flat()];
+    if(!perSeg) return;
+    const label = /^\d+$/.test(k) ? 'T' + k : k;
+    const all = new Set();
+    segs.forEach((sg, i)=>{
+      if(!sg || !sg.prez || !sg.iesire) return;
+      const trains = new Set(perSeg[i]);
+      trains.forEach(c=>{
+        all.add(c);
+        if(!idx.byCode.has(c)) idx.byCode.set(c, []);
+        idx.byCode.get(c).push({ tn: label, prez: sg.prez, rem: sg.iesire, trains });
+      });
+    });
+    idx.turnusTrains.set(label, all);
+  });
+  _turnusIdx = idx;
+  return idx;
+}
+
+// Alege segmentul potrivit pentru un tren: dacă același cod apare în mai multe turnusuri,
+// câștigă segmentul/turnusul ale cărui alte trenuri le are și persoana în aceeași zi (sau zilele vecine).
+function turnusTimesHtml(block, day, code){
+  const idx = _turnusIdx;
+  if(!idx) return '';
+  const cands = idx.byCode.get(normCode(code));
+  if(!cands || !cands.length) return '';
+  const today = new Set(trainCodesForDay(block, day).map(normCode));
+  const near = new Set();
+  [day-1, day, day+1].forEach(d => trainCodesForDay(block, d).forEach(c => near.add(normCode(c))));
+  const scored = cands.map(c=>{
+    let sc = 0;
+    c.trains.forEach(t => { if(today.has(t)) sc += 3; });
+    (idx.turnusTrains.get(c.tn) || new Set()).forEach(t => { if(near.has(t)) sc += 1; });
+    return { c, sc };
+  });
+  const best = Math.max.apply(null, scored.map(x => x.sc));
+  const seen = new Set(), items = [];
+  scored.filter(x => x.sc === best).forEach(x=>{
+    const key = x.c.prez + '|' + x.c.rem;
+    if(seen.has(key)) return;
+    seen.add(key); items.push(x.c);
+  });
+  const amb = items.length > 1;
+  return items.map(c =>
+    '<span class="t-times" title="Din fișa de pontaj, turnus ' + escapeHtml(c.tn) + '">Prezentare <b>' + escapeHtml(c.prez) +
+    '</b> · Remizare <b>' + escapeHtml(c.rem) + '</b>' + (amb ? ' (' + escapeHtml(c.tn) + ')' : '') + '</span>'
+  ).join('');
+}
+
+async function renderTeam(){
+  const container = document.getElementById('app');
+  container.innerHTML =
+    '<h2 style="margin:0 0 4px;">Programul unei persoane</h2>' +
+    '<div class="doc-meta" style="margin-bottom:16px;">Pui numele (mecanic, șef tren sau vânzător bilete) — cu zi vezi doar acea zi, fără zi vezi tot programul pe lună.</div>' +
+    '<div class="card">' +
+      '<div class="search-bar">' +
+        '<div><label>Nume</label><input type="text" id="team-name" placeholder="ex. Nitu Ionut" value="' + escapeHtml(state.teamName) + '"></div>' +
+        '<div><label>Zi (1-31, opțional)</label><input type="text" id="team-day" placeholder="ex. 15 (gol = toată luna)" value="' + escapeHtml(state.teamDay) + '" style="min-width:80px;"></div>' +
+        '<div class="day-quick"><button class="btn ghost btn-sm" id="team-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="team-day-tomorrow" type="button">Mâine</button></div>' +
+        '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
+      '</div>' +
+      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna. La fiecare tren apar prezentarea și remizarea din fișa de pontaj (turnusurile salvate acolo).</div>' +
+    '</div>' +
+    '<div id="team-results"><div class="empty">Introdu numele, apoi apasă Arată programul.</div></div>';
+
+  document.getElementById('team-btn').onclick = async ()=>{
+    state.teamName = document.getElementById('team-name').value.trim();
+    state.teamDay = document.getElementById('team-day').value.trim();
+    await runTeamSearch();
+  };
+  document.getElementById('team-day-today').onclick = async ()=>{
+    document.getElementById('team-day').value = String(todayDayOfMonth());
+    await document.getElementById('team-btn').onclick();
+  };
+  document.getElementById('team-day-tomorrow').onclick = async ()=>{
+    document.getElementById('team-day').value = String(tomorrowDayOfMonth());
+    await document.getElementById('team-btn').onclick();
+  };
+  ['team-name','team-day'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown', e=>{
+      if(e.key==='Enter') document.getElementById('team-btn').click();
+    });
+  });
+}
+
+async function runTeamSearch(){
+  const holder = document.getElementById('team-results');
+  const nameQ = normalize(state.teamName);
+  const dayStr = state.teamDay.trim();
+  const hasDay = dayStr !== '';
+  const day = parseInt(dayStr, 10);
+  if(!nameQ || (hasDay && (isNaN(day) || day < 1 || day > 31))){
+    holder.innerHTML = '<div class="empty">Completează numele (ziua e opțională, 1-31).</div>';
+    return;
+  }
+  holder.innerHTML = '<div class="empty">Se caută...</div>';
+
+  const all = await getAllTaggedBlocks();
+  const matches = all.filter(t => normalize(t.block.name).includes(nameQ));
+
+  if(matches.length === 0){
+    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu numele „' + escapeHtml(state.teamName) + '”.</div>';
+    return;
+  }
+
+  await loadTurnusIndex();
+
+  function crewFor(m, d, code){
+    const seen = new Set();
+    const crew = all.filter(o => o !== m && o.block.role !== m.block.role && (o.block.dayCodes[d]||[]).includes(code))
+      .map(o => ({ name:o.block.name, role:o.block.role }))
+      .filter(c=>{
+        const key = c.name + '|' + c.role;
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+    return crew.length
+      ? crew.map(c=>'<div class="crew-row"><span class="crew-name">' + escapeHtml(c.name) + '</span><span class="crew-role">' + escapeHtml(c.role) + '</span></div>').join('')
+      : '<div class="crew-row"><span class="crew-name">— niciun coleg găsit —</span></div>';
+  }
+
+  if(hasDay){
+    holder.innerHTML = matches.map(m=>{
+      const codes = trainCodesForDay(m.block, day);
+      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
+        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
+
+      if(codes.length === 0){
+        return '<div class="person-card">' + header +
+          '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
+      }
+
+      const groupsHtml = codes.map(code=>{
+        const label = dayRangeLabel(m.block, day, code);
+        const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
+        return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + turnusTimesHtml(m.block, day, code) + '</span>' + crewFor(m, day, code) + '</div>';
+      }).join('');
+
+      return '<div class="person-card">' + header + groupsHtml + '</div>';
+    }).join('');
+  } else {
+    holder.innerHTML = matches.map(m=>{
+      const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
+        '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
+
+      let dayGroups = '';
+      const consumedDayCode = new Set();
+      for(let d=1; d<=31; d++){
+        const codes = trainCodesForDay(m.block, d);
+        if(codes.length === 0) continue;
+        const codesHtml = codes.map(code=>{
+          const key = d + ':' + code.toLowerCase();
+          if(consumedDayCode.has(key)) return ''; // deja afișat ca parte din perechea zilei precedente
+          const label = dayRangeLabel(m.block, d, code);
+          if(label.indexOf('/') !== -1) consumedDayCode.add((d+1) + ':' + code.toLowerCase());
+          const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
+          return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + turnusTimesHtml(m.block, d, code) + '</span>' + crewFor(m, d, code) + '</div>';
+        }).join('');
+        if(!codesHtml.trim()) continue;
+        dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
+      }
+
+      if(!dayGroups){
+        dayGroups = '<div class="hint" style="margin-top:10px;">Niciun cod de tren găsit în această lună.</div>';
+      }
+
+      return '<div class="person-card">' + header + dayGroups + '</div>';
+    }).join('');
+  }
+}
+
+async function render(){
+  if((state.view==='list' || state.view==='detail') && !hasToken() && (state.category==='conductori' || state.category==='mecanici')){
+    state.view = 'cross'; state.openDocId = null;
+    renderTabs();
+  }
+  if(state.view === 'team'){ await renderTeam(); return; }
+  if(state.view === 'cross'){ await renderCross(); return; }
+  if(state.view==='detail' && state.openDocId){
+    const doc = (state.docsMeta[state.category]||[]).find(d=>d.id===state.openDocId);
+    if(doc){ await renderDetail(state.category, doc); return; }
+    state.view='list';
+  }
+  renderList();
+}
+
+function updateGhAccountBtn(){
+  const authed = hasToken();
+  const dot = document.getElementById('statusDot');
+  if(dot) dot.classList.toggle('status-connected', authed);
+  const navBani = document.getElementById('navBani');
+  if(navBani && !authed) navBani.remove();
+}
+
+// Picks up a token connected/disconnected from index.html in another tab, without needing a manual refresh.
+window.addEventListener('storage', function(e){
+  if(e.key === TOKEN_KEY){ location.reload(); }
+});
+
+(async function init(){
+  state.view = hasToken() ? 'list' : 'cross';
+  renderTabs();
+  await loadAllMeta();
+  render();
 })();
 </script>
-
-<script>
-// ── Sferă 3D transparentă cu margini negre (canvas, fără biblioteci) ──
-(function(){
-  var canvas = document.getElementById('ballCanvas');
-  if(!canvas) return;
-  var SIZE = 150, dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var N = Math.round(SIZE * dpr);
-  canvas.width = N; canvas.height = N;
-  var ctx = canvas.getContext('2d');
-  var img = ctx.createImageData(N, N);
-  var out = img.data;
-
-  // Textură transparentă: grilă neagră + logo EMX alb cu contur negru
-  var TW = 1024, TH = 512, tex = null;
-  function buildTexture(){
-    var c = document.createElement('canvas'); c.width = TW; c.height = TH;
-    var g = c.getContext('2d');
-    g.strokeStyle = '#000'; g.lineWidth = 6;
-    for(var i = 0; i < 12; i++){ var x = i * TW / 12; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, TH); g.stroke(); }
-    for(var j = 1; j < 6; j++){ var y = j * TH / 6; g.beginPath(); g.moveTo(0, y); g.lineTo(TW, y); g.stroke(); }
-    g.font = '900 120px Rajdhani, "Arial Black", Arial, sans-serif';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.lineJoin = 'round'; g.lineWidth = 14; g.strokeStyle = '#000'; g.fillStyle = '#fff';
-    [0, TW / 2, TW].forEach(function(cx){ g.strokeText('EMX', cx, TH / 2 + 6); g.fillText('EMX', cx, TH / 2 + 6); });
-    tex = g.getImageData(0, 0, TW, TH).data;
-  }
-  buildTexture();
-  if(document.fonts && document.fonts.load){
-    document.fonts.load('900 120px Rajdhani').then(buildTexture).catch(function(){});
-  }
-
-  var R = N / 2, TILT = 0.38, cT = Math.cos(TILT), sT = Math.sin(TILT);
-  var M = N * N;
-  var lonF = new Float32Array(M), rowF = new Int16Array(M);
-  var lonB = new Float32Array(M), rowB = new Int16Array(M);
-  var tint = new Float32Array(M), rim = new Float32Array(M), spec = new Float32Array(M);
-  var mask = new Float32Array(M);
-  var L = (function(){ var v = [-0.5, 0.55, 0.67], m = Math.hypot(v[0], v[1], v[2]); return [v[0]/m, v[1]/m, v[2]/m]; })();
-  function rowOf(lat){ return Math.max(0, Math.min(TH - 1, Math.floor((0.5 - lat / Math.PI) * TH))); }
-  function smooth(a, b, v){ var t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
-
-  for(var py = 0; py < N; py++){
-    for(var px = 0; px < N; px++){
-      var k = py * N + px;
-      var x = (px + 0.5 - R) / R, y = -(py + 0.5 - R) / R;
-      var r2 = x * x + y * y, r = Math.sqrt(r2);
-      mask[k] = Math.max(0, Math.min(1, (1 - r) * R + 0.5));
-      if(r2 >= 1.02) continue;
-      var z = Math.sqrt(Math.max(0, 1 - r2));
-      // față
-      var qy = y * cT - z * sT, qz = y * sT + z * cT;
-      lonF[k] = Math.atan2(x, qz); rowF[k] = rowOf(Math.asin(Math.max(-1, Math.min(1, qy))));
-      // spate (vizibil prin transparență)
-      var by = y * cT + z * sT, bz = y * sT - z * cT;
-      lonB[k] = Math.atan2(x, bz); rowB[k] = rowOf(Math.asin(Math.max(-1, Math.min(1, by))));
-      // iluminare
-      var nl = Math.max(0, x * L[0] + y * L[1] + z * L[2]);
-      tint[k] = 0.06 + 0.16 * nl;                       // nuanță roșie foarte ușoară
-      var hx = L[0], hy = L[1], hz = L[2] + 1, hm = Math.hypot(hx, hy, hz);
-      spec[k] = Math.pow(Math.max(0, (x * hx + y * hy + z * hz) / hm), 46) * 0.85;
-      // margine neagră: întunecare spre contur + inel ferm
-      rim[k] = Math.max(Math.min(1, Math.pow(1 - z, 2.6) * 0.95), smooth(0.945, 0.985, r));
-    }
-  }
-
-  var TWO_PI = Math.PI * 2;
-  function render(angle){
-    for(var k = 0; k < M; k++){
-      var o = k * 4, m = mask[k];
-      if(m === 0){ out[o + 3] = 0; continue; }
-      var R_ = 0, G_ = 0, B_ = 0, A_ = 0, sa, t, u;
-      // 1) spate (grilă/logo, estompate)
-      u = ((lonB[k] + angle) / TWO_PI) % 1; if(u < 0) u += 1;
-      t = (rowB[k] * TW + Math.floor(u * TW)) * 4;
-      sa = tex[t + 3] / 255 * 0.38;
-      R_ = tex[t] / 255 * sa; G_ = tex[t + 1] / 255 * sa; B_ = tex[t + 2] / 255 * sa; A_ = sa;
-      // 2) nuanță roșie de sticlă
-      sa = tint[k]; var inv = 1 - sa;
-      R_ = R_ * inv + 1.0 * sa; G_ = G_ * inv + 0.12 * sa; B_ = B_ * inv + 0.24 * sa; A_ = A_ * inv + sa;
-      // 3) față (grilă neagră + logo)
-      u = ((lonF[k] + angle) / TWO_PI) % 1; if(u < 0) u += 1;
-      t = (rowF[k] * TW + Math.floor(u * TW)) * 4;
-      sa = tex[t + 3] / 255 * 0.95; inv = 1 - sa;
-      R_ = R_ * inv + tex[t] / 255 * sa; G_ = G_ * inv + tex[t + 1] / 255 * sa; B_ = B_ * inv + tex[t + 2] / 255 * sa; A_ = A_ * inv + sa;
-      // 4) margine neagră
-      sa = rim[k]; inv = 1 - sa;
-      R_ *= inv; G_ *= inv; B_ *= inv; A_ = A_ * inv + sa;
-      // 5) reflexie
-      sa = spec[k]; inv = 1 - sa;
-      R_ = R_ * inv + sa; G_ = G_ * inv + sa; B_ = B_ * inv + sa; A_ = A_ * inv + sa;
-      // ieșire (alpha nepremultiplicat), cu margine antialiasată
-      var fa = A_ * m;
-      if(fa <= 0.0005){ out[o + 3] = 0; continue; }
-      out[o]     = Math.min(255, R_ / A_ * 255);
-      out[o + 1] = Math.min(255, G_ / A_ * 255);
-      out[o + 2] = Math.min(255, B_ / A_ * 255);
-      out[o + 3] = fa * 255;
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  render(0);
-  if(reduce) return;
-
-  var preloader = document.getElementById('preloader');
-  var t0 = performance.now(), hideAt = 0;
-  (function loop(now){
-    if(preloader.classList.contains('hide')){
-      if(!hideAt) hideAt = now;
-      if(now - hideAt > 900) return;
-    }
-    render(((now - t0) / 2600) * TWO_PI);
-    requestAnimationFrame(loop);
-  })(t0);
-})();
-</script>
-
 </body>
 </html>
