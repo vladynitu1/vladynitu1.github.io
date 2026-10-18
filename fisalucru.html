@@ -833,15 +833,40 @@ async function runCrossSearch(){
     const docs = state.docsMeta[cat] || [];
     for(const d of docs){
       const blocks = await getBlocksForDoc(cat, d.id);
+      const sets = await loadTurnusSets(docYear(d));
       blocks.forEach(b=>{
         const codes = b.dayCodes[day] || [];
-        const hit = codes.find(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
-        if(hit){
-          results.push({ name: b.name, role: b.role, category: CATS[cat], file: d.filename, code: hit, dayLabel: dayRangeLabel(b, day, hit) });
+        const oi = codes.findIndex(c => c.toLowerCase() === code || c.toLowerCase().includes(code));
+        if(oi >= 0){
+          const hit = codes[oi];
+          // Prezentare/Remizare din setul de turnusuri al rolului persoanei (mecanici / șefi tren / vânzători bilete separat)
+          const rk = roleKey(b.role);
+          const A = (rk && sets[rk] && Object.keys(sets[rk]).length) ? buildAnnotation(b, sets[rk]) : null;
+          results.push({ name: b.name, role: b.role, rk, category: CATS[cat], file: d.filename, code: hit,
+            dayLabel: dayRangeLabelA(b, day, hit, oi, A), a: (A && A.ann && A.ann[day] && A.ann[day][oi]) || null });
         }
       });
     }
   }
+
+  // Un singur cuvânt pe persoană, fără ore: Prezentare = intră pe tren, Remizare = iese de pe tren.
+  // Dacă într-un turnus și intră și iese pe același tren (segment cu un singur tren), vedem cine îl schimbă:
+  // dacă altcineva (același rol) își începe Prezentarea în intervalul lui => el predă (Remizare);
+  // dacă altcineva își face Remizarea în intervalul lui => el preia (Prezentare).
+  results.forEach(r => {
+    r.lbl = '';
+    const a = r.a; if(!a) return;
+    if(a.prez && !a.rem) r.lbl = 'Prezentare';
+    else if(a.rem && !a.prez) r.lbl = 'Remizare';
+    else if(a.prez && a.rem){
+      const p = t2m(a.prez), e = t2m(a.rem); if(p < 0 || e < 0) return;
+      const len = (e - p + 1440) % 1440;
+      const others = results.filter(o => o !== r && o.rk === r.rk && o.code.toLowerCase() === r.code.toLowerCase() && o.a);
+      const leaving = others.some(o => o.a.prez && (dd => dd > 0 && dd <= len)((t2m(o.a.prez) - p + 1440) % 1440));
+      const entering = others.some(o => o.a.rem && (dd => dd >= 0 && dd < len)((t2m(o.a.rem) - p + 1440) % 1440));
+      if(leaving) r.lbl = 'Remizare'; else if(entering) r.lbl = 'Prezentare';
+    }
+  });
 
   if(results.length === 0){
     holder.innerHTML = '<div class="empty">Niciun angajat găsit cu codul „' + escapeHtml(state.crossCode) + '” în ziua ' + day + '.</div>';
@@ -854,7 +879,7 @@ async function runCrossSearch(){
         ? ' <span style="color:var(--grn); font-weight:600;">(ziua ' + escapeHtml(r.dayLabel) + ')</span>'
         : '';
       return '<div class="result-card">' +
-        '<div><div class="result-name">' + escapeHtml(r.name) + span + '</div>' +
+        '<div><div class="result-name">' + escapeHtml(r.name) + span + (r.lbl ? '<span class="t-hr ' + (r.lbl === 'Prezentare' ? 'pr' : 'rm') + '">' + r.lbl + '</span>' : '') + '</div>' +
         '<div class="result-meta">' + escapeHtml(r.role) + ' · ' + escapeHtml(r.category) + ' · ' + escapeHtml(r.file) + '</div></div>' +
         '<div class="result-code">' + escapeHtml(r.code) + '</div>' +
       '</div>';
