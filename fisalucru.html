@@ -156,6 +156,8 @@
   .person-card .p-role{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); margin-top:2px; text-transform:uppercase; letter-spacing:.06em;}
   .train-group{background:var(--surf2); border:1px solid var(--bord); border-radius:8px; padding:10px 14px; margin-top:12px;}
   .train-group .t-code{font-family:'Share Tech Mono',monospace; color:var(--acc); font-weight:700; font-size:13px; margin-bottom:8px; display:block;}
+  .t-hr{display:inline-block; margin-left:8px; padding:1px 7px; border-radius:5px; border:1px solid var(--bord2); font-family:'Share Tech Mono',monospace; font-size:11px; font-weight:400; letter-spacing:.02em;}
+  .t-hr.pr{color:var(--grn);} .t-hr.rm{color:var(--org);}
   .crew-row{display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; border-top:1px dashed var(--bord);}
   .crew-row:first-of-type{border-top:none;}
   .crew-name{color:var(--txt);}
@@ -871,6 +873,168 @@ async function getAllTaggedBlocks(){
   return out;
 }
 
+// ---- Prezentare / Remizare din turnusuri (separat pe rol) ----
+// Seturile de turnusuri vin din Fișa Pontaj: data/turnusuri-partajate.json (public) iar, dacă ești conectat
+// cu token, din turnusurile tale salvate (repo Vlad / turnusuri.json) — acestea au prioritate.
+const TRAIN_RE = /^\d{3,6}(\/\d+)?$/;
+function normTok(s){ return String(s||'').replace(/\s*\*+\s*$/,'').trim(); }
+function roleKey(role){
+  if(/mecanic/i.test(role||'')) return 'mecanici';
+  if(/[sș]ef\s*tren/i.test(role||'')) return 'sefi';
+  if(/bilete/i.test(role||'')) return 'vanzatori';
+  return null;
+}
+function t2m(s){ const r = String(s||'').trim().match(/^(\d{1,3})[:\.](\d{2})$/); return r ? (+r[1])*60 + (+r[2]) : -1; }
+function turnusZile(sg){
+  let cur=0, end=0, any=false;
+  (sg||[]).forEach(s=>{
+    const a=t2m(s.prez), b=t2m(s.iesire); if(a<0||b<0) return; any=true;
+    let st=a; while(st<cur) st+=1440; let en=b; while(en<=st) en+=1440; cur=en; end=en;
+  });
+  return any ? Math.max(1, Math.ceil(end/1440)) : 3;
+}
+// Nota turnusului: grupurile de trenuri (câte un grup pe segment) se despart cu " / "
+function turnusDefs(set){
+  const defs = [];
+  Object.keys(set||{}).forEach(k=>{
+    const t = set[k], segs = (t && t.segmente) || [];
+    const note = String((t && t.note) || '').replace(/(\d)\/(\d{3,})/g, '$1 / $2');
+    const groups = note.split(/\s+\/\s*|\s*\/\s+/).map(g => g.split(/\s+/).map(normTok).filter(x => TRAIN_RE.test(x)));
+    const fl = [], segOf = [];
+    groups.forEach((g, gi) => g.forEach(c => { fl.push(c.toLowerCase()); segOf.push(gi); }));
+    if(!fl.length || !segs.length) return;
+    let sg, first, last;
+    if(groups.length === segs.length){
+      sg = segs.map(x => ({ prez: x.prez, iesire: x.iesire }));
+      first = groups.map(() => -1); last = groups.map(() => -1);
+      segOf.forEach((gi, fi) => { if(first[gi] < 0) first[gi] = fi; last[gi] = fi; });
+    } else {
+      // nota nu are tot atâtea grupuri cât segmente: tratăm turnusul ca un tot (prima prezentare / ultima remizare)
+      sg = [{ prez: segs[0].prez, iesire: segs[segs.length-1].iesire }];
+      for(let i=0;i<segOf.length;i++) segOf[i] = 0;
+      first = [0]; last = [fl.length-1];
+    }
+    defs.push({ k, fl, segOf, sg, first, last, zl: turnusZile(segs) });
+  });
+  return defs.sort((a,b) => b.fl.length - a.fl.length);
+}
+// Potrivește trenurile din fiecare zi cu turnusurile (aceeași logică ca "Preia din fișă" din Pontaj)
+function solveTurnusuri(cells, n, defs){
+  const rem = []; for(let d=1; d<=n; d++) rem[d] = cells[d].slice();
+  const res = [], unid = []; let nodes = 0, best = null;
+  function plans(d, t, cb){
+    let stop = false;
+    (function go(o, left, used){
+      if(stop) return;
+      if(!left.length){ if(cb(used)) stop = true; return; }
+      if(o >= t.zl) return; const day = d + o; if(day > n) return;
+      const c = rem[day], m = c.length;
+      for(let mask=(1<<m)-1; mask>=1 && !stop; mask--){
+        const lf = left.slice(), take = []; let ok = true;
+        for(let i=0; i<m && ok; i++) if(mask>>i & 1){
+          const j = lf.findIndex(f => t.fl[f] === c[i].c);
+          if(j < 0) ok = false; else { take.push({ i, f: lf[j], oi: c[i].oi }); lf.splice(j, 1); }
+        }
+        if(ok) go(o+1, lf, used.concat([{ day, take }]));
+      }
+    })(0, t.fl.map((_, i) => i), []);
+    return stop;
+  }
+  function dfs(d, sk){
+    if(++nodes > 80000 || (best && sk >= best.sk)) return false;
+    while(d <= n && !rem[d].length) d++;
+    if(d > n){ best = { sk, res: res.slice(), unid: unid.slice() }; return sk === 0; }
+    for(const t of defs){
+      const f = plans(d, t, used => {
+        const saved = used.map(u => [u.day, rem[u.day]]);
+        used.forEach(u => { const ti = u.take.map(x => x.i); rem[u.day] = rem[u.day].filter((_, i) => !ti.includes(i)); });
+        res.push({ d, k: t.k, used });
+        if(dfs(d, sk)) return true;
+        res.pop(); saved.forEach(x => rem[x[0]] = x[1]); return false;
+      });
+      if(f) return true;
+    }
+    const sv = rem[d]; unid.push(d); rem[d] = [];
+    const r = dfs(d, sk + sv.length); unid.pop(); rem[d] = sv; return r;
+  }
+  dfs(1, 0);
+  return best || { res: [], unid: [] };
+}
+// ann[zi][indexul tokenului în dayCodes] = { k: turnus, prez?, rem? }
+function buildAnnotation(block, set){
+  const defs = turnusDefs(set); if(!defs.length) return null;
+  const cells = [];
+  for(let d=1; d<=31; d++){
+    cells[d] = [];
+    (block.dayCodes[d] || []).forEach((tok, oi) => { const c = normTok(tok); if(TRAIN_RE.test(c)) cells[d].push({ c: c.toLowerCase(), oi }); });
+  }
+  const sol = solveTurnusuri(cells, 31, defs), byK = {}; defs.forEach(t => byK[t.k] = t);
+  const ann = {};
+  sol.res.forEach(r => {
+    const t = byK[r.k];
+    r.used.forEach(u => u.take.forEach(x => {
+      const si = t.segOf[x.f], sg = t.sg[si], a = { k: t.k, ord: r.d * 1000 + x.f };
+      if(sg && t.first[si] === x.f && sg.prez) a.prez = sg.prez;
+      if(sg && t.last[si] === x.f && sg.iesire) a.rem = sg.iesire;
+      (ann[u.day] = ann[u.day] || {})[x.oi] = a;
+    }));
+  });
+  return { ann, unid: sol.unid };
+}
+const _turnusSetsCache = {};
+async function ghFetchOwnPontaj(){
+  const token = getToken(); if(!token) return null;
+  try{
+    const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/Vlad/contents/turnusuri.json?t=' + Date.now(),
+      { cache: 'no-store', headers: { Accept: 'application/vnd.github.raw', Authorization: 'Bearer ' + token } });
+    if(!res.ok) return null;
+    return JSON.parse(await res.text());
+  }catch(e){ return null; }
+}
+async function loadTurnusSets(year){
+  if(_turnusSetsCache[year]) return _turnusSetsCache[year];
+  const out = { mecanici: {}, sefi: {}, vanzatori: {} };
+  const sh = await ghFetchRaw(DATA_DIR + '/turnusuri-partajate.json');
+  if(sh){ const S = sh.TNS || { mecanici: sh.TN || {} }; Object.keys(out).forEach(r => { out[r] = S[r] || {}; }); }
+  const own = await ghFetchOwnPontaj();
+  const y = own && own['cfr_' + year];
+  if(y){
+    const X = y.TNX || {}, O = { mecanici: y.TN || {}, sefi: X.sefi || {}, vanzatori: X.vanzatori || {} };
+    Object.keys(out).forEach(r => { if(Object.keys(O[r]).length) out[r] = O[r]; });
+  }
+  return (_turnusSetsCache[year] = out);
+}
+function docYear(doc){ const y = new Date(doc && doc.uploadedAt).getFullYear(); return isNaN(y) ? new Date().getFullYear() : y; }
+function trainEntriesForDay(block, day, A){
+  const out = [];
+  (block.dayCodes[day] || []).forEach((tok, oi) => { if(/\d/.test(tok)) out.push({ code: tok, oi }); });
+  // trenurile potrivite cu un turnus se afișează în ordinea din turnus (PDF-ul le poate lista altfel)
+  const ann = A && A.ann && A.ann[day];
+  if(ann){
+    const slots = out.map((e, i) => i).filter(i => ann[out[i].oi]);
+    const sorted = slots.map(i => out[i]).sort((a, b) => ann[a.oi].ord - ann[b.oi].ord);
+    slots.forEach((i, j) => { out[i] = sorted[j]; });
+  }
+  return out;
+}
+// Ca dayRangeLabel, dar trenurile deja potrivite cu un turnus rămân pe ziua lor (nu se mai contopesc "x/x+1")
+function dayRangeLabelA(block, day, code, oi, A){
+  const ann = A && A.ann;
+  const isAnn = (d, i) => !!(ann && ann[d] && ann[d][i]);
+  if(isAnn(day, oi)) return String(day);
+  const norm = c => (c||'').toLowerCase();
+  const has = d => (block.dayCodes[d] || []).some((c, i) => norm(c) === norm(code) && !isAnn(d, i));
+  if(has(day+1)) return day + '/' + (day+1);
+  if(has(day-1)) return (day-1) + '/' + day;
+  return String(day);
+}
+function hoursHtml(A, day, oi){
+  const a = A && A.ann && A.ann[day] && A.ann[day][oi];
+  if(!a) return '';
+  return (a.prez ? '<span class="t-hr pr">Prezentare ' + escapeHtml(a.prez) + '</span>' : '') +
+         (a.rem ? '<span class="t-hr rm">Remizare ' + escapeHtml(a.rem) + '</span>' : '');
+}
+
 async function renderTeam(){
   const container = document.getElementById('app');
   container.innerHTML =
@@ -927,6 +1091,15 @@ async function runTeamSearch(){
     return;
   }
 
+  // Prezentare/Remizare: fiecare persoană folosește DOAR setul de turnusuri al rolului ei
+  await Promise.all(matches.map(async m=>{
+    m.ann = null;
+    const rk = roleKey(m.block.role);
+    if(!rk) return;
+    const sets = await loadTurnusSets(docYear(m.doc));
+    if(sets[rk] && Object.keys(sets[rk]).length) m.ann = buildAnnotation(m.block, sets[rk]);
+  }));
+
   function crewFor(m, d, code){
     const seen = new Set();
     const crew = all.filter(o => o !== m && o.block.role !== m.block.role && (o.block.dayCodes[d]||[]).includes(code))
@@ -943,7 +1116,7 @@ async function runTeamSearch(){
 
   if(hasDay){
     holder.innerHTML = matches.map(m=>{
-      const codes = trainCodesForDay(m.block, day);
+      const codes = trainEntriesForDay(m.block, day, m.ann);
       const header = '<div class="p-name">' + escapeHtml(m.block.name) + '</div>' +
         '<div class="p-role">' + escapeHtml(m.block.role) + ' · ' + escapeHtml(CATS[m.cat]) + ' · ' + escapeHtml(m.doc.filename) + '</div>';
 
@@ -952,13 +1125,14 @@ async function runTeamSearch(){
           '<div class="hint" style="margin-top:10px;">Nu are niciun cod de tren în ziua ' + day + ' (liber / CO / altă însemnare).</div></div>';
       }
 
-      const groupsHtml = codes.map(code=>{
-        const label = dayRangeLabel(m.block, day, code);
+      const groupsHtml = codes.map(({code, oi})=>{
+        const label = dayRangeLabelA(m.block, day, code, oi, m.ann);
         const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
-        return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + '</span>' + crewFor(m, day, code) + '</div>';
+        return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + hoursHtml(m.ann, day, oi) + '</span>' + crewFor(m, day, code) + '</div>';
       }).join('');
+      const noTn = (m.ann && m.ann.unid.includes(day)) ? '<div class="hint" style="margin-top:10px;">Ziua ' + day + ' nu se potrivește cu niciun turnus salvat pentru acest rol — fără Prezentare/Remizare.</div>' : '';
 
-      return '<div class="person-card">' + header + groupsHtml + '</div>';
+      return '<div class="person-card">' + header + groupsHtml + noTn + '</div>';
     }).join('');
   } else {
     holder.innerHTML = matches.map(m=>{
@@ -968,15 +1142,15 @@ async function runTeamSearch(){
       let dayGroups = '';
       const consumedDayCode = new Set();
       for(let d=1; d<=31; d++){
-        const codes = trainCodesForDay(m.block, d);
+        const codes = trainEntriesForDay(m.block, d, m.ann);
         if(codes.length === 0) continue;
-        const codesHtml = codes.map(code=>{
+        const codesHtml = codes.map(({code, oi})=>{
           const key = d + ':' + code.toLowerCase();
           if(consumedDayCode.has(key)) return ''; // deja afișat ca parte din perechea zilei precedente
-          const label = dayRangeLabel(m.block, d, code);
+          const label = dayRangeLabelA(m.block, d, code, oi, m.ann);
           if(label.indexOf('/') !== -1) consumedDayCode.add((d+1) + ':' + code.toLowerCase());
           const span = label.indexOf('/') !== -1 ? ' <span style="color:var(--grn); font-weight:400;">(ziua ' + escapeHtml(label) + ')</span>' : '';
-          return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + '</span>' + crewFor(m, d, code) + '</div>';
+          return '<div class="train-group"><span class="t-code">Tren / cod ' + escapeHtml(code) + span + hoursHtml(m.ann, d, oi) + '</span>' + crewFor(m, d, code) + '</div>';
         }).join('');
         if(!codesHtml.trim()) continue;
         dayGroups += '<div class="section-title" style="margin:16px 0 6px;">Ziua ' + d + '</div>' + codesHtml;
@@ -984,6 +1158,8 @@ async function runTeamSearch(){
 
       if(!dayGroups){
         dayGroups = '<div class="hint" style="margin-top:10px;">Niciun cod de tren găsit în această lună.</div>';
+      } else if(m.ann && m.ann.unid.length){
+        dayGroups += '<div class="hint" style="margin-top:12px;">Zile fără turnus potrivit pentru acest rol (fără Prezentare/Remizare): ' + m.ann.unid.join(', ') + '.</div>';
       }
 
       return '<div class="person-card">' + header + dayGroups + '</div>';
