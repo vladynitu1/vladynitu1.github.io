@@ -125,6 +125,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
 <div class="overlay" id="preiaOverlay"><div class="modal" style="max-width:560px">
   <button class="mclose" onclick="closePreia()">✕</button>
   <h2 style="color:var(--grn)">📥 Preia din fișă</h2>
+  <div class="roleBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
   <p style="font-size:.72rem;color:var(--txtm);margin-bottom:10px">Se folosesc turnusurile publicate de administrator. Cele adăugate de tine cu același cod (ex: T1) le înlocuiesc doar la tine.</p>
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:10px">
     <div class="tn-field"><label>Fișa (din Fișa de lucru)</label><select class="fld" id="preiaDoc"></select></div>
@@ -135,7 +136,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
   <div id="preiaStatus" style="display:none;background:var(--surf);border:1px solid var(--bord);border-radius:7px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:.73rem;max-height:260px;overflow-y:auto;white-space:pre-wrap"></div>
 </div></div>
 
-<div class="infobox"><div class="tags" id="tagList"></div></div>
+<div class="infobox"><div class="roleBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div><div class="tags" id="tagList"></div></div>
 <div class="mtabs" id="mtabs"></div>
 
 <div class="cards">
@@ -167,11 +168,12 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
 <div class="overlay" id="editorOverlay"><div class="modal">
   <button class="mclose" onclick="closeEditor()">✕</button>
   <h2>⚙ Editor Turnus-uri</h2>
+  <div class="roleBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
   <div id="addTnBox"></div>
   <div class="tn-list" id="tnList"></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap">
     <button class="btn btn-s" onclick="closeEditor()">✕ Închide</button>
-    <button class="btn btn-s btn-sm" id="resetTNBtn" onclick="resetTN()">↺ Golește toate turnusurile</button>
+    <button class="btn btn-s btn-sm" id="resetTNBtn" onclick="resetTN()">↺ Golește turnusurile din setul curent</button>
   </div>
   <div id="editorMsg" style="display:none;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--grn)"></div>
 </div></div>
@@ -207,6 +209,29 @@ const YEAR_MIN=2024,YEAR_MAX=2035;
 const _today=new Date();
 let curYear=_today.getFullYear(),curM=_today.getMonth();
 let db={},TN={},SHARED={};
+// Seturi separate de turnusuri pe rol. TN / SHARED = setul rolului activ (ROLE).
+const ROLES={mecanici:'Mecanici',sefi:'Șefi tren',vanzatori:'Vânzători bilete'};
+let ROLE='mecanici';try{const r=localStorage.getItem('pontaj_rol');if(ROLES[r])ROLE=r}catch(e){}
+let TNS={mecanici:{},sefi:{},vanzatori:{}},SHAREDS={};
+function setTN(o){TNS[ROLE]=o;TN=o}
+function renderRoleBar(){
+  document.querySelectorAll('.roleBar').forEach(w=>{
+    w.innerHTML='';
+    const l=document.createElement('span');l.style.cssText='font-size:.62rem;color:var(--txtd);text-transform:uppercase;letter-spacing:1.5px;align-self:center';l.textContent='Turnusuri pentru:';w.appendChild(l);
+    Object.keys(ROLES).forEach(r=>{
+      const b=document.createElement('button');b.className='btn btn-sm '+(r===ROLE?'btn-g':'btn-s');b.textContent=ROLES[r];
+      b.onclick=()=>setRole(r);w.appendChild(b);
+    });
+  });
+}
+function setRole(r){
+  if(!ROLES[r]||r===ROLE)return;
+  TNS[ROLE]=TN;ROLE=r;TN=TNS[r];SHARED=SHAREDS[r]||{};
+  try{localStorage.setItem('pontaj_rol',r)}catch(e){}
+  renderTags();
+  const t=document.getElementById('addTnTitle');if(t)t.textContent='+ Adaugă Turnus Nou — '+ROLES[ROLE];
+  if(document.getElementById('editorOverlay').classList.contains('open'))renderEditorList();
+}
 const lbl=k=>/^\d+$/.test(String(k))?'T'+k:String(k);
 const keyCmp=(a,b)=>{const x=/^\d+$/.test(a),y=/^\d+$/.test(b);return x&&y?+a-+b:x?-1:y?1:a<b?-1:a>b?1:0};
 function normCode(v){v=String(v||'').trim().toUpperCase();if(/^T?\d+$/.test(v)){const n=parseInt(v.replace('T',''));return n>=1?String(n):''}return /^[A-Z]{1,6}$/.test(v)&&v!=='T'?v:''}
@@ -250,7 +275,7 @@ function updateStatusDot(){
   if(!ghToken)setSyncStatus('local','Fără token — local');
 }
 function save(){
-  try{localStorage.setItem('cfr_'+curYear,JSON.stringify({db,TN:localTN()}));localStorage.setItem('cfr_yr',String(curYear))}catch(e){}
+  try{TNS[ROLE]=TN;localStorage.setItem('cfr_'+curYear,JSON.stringify({db,TN:TNS.mecanici,TNX:{sefi:TNS.sefi,vanzatori:TNS.vanzatori}}));localStorage.setItem('cfr_yr',String(curYear))}catch(e){}
   schedulePublish();
   if(ghToken){setSyncStatus('syncing','Se salvează...');clearTimeout(syncTimeout);syncTimeout=setTimeout(saveToGithub,2000)}
   else setSyncStatus('local','Local');
@@ -286,7 +311,8 @@ async function loadFromGithub(){
 }
 function loadYear(){loadYear0();mergeShared()}
 function loadYear0(){
-  try{const s=localStorage.getItem('cfr_'+curYear);if(s){const p=JSON.parse(s);db=p.db||{};TN=p.TN||{}}else{db={};TN={}}}catch(e){db={};TN={}}
+  try{const s=localStorage.getItem('cfr_'+curYear);if(s){const p=JSON.parse(s),x=p.TNX||{};db=p.db||{};TNS={mecanici:p.TN||{},sefi:x.sefi||{},vanzatori:x.vanzatori||{}}}else{db={};TNS={mecanici:{},sefi:{},vanzatori:{}}}}catch(e){db={};TNS={mecanici:{},sefi:{},vanzatori:{}}}
+  TN=TNS[ROLE];
 }
 function load(){
   loadYear();updateStatusDot();
@@ -418,6 +444,7 @@ function renderTags(){
   const sh=ghToken?{}:SHARED;
   if(Object.keys(sh).length){lab('🔒 Exemplu — turnusuri publicate de administrator');add(sh,' t12');if(Object.keys(TN).length)lab('Turnusurile tale')}
   add(TN,'');
+  renderRoleBar();
   updateStickyOffset();
 }
 function renderTabs(){
@@ -524,7 +551,7 @@ function closeEditor(){document.getElementById('editorOverlay').classList.remove
 let newSegs=[];
 function buildAddTnBox(){
   document.getElementById('addTnBox').innerHTML=`<div style="background:var(--surf);border:1px dashed var(--bord2);border-radius:9px;padding:12px;margin-bottom:12px">
-    <div style="font-family:Rajdhani,sans-serif;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px">+ Adaugă Turnus Nou</div>
+    <div style="font-family:Rajdhani,sans-serif;font-weight:600;letter-spacing:1.5px;color:var(--grn);text-transform:uppercase;margin-bottom:8px"><span id="addTnTitle">+ Adaugă Turnus Nou — ${ROLES[ROLE]}</span></div>
     <p style="font-size:.72rem;color:var(--txtm);margin-bottom:8px">Introdu prezentarea și ieșirea pentru fiecare segment. Orele, odihna și orele de noapte se calculează automat, pe segmente.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
       <div class="tn-field" style="width:80px"><label>Cod turnus</label><input id="nCode" placeholder="T13 / CO / CM"></div>
@@ -569,6 +596,7 @@ function saveNewTN(){
 }
 function renderEditorList(){
   const w=document.getElementById('tnList');w.innerHTML='';
+  if(!Object.keys(TN).length)w.innerHTML=`<div class="calc-note">Niciun turnus salvat pentru ${ROLES[ROLE]}.</div>`;
   Object.keys(TN).sort(keyCmp).forEach(k=>{
     const t=TN[k],div=document.createElement('div');div.className='tn-item';div.id='tni_'+k;
     let h=`<div class="tn-item-hdr"><span class="tn-num">${lbl(k)}</span><span style="font-size:.68rem;color:var(--txtm);flex:1">${t.note||''}</span><button class="btn btn-r btn-sm" onclick="delTN('${k}')">✕ Șterge</button></div>`;
@@ -596,8 +624,8 @@ function delTN(k){if(isShared(k))return;
 }
 function resetTN(){
   const btn=document.getElementById('resetTNBtn');
-  if(btn.dataset.confirm!=='1'){btn.dataset.confirm='1';btn.textContent='Confirmi resetarea?';setTimeout(()=>{btn.dataset.confirm='';btn.textContent='↺ Golește toate turnusurile'},3000);return}
-  TN=ghToken?{}:{...SHARED};save();renderEditorList();renderTags();showEditorMsg('Toate turnusurile tale au fost golite.');
+  if(btn.dataset.confirm!=='1'){btn.dataset.confirm='1';btn.textContent='Confirmi resetarea?';setTimeout(()=>{btn.dataset.confirm='';btn.textContent='↺ Golește turnusurile din setul curent'},3000);return}
+  setTN(ghToken?{}:{...SHARED});save();renderEditorList();renderTags();showEditorMsg('Turnusurile pentru '+ROLES[ROLE]+' au fost golite.');
 }
 function showEditorMsg(msg){const el=document.getElementById('editorMsg');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3000)}
 
@@ -755,28 +783,30 @@ function splitBlocksStructured(rows){
 
 const SITE={o:'vladynitu1',r:'vladynitu1.github.io',b:'main'};
 const SHARED_PATH='data/turnusuri-partajate.json';
+function cleanTNS(){const o={};TNS[ROLE]=TN;Object.keys(ROLES).forEach(r=>{o[r]={};Object.keys(TNS[r]||{}).forEach(k=>{o[r][k]={segmente:TNS[r][k].segmente,note:TNS[r][k].note||''}})});return o}
+const anyTN=()=>Object.keys(ROLES).some(r=>Object.keys(TNS[r]||{}).length);
 function schedulePublish(){
-  if(!ghToken||!Object.keys(TN).length)return;
-  const j=JSON.stringify(Object.keys(TN).map(k=>[k,TN[k].segmente,TN[k].note]));
+  if(!ghToken||!anyTN())return;
+  const j=JSON.stringify(cleanTNS());
   if(j===lastSharedJson)return;
   lastSharedJson=j;clearTimeout(pubT);pubT=setTimeout(publishSharedTN,3000);
 }
 async function loadShared(){
   const sh=await ghRaw(SHARED_PATH);
-  if(sh&&sh.TN){
-    SHARED=sh.TN;mergeShared();renderTags();
+  if(sh&&(sh.TNS||sh.TN)){
+    SHAREDS=sh.TNS||{mecanici:sh.TN};SHARED=SHAREDS[ROLE]||{};mergeShared();renderTags();
     if(document.getElementById('editorOverlay').classList.contains('open'))renderEditorList();
   }
 }
 async function publishSharedTN(){
   if(!ghToken)return;
-  const clean={};Object.keys(TN).forEach(k=>{clean[k]={segmente:TN[k].segmente,note:TN[k].note||''}});
-  if(!Object.keys(clean).length)return;
+  const all=cleanTNS(),clean=all.mecanici;
+  if(!anyTN())return;
   const u=`https://api.github.com/repos/${SITE.o}/${SITE.r}/contents/${SHARED_PATH}`;
   try{
     let sha;const g=await fetch(u+'?ref='+SITE.b+'&_='+Date.now(),{headers:ghHeaders()});
-    if(g.ok){const gj=await g.json();sha=gj.sha;try{if(JSON.stringify(JSON.parse(b64Dec(gj.content)).TN)===JSON.stringify(clean)){setSyncStatus('ok','Turnusuri publicate');return}}catch(e){}}else if(g.status!==404){setSyncStatus('err','Publicare turnusuri: eroare '+g.status);return}
-    const body={message:'Turnusuri partajate',branch:SITE.b,content:b64Enc(JSON.stringify({TN:clean,updated:new Date().toISOString()}))};
+    if(g.ok){const gj=await g.json();sha=gj.sha;try{if(JSON.stringify(JSON.parse(b64Dec(gj.content)).TNS)===JSON.stringify(all)){setSyncStatus('ok','Turnusuri publicate');return}}catch(e){}}else if(g.status!==404){setSyncStatus('err','Publicare turnusuri: eroare '+g.status);return}
+    const body={message:'Turnusuri partajate',branch:SITE.b,content:b64Enc(JSON.stringify({TN:clean,TNS:all,updated:new Date().toISOString()}))};
     if(sha)body.sha=sha;
     const r=await fetch(u,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
     setSyncStatus(r.ok?'ok':'err',r.ok?'Turnusuri publicate':'Publicare turnusuri: eroare '+r.status);
@@ -893,9 +923,9 @@ async function preiaNume(name){
   const saved=TN;
   if(!ghToken)TN={...SHARED,...TN};
   const nUsed=Object.keys(TN).length;
-  if(!nUsed){TN=saved;setPreiaStatus('❌ Nu există turnusuri. Adaugă-le din ⚙ Turnus-uri.','var(--red)');return}
+  if(!nUsed){TN=saved;setPreiaStatus('❌ Nu există turnusuri pentru '+ROLES[ROLE]+'. Adaugă-le din ⚙ Turnus-uri sau alege alt rol de mai sus.','var(--red)');return}
   let r;try{r=importBlock(c[0],luna,()=>{TN=saved})}finally{TN=saved}
-  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite: ${nUsed} (${ghToken?'ale tale':'publicate de administrator + ale tale; la același cod se folosește al tău'}).`;
+  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite — ${ROLES[ROLE]}: ${nUsed} (${ghToken?'ale tale':'publicate de administrator + ale tale; la același cod se folosește al tău'}).`;
   if(c.length>1)msg+=`\nℹ Am mai găsit și: ${c.slice(1).map(x=>x.name).join(', ')}`;
   msg+='\n\nCitit din fișă:\n'+r.lines.join('\n');
   if(r.neid.length)msg+=`\n⚠ Zile fără turnus potrivit (verifică manual): ${r.neid.join(', ')}`;
@@ -906,3 +936,4 @@ init();
 </script>
 </body>
 </html>
+
