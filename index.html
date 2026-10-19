@@ -171,6 +171,8 @@
   .gh-btn.primary{ background:var(--acc); color:#050505; border-color:var(--acc); margin-bottom:8px; }
   .gh-btn:hover{ filter:brightness(1.1); }
   .gh-btn.ghost:hover{ color:var(--acc,#ff2d55); border-color:var(--acc,#ff2d55); }
+  .gh-note{ font-family:'Share Tech Mono',monospace; font-size:10.5px; line-height:1.5; color:var(--txtd); margin:2px 0 12px; }
+  .gh-sep{ height:8px; }
 
   .actions{
     display:flex; gap:18px; flex-wrap:wrap; justify-content:center; max-width:520px;
@@ -258,10 +260,26 @@
     <div class="modal-title">⚙ Admin</div>
     <div class="modal-status" id="adminStatus">🔒 Neconectat</div>
     <div class="gh-form" id="adminForm">
-      <input type="password" id="ghTokenInput" placeholder="Token GitHub (ghp_...)" autocomplete="off">
-      <button class="gh-btn primary" id="ghConnectBtn">Conectează</button>
+      <div id="loginBox">
+        <input type="email" id="admEmail" placeholder="Email" autocomplete="username">
+        <input type="password" id="admPass" placeholder="Parolă" autocomplete="current-password">
+        <button class="gh-btn primary" id="admLoginBtn">Conectează</button>
+      </div>
+      <div id="setupBox" style="display:none;">
+        <div class="gh-note" id="setupNote">Configurare (o singură dată): introdu tokenul GitHub și alege email + parolă. Tokenul se salvează criptat; emailul și parola nu se scriu nicăieri.</div>
+        <input type="password" id="ghTokenInput" placeholder="Token GitHub (ghp_...)" autocomplete="off">
+        <input type="email" id="setEmail" placeholder="Email nou (opțional)" autocomplete="off">
+        <input type="password" id="setPass" placeholder="Parolă nouă (min. 10 caractere)" autocomplete="new-password">
+        <input type="password" id="setPass2" placeholder="Repetă parola" autocomplete="new-password">
+        <button class="gh-btn primary" id="setSaveBtn">Salvează și conectează</button>
+      </div>
+      <div class="gh-sep"></div>
+      <button class="gh-btn ghost" id="toggleSetupBtn">Prima configurare / conectare cu token</button>
     </div>
-    <button class="gh-btn ghost" id="ghDisconnectBtn" style="display:none;">Deconectează</button>
+    <div id="connectedBox" style="display:none;">
+      <button class="gh-btn ghost" id="changeCredsBtn" style="margin-bottom:8px;">Schimbă email / parolă</button>
+      <button class="gh-btn ghost" id="ghDisconnectBtn">Deconectează</button>
+    </div>
   </div>
 </div>
 
@@ -278,63 +296,143 @@
   var adminStatus = document.getElementById('adminStatus');
   var adminForm = document.getElementById('adminForm');
   var disconnectBtn = document.getElementById('ghDisconnectBtn');
+  function $id(i){ return document.getElementById(i); }
 
-  function refreshAdminUI(){
-    adminBtn.classList.toggle('connected', hasToken());
-    document.getElementById('statusDot').classList.toggle('status-connected', hasToken());
-    if(hasToken()){
-      adminStatus.textContent = '🟢 Conectat la GitHub';
-      adminStatus.classList.add('connected');
-      adminForm.style.display = 'none';
-      disconnectBtn.style.display = '';
-    } else {
-      adminStatus.textContent = '🔒 Neconectat';
-      adminStatus.classList.remove('connected');
-      adminForm.style.display = '';
-      disconnectBtn.style.display = 'none';
-    }
-    document.getElementById('baniBtn').style.display = hasToken() ? '' : 'none';
+  // ── Email + parolă ──
+  // Pe un site static nu există server care să verifice parola, deci tokenul GitHub e păstrat CRIPTAT
+  // (AES-GCM, cheie derivată din email + parolă cu PBKDF2) în data/admin.json. Emailul și parola nu apar în cod
+  // și nu se trimit nicăieri; doar cine știe ambele poate decripta tokenul în browser.
+  var REPO_API = 'https://api.github.com/repos/vladynitu1/vladynitu1.github.io/contents/data/admin.json';
+  var REPO_RAW = 'https://raw.githubusercontent.com/vladynitu1/vladynitu1.github.io/main/data/admin.json';
+  var adminBlob;           // undefined = neîncărcat, null = nu există
+  var adminMode = 'login'; // login | setup | change
+  var te = new TextEncoder(), td = new TextDecoder();
+  function b64(buf){ var a = new Uint8Array(buf), s = ''; for(var i=0;i<a.length;i++) s += String.fromCharCode(a[i]); return btoa(s); }
+  function unb64(s){ var b = atob(s), a = new Uint8Array(b.length); for(var i=0;i<b.length;i++) a[i] = b.charCodeAt(i); return a; }
+  async function deriveKey(email, pass, salt, iter){
+    var km = await crypto.subtle.importKey('raw', te.encode(email.trim().toLowerCase() + '\u0000' + pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name:'PBKDF2', salt:salt, iterations:iter, hash:'SHA-256' }, km, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+  }
+  async function encryptToken(tok, email, pass){
+    var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 600000;
+    var key = await deriveKey(email, pass, salt, iter);
+    var ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv:iv }, key, te.encode(tok));
+    return { v:1, kdf:'PBKDF2-SHA256', iter:iter, salt:b64(salt), iv:b64(iv), ct:b64(ct) };
+  }
+  async function decryptToken(blob, email, pass){
+    var key = await deriveKey(email, pass, unb64(blob.salt), blob.iter);
+    return td.decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv:unb64(blob.iv) }, key, unb64(blob.ct)));
+  }
+  async function fetchBlob(force){
+    if(adminBlob !== undefined && !force) return adminBlob;
+    try{
+      var r = await fetch(REPO_RAW + '?t=' + Date.now(), { cache:'no-store' });
+      adminBlob = r.ok ? await r.json() : null;
+    }catch(e){ adminBlob = null; }
+    return adminBlob;
+  }
+  async function saveBlob(blob, tok){
+    var h = { 'Authorization':'token ' + tok, 'Accept':'application/vnd.github+json' };
+    var sha, g = await fetch(REPO_API + '?ref=main', { headers:h });
+    if(g.ok) sha = (await g.json()).sha; else if(g.status !== 404) throw new Error('GitHub ' + g.status);
+    var body = { message:'Admin login', branch:'main', content:btoa(JSON.stringify(blob)) };
+    if(sha) body.sha = sha;
+    var p = await fetch(REPO_API, { method:'PUT', headers:Object.assign({ 'Content-Type':'application/json' }, h), body:JSON.stringify(body) });
+    if(!p.ok) throw new Error('Nu am putut salva în repo (' + p.status + '). Tokenul trebuie să aibă drept de scriere pe vladynitu1.github.io.');
+  }
+  async function verifyToken(tok){
+    var res = await fetch('https://api.github.com/repos/vladynitu1/Vlad', { headers:{ 'Authorization':'token ' + tok, 'Accept':'application/vnd.github+json' } });
+    return res.ok;
   }
 
+  function showView(mode){
+    adminMode = mode;
+    $id('loginBox').style.display = mode === 'login' ? '' : 'none';
+    $id('setupBox').style.display = mode === 'login' ? 'none' : '';
+    $id('ghTokenInput').style.display = mode === 'change' ? 'none' : '';
+    $id('toggleSetupBtn').style.display = mode === 'change' ? 'none' : '';
+    $id('toggleSetupBtn').textContent = mode === 'login' ? 'Prima configurare / conectare cu token' : '← Înapoi la email și parolă';
+    $id('setupNote').textContent = mode === 'change'
+      ? 'Alege emailul și parola noi. Tokenul rămâne criptat cu ele; cele vechi nu vor mai funcționa.'
+      : 'Configurare (o singură dată): introdu tokenul GitHub și alege email + parolă. Tokenul se salvează criptat; emailul și parola nu se scriu nicăieri. Lasă emailul și parolele goale ca să te conectezi doar cu token.';
+  }
+  function refreshAdminUI(){
+    var c = hasToken();
+    adminBtn.classList.toggle('connected', c);
+    $id('statusDot').classList.toggle('status-connected', c);
+    adminStatus.textContent = c ? '🟢 Conectat la GitHub' : '🔒 Neconectat';
+    adminStatus.classList.toggle('connected', c);
+    adminForm.style.display = c && adminMode !== 'change' ? 'none' : '';
+    $id('connectedBox').style.display = c && adminMode !== 'change' ? '' : 'none';
+    $id('baniBtn').style.display = c ? '' : 'none';
+  }
   function openAdmin(){
-    document.getElementById('ghTokenInput').value = '';
+    ['admEmail','admPass','ghTokenInput','setEmail','setPass','setPass2'].forEach(function(i){ $id(i).value = ''; });
+    showView('login');
     refreshAdminUI();
     adminOverlay.classList.add('open');
+    if(!hasToken()) fetchBlob().then(function(b){ if(!b && !hasToken()){ showView('setup'); $id('setupNote').textContent = 'Nu e setat încă email/parolă. Introdu tokenul GitHub o singură dată și alege email + parolă.'; } });
   }
-  function closeAdmin(){
-    adminOverlay.classList.remove('open');
-  }
+  function closeAdmin(){ adminOverlay.classList.remove('open'); }
+  function busy(btn, on, label){ btn.disabled = on; btn.textContent = on ? 'Se verifică...' : label; }
 
-  async function connectToken(){
-    var input = document.getElementById('ghTokenInput');
-    var btn = document.getElementById('ghConnectBtn');
-    var val = input.value.trim();
-    if(!val) return;
-    btn.disabled = true; btn.textContent = 'Se verifică...';
+  async function adminLogin(){
+    var btn = $id('admLoginBtn'), email = $id('admEmail').value.trim(), pass = $id('admPass').value;
+    if(!email || !pass) return;
+    busy(btn, true);
     try{
-      var res = await fetch('https://api.github.com/repos/vladynitu1/Vlad', {
-        headers: { 'Authorization': 'token ' + val, 'Accept': 'application/vnd.github+json' }
-      });
-      if(!res.ok) throw new Error('Token invalid sau fără acces la repo.');
-      setToken(val);
+      var blob = await fetchBlob(true);
+      if(!blob) throw new Error('Nu e setat încă email/parolă. Folosește „Prima configurare”.');
+      var tok;
+      try{ tok = await decryptToken(blob, email, pass); }catch(e){ throw new Error('Email sau parolă greșite.'); }
+      if(!(await verifyToken(tok))) throw new Error('Autentificarea e corectă, dar tokenul salvat nu mai e valid. Refă „Prima configurare” cu un token nou.');
+      setToken(tok);
+      $id('admPass').value = '';
       refreshAdminUI();
-    }catch(e){
-      alert('Nu am putut conecta: ' + e.message);
+    }catch(e){ alert(e.message); }
+    busy(btn, false, 'Conectează');
+  }
+  async function adminSetup(){
+    var btn = $id('setSaveBtn'), changing = hasToken();
+    var tok = changing ? getToken() : $id('ghTokenInput').value.trim();
+    var email = $id('setEmail').value.trim(), p1 = $id('setPass').value, p2 = $id('setPass2').value;
+    var wantCreds = !!(email || p1 || p2);
+    if(!tok){ alert('Introdu tokenul GitHub.'); return; }
+    if(changing && !wantCreds) return;
+    if(wantCreds){
+      if(!/^\S+@\S+\.\S+$/.test(email)){ alert('Email invalid.'); return; }
+      if(p1.length < 10){ alert('Parola trebuie să aibă minim 10 caractere.'); return; }
+      if(p1 !== p2){ alert('Parolele nu coincid.'); return; }
     }
-    btn.disabled = false; btn.textContent = 'Conectează';
+    busy(btn, true);
+    try{
+      if(!(await verifyToken(tok))) throw new Error('Token invalid sau fără acces la repo.');
+      if(!changing) setToken(tok);
+      if(wantCreds){
+        var blob = await encryptToken(tok, email, p1);
+        await saveBlob(blob, tok);
+        adminBlob = blob;
+      }
+      adminMode = 'login';
+      ['ghTokenInput','setEmail','setPass','setPass2'].forEach(function(i){ $id(i).value = ''; });
+      refreshAdminUI();
+      if(wantCreds) alert('Gata. De acum te conectezi cu email și parolă.');
+    }catch(e){
+      refreshAdminUI();
+      alert('Nu am putut finaliza: ' + e.message);
+    }
+    busy(btn, false, 'Salvează și conectează');
   }
 
   adminBtn.onclick = openAdmin;
-  document.getElementById('adminClose').onclick = closeAdmin;
+  $id('adminClose').onclick = closeAdmin;
   adminOverlay.addEventListener('click', function(e){ if(e.target === adminOverlay) closeAdmin(); });
-  document.getElementById('ghConnectBtn').onclick = connectToken;
-  document.getElementById('ghTokenInput').addEventListener('keydown', function(e){
-    if(e.key === 'Enter') connectToken();
-  });
-  disconnectBtn.onclick = function(){
-    clearToken();
-    refreshAdminUI();
-  };
+  $id('admLoginBtn').onclick = adminLogin;
+  $id('setSaveBtn').onclick = adminSetup;
+  $id('admPass').addEventListener('keydown', function(e){ if(e.key === 'Enter') adminLogin(); });
+  $id('toggleSetupBtn').onclick = function(){ showView(adminMode === 'login' ? 'setup' : 'login'); };
+  $id('changeCredsBtn').onclick = function(){ showView('change'); refreshAdminUI(); };
+  disconnectBtn.onclick = function(){ clearToken(); adminMode = 'login'; showView('login'); refreshAdminUI(); };
 
   refreshAdminUI();
 </script>
