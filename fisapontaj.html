@@ -212,12 +212,12 @@ let db={},TN={},SHARED={};
 // Seturi separate de turnusuri pe rol. TN / SHARED = setul rolului activ (ROLE).
 const ROLES={mecanici:'Mecanici',sefi:'Șefi tren',vanzatori:'Vânzători bilete'};
 let ROLE='mecanici';try{const r=localStorage.getItem('pontaj_rol');if(ROLES[r])ROLE=r}catch(e){}
-let TNS={mecanici:{},sefi:{},vanzatori:{}},SHAREDS={};
+let TNS={mecanici:{},sefi:{},vanzatori:{}},SHAREDS={},DBS={mecanici:{},sefi:{},vanzatori:{}};
 function setTN(o){TNS[ROLE]=o;TN=o}
 function renderRoleBar(){
   document.querySelectorAll('.roleBar').forEach(w=>{
     w.innerHTML='';
-    const l=document.createElement('span');l.style.cssText='font-size:.62rem;color:var(--txtd);text-transform:uppercase;letter-spacing:1.5px;align-self:center';l.textContent='Turnusuri pentru:';w.appendChild(l);
+    const l=document.createElement('span');l.style.cssText='font-size:.62rem;color:var(--txtd);text-transform:uppercase;letter-spacing:1.5px;align-self:center';l.textContent='Pontaj + turnusuri pentru:';w.appendChild(l);
     Object.keys(ROLES).forEach(r=>{
       const b=document.createElement('button');b.className='btn btn-sm '+(r===ROLE?'btn-g':'btn-s');b.textContent=ROLES[r];
       b.onclick=()=>setRole(r);w.appendChild(b);
@@ -226,9 +226,9 @@ function renderRoleBar(){
 }
 function setRole(r){
   if(!ROLES[r]||r===ROLE)return;
-  TNS[ROLE]=TN;ROLE=r;TN=TNS[r];SHARED=SHAREDS[r]||{};
+  TNS[ROLE]=TN;DBS[ROLE]=db;ROLE=r;TN=TNS[r];db=DBS[r];SHARED=SHAREDS[r]||{};
   try{localStorage.setItem('pontaj_rol',r)}catch(e){}
-  renderTags();
+  renderTags();renderTabs();renderTable();
   const t=document.getElementById('addTnTitle');if(t)t.textContent='+ Adaugă Turnus Nou — '+ROLES[ROLE];
   if(document.getElementById('editorOverlay').classList.contains('open'))renderEditorList();
 }
@@ -275,7 +275,7 @@ function updateStatusDot(){
   if(!ghToken)setSyncStatus('local','Fără token — local');
 }
 function save(){
-  try{TNS[ROLE]=TN;localStorage.setItem('cfr_'+curYear,JSON.stringify({db,TN:TNS.mecanici,TNX:{sefi:TNS.sefi,vanzatori:TNS.vanzatori}}));localStorage.setItem('cfr_yr',String(curYear))}catch(e){}
+  try{TNS[ROLE]=TN;DBS[ROLE]=db;localStorage.setItem('cfr_'+curYear,JSON.stringify({db:DBS.mecanici,TN:TNS.mecanici,TNX:{sefi:TNS.sefi,vanzatori:TNS.vanzatori},DBX:{sefi:DBS.sefi,vanzatori:DBS.vanzatori}}));localStorage.setItem('cfr_yr',String(curYear))}catch(e){}
   schedulePublish();
   if(ghToken){setSyncStatus('syncing','Se salvează...');clearTimeout(syncTimeout);syncTimeout=setTimeout(saveToGithub,2000)}
   else setSyncStatus('local','Local');
@@ -311,8 +311,8 @@ async function loadFromGithub(){
 }
 function loadYear(){loadYear0();mergeShared()}
 function loadYear0(){
-  try{const s=localStorage.getItem('cfr_'+curYear);if(s){const p=JSON.parse(s),x=p.TNX||{};db=p.db||{};TNS={mecanici:p.TN||{},sefi:x.sefi||{},vanzatori:x.vanzatori||{}}}else{db={};TNS={mecanici:{},sefi:{},vanzatori:{}}}}catch(e){db={};TNS={mecanici:{},sefi:{},vanzatori:{}}}
-  TN=TNS[ROLE];
+  try{const s=localStorage.getItem('cfr_'+curYear);if(s){const p=JSON.parse(s),x=p.TNX||{},y=p.DBX||{};DBS={mecanici:p.db||{},sefi:y.sefi||{},vanzatori:y.vanzatori||{}};TNS={mecanici:p.TN||{},sefi:x.sefi||{},vanzatori:x.vanzatori||{}}}else{DBS={mecanici:{},sefi:{},vanzatori:{}};TNS={mecanici:{},sefi:{},vanzatori:{}}}}catch(e){DBS={mecanici:{},sefi:{},vanzatori:{}};TNS={mecanici:{},sefi:{},vanzatori:{}}}
+  TN=TNS[ROLE];db=DBS[ROLE];
 }
 function load(){
   loadYear();updateStatusDot();
@@ -395,7 +395,8 @@ function writeNextYear(acc2){
   const days=Object.values(acc2);
   if(!o&&!days.length)return;
   o=o||{db:{},TN:{}};o.db=o.db||{};
-  const J=o.db[0]=o.db[0]||{};
+  let tgt=o.db;if(ROLE!=='mecanici'){o.DBX=o.DBX||{};o.DBX[ROLE]=o.DBX[ROLE]||{};tgt=o.DBX[ROLE]}
+  const J=tgt[0]=tgt[0]||{};
   Object.keys(J).forEach(d=>{const x=J[d];if(x.overflow&&/continuare|început/.test(x.note||''))J[d]=blankDay()});
   days.forEach(x=>{
     if(x.m!==0)return;
@@ -936,4 +937,3 @@ init();
 </script>
 </body>
 </html>
-
