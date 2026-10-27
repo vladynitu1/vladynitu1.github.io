@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMX CS2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;900&family=Share+Tech+Mono&family=Exo+2:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#050505;--surf:#0d0808;--surf2:#160c0c;--surf3:#1f1010;--bord:#3d1414;--bord2:#5c1c1c;--acc:#ff1f3d;--acc2:rgba(255,31,61,.14);--grn:#ff6b3d;--red:#ff2d55;--txt:#f0d8d8;--txtd:#7a5555;--txtm:#c08a8a}
+body{min-height:100vh;background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;display:flex;flex-direction:column;align-items:center}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,31,61,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,31,61,.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+.hidden{display:none!important}
+.board{width:100%;border-bottom:1px solid var(--bord);background:linear-gradient(135deg,#0a0303,#150606,#0a0303);padding:20px 24px 16px;text-align:center;box-shadow:0 0 40px rgba(255,31,61,.1);position:relative;z-index:1}
+.logo{display:flex;justify-content:center;align-items:center;font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:900;letter-spacing:-1.5px;line-height:1}
+.e{color:var(--acc);text-shadow:0 0 24px var(--acc)}.m{color:#fff}.x{color:var(--grn);text-shadow:0 0 24px var(--grn)}
+.dot{font-size:.6rem;color:var(--acc);margin-left:7px;animation:bl 1.5s infinite}.dot.on{color:#2ed573;text-shadow:0 0 10px rgba(46,213,115,.85)}
+@keyframes bl{50%{opacity:.2}}
+.sub{color:var(--txtd);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.2em;margin-top:4px}
+.bar{margin:14px auto 0;max-width:640px;padding:9px 14px;background:var(--surf);border:1px solid var(--bord);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:var(--txtd)}
+.nav{max-width:1100px;margin:16px auto 0;padding:12px 16px;background:var(--surf);border:1px solid var(--bord);border-radius:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1}
+.nb{padding:9px 18px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--txtd);background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;text-decoration:none}
+.nb:hover{color:var(--txt);border-color:var(--acc)}.nb.on{background:var(--acc);color:#050505;border-color:var(--acc)}
+.btn{background:var(--acc);color:#050505;border:1px solid var(--acc);padding:9px 16px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:13px;cursor:pointer}
+.btn:hover{filter:brightness(1.1)}.btn.ghost{background:transparent;border-color:var(--bord2);color:var(--txtm)}.btn.ghost:hover{color:var(--acc);border-color:var(--acc)}.btn.del{background:transparent;color:var(--red);border-color:var(--red)}
+.wrap{width:100%;max-width:1000px;padding:20px 16px 60px;position:relative;z-index:1}
+.crumb{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--txtd);margin-bottom:10px}.crumb a{color:var(--txtm);text-decoration:none}.crumb a:hover{color:var(--acc)}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:18px;border-bottom:1px solid var(--bord)}
+h1{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;text-transform:uppercase}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:18px}.grid.m{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.fc{position:relative;background:var(--surf);border:1px solid var(--bord2);border-radius:12px;padding:18px 14px;cursor:pointer;overflow:hidden}
+.fc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--grn))}
+.fc:hover{border-color:var(--acc);background:var(--surf2)}.fi{font-size:26px}
+.fn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;margin-top:6px;word-break:break-word;padding-right:48px}
+.fm{font-family:'Share Tech Mono',monospace;font-size:10.5px;color:var(--txtd);margin-top:4px}
+.fa{position:absolute;top:8px;right:8px;display:flex;gap:4px}
+.fa button{background:var(--surf3);border:1px solid var(--bord2);color:var(--txtm);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:14px}.fa button:hover{color:var(--acc);border-color:var(--acc)}
+.mc{background:var(--surf);border:1px solid var(--bord);border-radius:10px;overflow:hidden;cursor:pointer}.mc:hover{border-color:var(--acc)}
+.th{position:relative;aspect-ratio:16/10;background:var(--surf3) center/cover no-repeat;display:flex;align-items:center;justify-content:center}
+.pl{width:38px;height:38px;border-radius:50%;background:rgba(5,5,5,.7);border:1px solid var(--acc);color:var(--acc);display:flex;align-items:center;justify-content:center;font-size:14px}
+.mt{padding:8px 10px;font-size:13px;color:var(--txtm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty,.lockc{text-align:center;color:var(--txtm);padding:40px 16px;border:1px dashed var(--bord2);border-radius:12px;line-height:1.6;font-size:14px}
+.lockc{max-width:520px;margin:30px 16px}
+input[type=text],textarea{width:100%;background:var(--surf2);border:1px solid var(--bord2);border-radius:6px;padding:9px 10px;color:var(--txt);font:13.5px 'Share Tech Mono',monospace;outline:none;margin-bottom:8px}
+input:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
+.ov{position:fixed;inset:0;background:rgba(5,5,5,.88);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.md{background:var(--surf);border:1px solid var(--bord2);border-radius:14px;padding:22px;width:100%;max-width:440px;max-height:90vh;overflow:auto}
+.mh{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;text-transform:uppercase;margin-bottom:14px}
+.row{display:flex;gap:8px;margin-top:6px}.row .btn{flex:1}
+.ur{border-bottom:1px dashed var(--bord);padding-bottom:6px;margin-bottom:10px}.un{font-size:11px;color:var(--txtd);margin-bottom:5px;font-family:'Share Tech Mono',monospace;word-break:break-all}
+#lb{position:fixed;inset:0;background:rgba(3,3,3,.96);z-index:300;display:flex;flex-direction:column}
+.lbh{display:flex;justify-content:flex-end;gap:8px;padding:10px}
+#lbm{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 52px}
+#lbm img,#lbm video{max-width:100%;max-height:100%;border-radius:6px}
+.spin{color:var(--txtd);font-family:'Share Tech Mono',monospace}
+.lbf{padding:12px 16px 18px;text-align:center}#lbt{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px}#lbn{color:var(--txtm);font-size:14px;margin-top:4px;white-space:pre-wrap}
+.ar{position:absolute;top:50%;transform:translateY(-50%);background:var(--surf2);border:1px solid var(--bord2);color:var(--txt);width:40px;height:56px;border-radius:8px;font-size:22px;cursor:pointer}.ar:hover{border-color:var(--acc);color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="logo"><span class="e">E</span><span class="m">M</span><span class="x">X</span><span class="dot" id="dot">●</span></div>
+  <div class="sub">CS2 · SECRETE &amp; LINEUP-URI</div>
+  <div class="bar"><span id="msg">Se încarcă…</span><button class="btn ghost" id="reload">↻ Reîncarcă</button></div>
+</div>
+<div class="nav">
+  <a href="index.html" class="nb">🏠 Acasă</a>
+  <a href="fisalucru.html" class="nb">📋 Fișă de lucru</a>
+  <a href="salariu.html" class="nb">💰 Calcul salariu</a>
+  <a href="bani.html" class="nb">💵 Bani de luat</a>
+  <span class="nb on">🎯 CS2</span>
+  <a href="intarzieri.html" class="nb">🚆 Întârzieri</a>
+  <a href="fisapontaj.html" class="nb">📅 Pontaj</a>
+</div>
+
+<div id="lock" class="lockc hidden">
+  <div class="mh">🔒 Acces restricționat</div>
+  <p style="margin-bottom:14px">Această pagină e vizibilă doar adminilor (conectați din pagina principală).</p>
+  <a href="index.html" class="btn" style="text-decoration:none;display:inline-block">Conectează-te din pagina principală</a>
+</div>
+
+<div id="app" class="wrap">
+  <div class="crumb" id="crumb"></div>
+  <div class="head">
+    <h1 id="title">CS2</h1>
+    <div class="acts">
+      <button class="btn ghost" id="addF">+ Folder</button>
+      <button class="btn hidden" id="addMedia">+ Poze / clipuri</button>
+    </div>
+  </div>
+  <div id="content"></div>
+</div>
+<input type="file" id="file" accept="image/*,video/*" multiple class="hidden">
+
+<div class="ov hidden" id="fm"><div class="md"><div class="mh" id="fmT"></div><div id="fmF"></div><div class="row"><button class="btn" id="fmOk">Salvează</button><button class="btn ghost" id="fmNo">Anulează</button></div></div></div>
+<div class="ov hidden" id="cf"><div class="md" style="text-align:center"><div class="mh" id="cfT"></div><div class="row"><button class="btn del" id="cfOk">Da, șterge</button><button class="btn ghost" id="cfNo">Anulează</button></div></div></div>
+<div class="ov hidden" id="up"><div class="md"><div class="mh">Adaugă în acest folder</div><div id="upL"></div><div class="row"><button class="btn" id="upOk">Încarcă</button><button class="btn ghost" id="upNo">Anulează</button></div></div></div>
+<div id="lb" class="hidden">
+  <div class="lbh"><button class="btn ghost" id="lbe">✎ Editează</button><button class="btn del" id="lbd">🗑 Șterge</button><button class="btn ghost" id="lbx">✕</button></div>
+  <div id="lbm"></div>
+  <button class="ar" id="lbp" style="left:6px">‹</button><button class="ar" id="lbnx" style="right:6px">›</button>
+  <div class="lbf"><div id="lbt"></div><div id="lbn"></div></div>
+</div>
+
+<script>
+const REPO="vladynitu1/Vlad",DP="cs2/data.json",MD="cs2/media/",TK="emx_gh_token",API="https://api.github.com/repos/"+REPO+"/contents/",MAX=25*1024*1024;
+const tok=localStorage.getItem(TK)||"";
+let db={folders:[],items:[]},cur=null,busy=false,pending=[],lb=[],li=-1;
+const $=i=>document.getElementById(i),mb=n=>(n/1048576).toFixed(1);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const H=x=>Object.assign({Authorization:"token "+tok,Accept:"application/vnd.github+json"},x||{}),J={"Content-Type":"application/json"};
+const b64u=s=>btoa(unescape(encodeURIComponent(s)));
+const f2b=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=()=>no(new Error("Nu pot citi fișierul"));r.readAsDataURL(b)});
+function msg(t,c){const e=$("msg");e.textContent=t;e.style.color=c||""}
+async function err(r){let m="";try{m=(await r.json()).message}catch(e){}return new Error(r.status===401?"Token invalid.":r.status===403?"Tokenul nu are permisiunea 'repo'.":"GitHub "+r.status+(m?": "+m:""))}
+
+/* ── GitHub: date + fișiere ── */
+async function load(){
+  const r=await fetch(API+DP+"?t="+Date.now(),{headers:H(),cache:"no-store"});
+  if(r.status===404)return{sha:null,d:{folders:[],items:[]}};
+  if(!r.ok)throw await err(r);
+  const j=await r.json();let t;
+  if(j.content)t=decodeURIComponent(escape(atob(j.content.replace(/\n/g,""))));
+  else t=await(await fetch(API+DP,{headers:H({Accept:"application/vnd.github.raw+json"}),cache:"no-store"})).text();
+  const d=JSON.parse(t);return{sha:j.sha,d:{folders:d.folders||[],items:d.items||[]}};
+}
+let chain=Promise.resolve();
+function mutate(fn){ // citește ultima versiune, aplică schimbarea, salvează (reîncearcă la conflict)
+  const p=chain.then(async()=>{for(let a=0;a<4;a++){
+    const{sha,d}=await load(),out=fn(d),body={message:"cs2: update",content:b64u(JSON.stringify(d))};
+    if(sha)body.sha=sha;
+    const r=await fetch(API+DP,{method:"PUT",headers:H(J),body:JSON.stringify(body)});
+    if(r.status===409||r.status===422)continue;
+    if(!r.ok)throw await err(r);
+    db=d;return out}
+    throw new Error("Conflict la salvare, încearcă din nou.")});
+  chain=p.catch(()=>{});return p;
+}
+async function put(path,b){const r=await fetch(API+path,{method:"PUT",headers:H(J),body:JSON.stringify({message:"cs2: media",content:await f2b(b)})});if(!r.ok)throw await err(r)}
+async function rm(path){if(!path)return;try{const g=await fetch(API+path+"?t="+Date.now(),{headers:H(),cache:"no-store"});if(!g.ok)return;const j=await g.json();await fetch(API+path,{method:"DELETE",headers:H(J),body:JSON.stringify({message:"cs2: delete",sha:j.sha})})}catch(e){}}
+const cache=new Map();
+function blobUrl(path,mime){if(!cache.has(path)){const p=fetch(API+path,{headers:H({Accept:"application/vnd.github.raw+json"})}).then(async r=>{if(!r.ok)throw await err(r);return URL.createObjectURL(new Blob([await r.arrayBuffer()],{type:mime}))});p.catch(()=>cache.delete(path));cache.set(path,p)}return cache.get(path)}
+let act=0;const q=[];
+function lim(fn){return new Promise((ok,no)=>{const go=()=>{act++;fn().then(ok,no).finally(()=>{act--;q.length&&q.shift()()})};act<4?go():q.push(go)})}
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const t=e.target;io.unobserve(t);lim(()=>blobUrl(t.dataset.p,"image/jpeg")).then(u=>{t.style.backgroundImage="url("+u+")"}).catch(()=>{})}),{rootMargin:"200px"});
+
+/* ── Procesare poze / clipuri ── */
+async function bmp(f){try{return await createImageBitmap(f,{imageOrientation:"from-image"})}catch(e){return await createImageBitmap(f)}}
+function scale(src,w,h,max,qu){const s=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext("2d").drawImage(src,0,0,c.width,c.height);return new Promise(ok=>c.toBlob(ok,"image/jpeg",qu))}
+function vthumb(f){return new Promise(ok=>{const v=document.createElement("video"),u=URL.createObjectURL(f);let d=false;const end=b=>{if(d)return;d=true;URL.revokeObjectURL(u);ok(b)};setTimeout(()=>end(null),8000);v.muted=true;v.playsInline=true;v.preload="auto";v.src=u;v.onloadeddata=()=>{v.currentTime=Math.min(.5,(v.duration||1)/2)};v.onseeked=()=>scale(v,v.videoWidth,v.videoHeight,400,.7).then(end).catch(()=>end(null));v.onerror=()=>end(null)})}
+async function prep(f){
+  if(/^video\//.test(f.type)||/\.(mp4|mov|m4v|webm)$/i.test(f.name)){
+    if(f.size>MAX)throw new Error("video prea mare ("+mb(f.size)+" MB, maxim 25 MB) — scurtează-l sau comprimă-l");
+    const w=/webm$/i.test(f.name)||f.type==="video/webm",mv=/\.mov$/i.test(f.name)||f.type==="video/quicktime";
+    return{type:"video",blob:f,thumb:await vthumb(f),ext:w?"webm":mv?"mov":"mp4",mime:w?"video/webm":mv?"video/quicktime":"video/mp4"};
+  }
+  if(!/^image\//.test(f.type))throw new Error("tip de fișier nesuportat");
+  const b=await bmp(f);
+  return{type:"image",blob:await scale(b,b.width,b.height,2048,.9),thumb:await scale(b,b.width,b.height,400,.7),ext:"jpg",mime:"image/jpeg"};
+}
+
+/* ── Afișare ── */
+const kids=p=>db.folders.filter(f=>(f.parent||null)===(p||null));
+function desc(id,d){const s=[id];d.folders.forEach(f=>{if(f.parent===id)s.push(...desc(f.id,d))});return s}
+function render(){
+  const f=cur&&db.folders.find(x=>x.id===cur);if(cur&&!f)cur=null;
+  const bc=[];let x=f,g=0;while(x&&g++<20){bc.unshift(x);const p=x.parent;x=db.folders.find(y=>y.id===p)}
+  $("crumb").innerHTML='<a href="#/">CS2</a>'+bc.map(b=>' › <a href="#/'+esc(b.id)+'">'+esc(b.name)+'</a>').join("");
+  $("title").textContent=f?f.name:"CS2";
+  $("addMedia").classList.toggle("hidden",!f);
+  const fs=kids(cur),its=db.items.filter(i=>(i.folder||null)===(cur||null)).sort((a,b)=>b.ts-a.ts);lb=its;
+  let h="";
+  if(fs.length)h+='<div class="grid">'+fs.map(k=>{const ids=desc(k.id,db),n=db.items.filter(i=>ids.includes(i.folder)).length;
+    return'<div class="fc" data-go="'+esc(k.id)+'"><span class="fi">📁</span><div class="fn">'+esc(k.name)+'</div><div class="fm">'+kids(k.id).length+' foldere · '+n+' fișiere</div><div class="fa"><button data-a="ren" data-id="'+esc(k.id)+'" title="Redenumește">✎</button><button data-a="del" data-id="'+esc(k.id)+'" title="Șterge">×</button></div></div>'}).join("")+'</div>';
+  if(its.length)h+='<div class="grid m">'+its.map(i=>'<div class="mc" data-open="'+esc(i.id)+'"><div class="th"'+(i.thumb?' data-p="'+esc(i.thumb)+'"':'')+'>'+(i.type==="video"?'<span class="pl">▶</span>':'')+'</div><div class="mt">'+esc(i.title)+'</div></div>').join("")+'</div>';
+  if(!fs.length&&!its.length)h='<div class="empty">'+(f?'Folder gol. Adaugă un subfolder sau poze / clipuri.':'Nicio categorie încă.<br><br><button class="btn" id="seed">Pornește cu Smoke → Dust2, Mirage, Inferno</button>')+'</div>';
+  $("content").innerHTML=h;
+  document.querySelectorAll(".th[data-p]").forEach(t=>io.observe(t));
+  const s=$("seed");if(s)s.onclick=seed;
+}
+function route(){cur=decodeURIComponent((location.hash||"").replace(/^#\/?/,""))||null;render()}
+
+/* ── Lightbox ── */
+async function openLb(i){
+  if(i<0)return;li=i;const it=lb[i];
+  $("lb").classList.remove("hidden");$("lbt").textContent=it.title;$("lbn").textContent=it.note||"";
+  $("lbm").innerHTML='<div class="spin">Se încarcă…</div>';
+  try{const u=await blobUrl(it.path,it.mime);if(li!==i)return;
+    $("lbm").innerHTML=it.type==="video"?'<video src="'+u+'" controls autoplay muted loop playsinline></video>':'<img src="'+u+'">'}
+  catch(e){if(li===i)$("lbm").innerHTML='<div class="spin">Eroare: '+esc(e.message)+'</div>'}
+}
+function closeLb(){li=-1;$("lb").classList.add("hidden");$("lbm").innerHTML=""}
+function nav(d){if(li>=0&&lb.length>1)openLb((li+d+lb.length)%lb.length)}
+
+/* ── Ferestre ── */
+function form(title,fields){return new Promise(ok=>{
+  $("fmT").textContent=title;
+  $("fmF").innerHTML=fields.map((f,i)=>f.area?'<textarea id="ff'+i+'" placeholder="'+esc(f.ph)+'" rows="3">'+esc(f.v)+'</textarea>':'<input type="text" id="ff'+i+'" placeholder="'+esc(f.ph)+'" value="'+esc(f.v)+'" maxlength="80">').join("");
+  $("fm").classList.remove("hidden");const a=$("ff0");a.focus();
+  const done=v=>{$("fm").classList.add("hidden");ok(v)};
+  $("fmOk").onclick=()=>done(fields.map((f,i)=>$("ff"+i).value.trim()));$("fmNo").onclick=()=>done(null);
+  a.onkeydown=e=>{if(e.key==="Enter"&&!fields[0].area)$("fmOk").click()}})}
+function conf(t){return new Promise(ok=>{$("cfT").textContent=t;$("cf").classList.remove("hidden");
+  $("cfOk").onclick=()=>{$("cf").classList.add("hidden");ok(true)};$("cfNo").onclick=()=>{$("cf").classList.add("hidden");ok(false)}})}
+
+/* ── Acțiuni ── */
+async function run(fn,ok){
+  if(busy)return;busy=true;msg("Se salvează…");
+  try{await fn();msg("✓ "+(ok||"Salvat"))}catch(e){msg("✗ "+e.message,"var(--red)");alert(e.message)}
+  busy=false;render();setTimeout(()=>msg("Sincronizat cu "+REPO),3000);
+}
+async function newFolder(){const v=await form("Folder nou",[{ph:"Nume (ex: Smoke, Dust2)",v:""}]);if(!v||!v[0])return;const p=cur;run(()=>mutate(d=>{d.folders.push({id:uid(),name:v[0],parent:p})}))}
+async function renameF(id){const f=db.folders.find(x=>x.id===id),v=await form("Redenumește",[{ph:"Nume",v:f.name}]);if(!v||!v[0])return;run(()=>mutate(d=>{const x=d.folders.find(y=>y.id===id);if(x)x.name=v[0]}))}
+async function delF(id){
+  const f=db.folders.find(x=>x.id===id),ids=desc(id,db),n=db.items.filter(i=>ids.includes(i.folder)).length;
+  if(!await conf("Ștergi „"+f.name+"” cu tot ce conține ("+(ids.length-1)+" subfoldere, "+n+" fișiere)?"))return;
+  let gone=[];
+  run(async()=>{await mutate(d=>{const s=desc(id,d);gone=d.items.filter(i=>s.includes(i.folder));d.folders=d.folders.filter(x=>!s.includes(x.id));d.items=d.items.filter(i=>!s.includes(i.folder))});for(const i of gone){await rm(i.path);await rm(i.thumb)}},"Șters");
+}
+async function editI(){const it=lb[li],v=await form("Editează",[{ph:"Titlu",v:it.title},{ph:"Notă (poziție, unde te așezi, ce apeși…)",v:it.note,area:1}]);if(!v||!v[0])return;const id=it.id;await run(()=>mutate(d=>{const x=d.items.find(y=>y.id===id);if(x){x.title=v[0];x.note=v[1]}}));openLb(lb.findIndex(i=>i.id===id))}
+async function delI(){const it=lb[li];if(!await conf("Ștergi „"+it.title+"”?"))return;closeLb();run(async()=>{await mutate(d=>{d.items=d.items.filter(i=>i.id!==it.id)});await rm(it.path);await rm(it.thumb)},"Șters")}
+function seed(){run(()=>mutate(d=>{const s=uid();d.folders.push({id:s,name:"Smoke",parent:null});["Dust2","Mirage","Inferno"].forEach(n=>d.folders.push({id:uid(),name:n,parent:s}))}))}
+
+function pick(files){pending=[...files].map(f=>({file:f,title:f.name.replace(/\.[^.]+$/,""),note:""}));if(!pending.length)return;
+  $("upL").innerHTML=pending.map((p,i)=>'<div class="ur"><div class="un">'+esc(p.file.name)+' · '+mb(p.file.size)+' MB</div><input type="text" data-i="'+i+'" data-k="title" value="'+esc(p.title)+'" placeholder="Titlu"><input type="text" data-i="'+i+'" data-k="note" placeholder="Notă (opțional): poziție, ce apeși…"></div>').join("");
+  $("up").classList.remove("hidden")}
+async function doUp(){
+  if(busy||!pending.length||!cur)return;
+  const list=pending,fid=cur,fails=[];pending=[];$("up").classList.add("hidden");busy=true;
+  for(let i=0;i<list.length;i++){const p=list[i];msg("Se încarcă "+(i+1)+"/"+list.length+": "+p.file.name+"…");
+    try{const r=await prep(p.file),id=uid(),path=MD+id+"."+r.ext;await put(path,r.blob);
+      let tp=null;if(r.thumb){tp=MD+id+"_t.jpg";await put(tp,r.thumb)}
+      await mutate(d=>{d.items.push({id,folder:fid,type:r.type,title:p.title||"Fără titlu",note:p.note,path,thumb:tp,mime:r.mime,size:r.blob.size,ts:Date.now()})});render()}
+    catch(e){fails.push(p.file.name+": "+e.message)}}
+  busy=false;$("file").value="";msg(fails.length?"✗ "+fails.length+" eșuate":"✓ Încărcat");render();
+  if(fails.length)alert("Nu s-au încărcat:\n"+fails.join("\n"));setTimeout(()=>msg("Sincronizat cu "+REPO),3000);
+}
+async function reload(){
+  msg("Se încarcă…");
+  try{db=(await load()).d;msg("Sincronizat cu "+REPO);route()}
+  catch(e){msg("✗ "+e.message,"var(--red)");$("content").innerHTML='<div class="empty">✗ '+esc(e.message)+'</div>'}
+}
+
+/* ── Evenimente ── */
+$("content").addEventListener("click",e=>{
+  const a=e.target.closest("[data-a]");
+  if(a){e.stopPropagation();a.dataset.a==="ren"?renameF(a.dataset.id):delF(a.dataset.id);return}
+  const g=e.target.closest("[data-go]");if(g){location.hash="#/"+g.dataset.go;return}
+  const m=e.target.closest("[data-open]");if(m)openLb(lb.findIndex(i=>i.id===m.dataset.open));
+});
+$("upL").addEventListener("input",e=>{const t=e.target;if(t.dataset.i!=null)pending[t.dataset.i][t.dataset.k]=t.value});
+$("addF").onclick=newFolder;$("addMedia").onclick=()=>$("file").click();$("file").onchange=e=>pick(e.target.files);
+$("reload").onclick=reload;$("upOk").onclick=doUp;$("upNo").onclick=()=>{pending=[];$("up").classList.add("hidden");$("file").value=""};
+$("lbx").onclick=closeLb;$("lbp").onclick=()=>nav(-1);$("lbnx").onclick=()=>nav(1);$("lbe").onclick=editI;$("lbd").onclick=delI;
+let tx=0;$("lb").addEventListener("touchstart",e=>{tx=e.changedTouches[0].clientX},{passive:true});
+$("lb").addEventListener("touchend",e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>70)nav(d<0?1:-1)});
+addEventListener("keydown",e=>{if(li<0)return;if(e.key==="Escape")closeLb();if(e.key==="ArrowLeft")nav(-1);if(e.key==="ArrowRight")nav(1)});
+addEventListener("hashchange",()=>{closeLb();if(tok)route()});
+addEventListener("storage",e=>{if(e.key===TK)location.reload()});
+
+$("dot").classList.toggle("on",!!tok);
+if(!tok){$("lock").classList.remove("hidden");$("app").classList.add("hidden");$("reload").classList.add("hidden");msg("Fără token — pagină restricționată.")}
+else reload();
+</script>
+</body>
+</html>
