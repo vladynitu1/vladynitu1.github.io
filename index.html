@@ -249,6 +249,11 @@
       <span class="action-title">Bani de luat</span>
       <span class="action-sub">registru financiar</span>
     </a>
+    <a href="cs2.html" class="action-btn" id="cs2Btn" style="display:none;">
+      <span class="action-icon">🎯</span>
+      <span class="action-title">CS2</span>
+      <span class="action-sub">secrete &amp; lineup-uri</span>
+    </a>
   </div>
 </div>
 
@@ -365,6 +370,7 @@
     adminForm.style.display = c && adminMode !== 'change' ? 'none' : '';
     $id('connectedBox').style.display = c && adminMode !== 'change' ? '' : 'none';
     $id('baniBtn').style.display = c ? '' : 'none';
+    $id('cs2Btn').style.display = c ? '' : 'none';
   }
   function openAdmin(){
     ['admEmail','admPass','ghTokenInput','setEmail','setPass','setPass2'].forEach(function(i){ $id(i).value = ''; });
