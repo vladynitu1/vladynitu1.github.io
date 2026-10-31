@@ -364,7 +364,7 @@ function recalcAll(){
   }
   srcs.forEach(([m,d,s])=>{
     const sn=db[m][d].snap;(parseSrc(s,sn)||[]).forEach(num=>{
-      const t=(sn&&sn[num])||TN[num];let cur=0,prevEnd=null;const sh=p2m(t.segmente[0].prez)>=1380?-1440:0;
+      const t=(sn&&sn[num])||TN[num];let cur=0,prevEnd=null;const sh=0;
       t.segmente.forEach(sg=>{
         const sM=p2m(sg.prez),eM=p2m(sg.iesire);if(sM<0||eM<0)return;
         let st=sM;while(st<cur)st+=1440;let en=eM;while(en<=st)en+=1440;
