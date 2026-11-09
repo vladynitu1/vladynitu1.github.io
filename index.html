@@ -201,7 +201,29 @@
   @media (prefers-reduced-motion: reduce){
     .ball, .ball-shadow{ animation:none !important; }
   }
+
+  .theme-btn{
+    position:fixed; top:18px; right:100px; z-index:50; display:none;
+    padding:7px 14px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:11px;
+    letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf);
+    color:var(--txtm); cursor:pointer; transition:border-color .15s, color .15s;
+  }
+  .theme-btn:hover{ border-color:var(--acc); color:var(--acc); }
+  .theme-list{ display:flex; flex-direction:column; gap:8px; margin:14px 0 4px; }
+  .theme-opt{
+    display:flex; align-items:center; gap:12px; width:100%; padding:11px 14px; border-radius:10px;
+    border:1px solid var(--bord2); background:var(--surf2); color:var(--txt); cursor:pointer;
+    font-family:'Exo 2',sans-serif; font-size:14px; text-align:left; transition:border-color .15s, background .15s;
+  }
+  .theme-opt:hover{ border-color:var(--acc); }
+  .theme-opt.active{ border-color:var(--acc); background:var(--acc2); }
+  .theme-opt .sw{ display:flex; gap:3px; flex:none; }
+  .theme-opt .sw i{ width:14px; height:14px; border-radius:50%; border:1px solid rgba(255,255,255,.2); }
+  .theme-opt .nm{ flex:1; }
+  .theme-opt .ck{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--acc); letter-spacing:.06em; }
+  .theme-msg{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); min-height:16px; margin-top:8px; }
 </style>
+<script src="theme.js?v=3"></script>
 </head>
 <body>
 
@@ -258,6 +280,17 @@
 </div>
 
 <button class="admin-btn" id="adminBtn">Admin</button>
+
+<button class="theme-btn" id="themeBtn">🎨 Temă</button>
+
+<div class="overlay" id="themeOverlay">
+  <div class="modal">
+    <button class="modal-close" id="themeClose">✕</button>
+    <div class="modal-title">🎨 Temă site</div>
+    <div class="theme-list" id="themeList"></div>
+    <div class="theme-msg" id="themeMsg">Se aplică pe toate paginile, pentru toți vizitatorii.</div>
+  </div>
+</div>
 
 <div class="overlay" id="adminOverlay">
   <div class="modal">
@@ -338,7 +371,7 @@
   }
   async function saveBlob(blob, tok){
     var h = { 'Authorization':'token ' + tok, 'Accept':'application/vnd.github+json' };
-    var sha, g = await fetch(REPO_API + '?ref=main', { headers:h });
+    var sha, g = await fetch(REPO_API + '?ref=main&t=' + Date.now(), { headers:h, cache:'no-store' });
     if(g.ok) sha = (await g.json()).sha; else if(g.status !== 404) throw new Error('GitHub ' + g.status);
     var body = { message:'Admin login', branch:'main', content:btoa(JSON.stringify(blob)) };
     if(sha) body.sha = sha;
@@ -590,6 +623,88 @@
     render(((now - t0) / 2600) * TWO_PI);
     requestAnimationFrame(loop);
   })(t0);
+})();
+</script>
+
+<script>
+// ── Selector temă (doar pentru admin conectat cu token) ──
+(function(){
+  var THEME_API = 'https://api.github.com/repos/vladynitu1/vladynitu1.github.io/contents/data/theme.json';
+  var btn = document.getElementById('themeBtn'), ov = document.getElementById('themeOverlay');
+  var list = document.getElementById('themeList'), msg = document.getElementById('themeMsg');
+  var saved = null, busy = false;
+
+  function render(){
+    var cur = window.EMXTheme ? window.EMXTheme.current() : 'clasic';
+    list.innerHTML = '';
+    Object.keys(window.EMXTheme.list).forEach(function(k){
+      var t = window.EMXTheme.list[k];
+      var b = document.createElement('button');
+      b.className = 'theme-opt' + (k === cur ? ' active' : '');
+      b.innerHTML = '<span class="sw">' + t.sw.map(function(c){ return '<i style="background:' + c + '"></i>'; }).join('') + '</span>' +
+                    '<span class="nm">' + t.emoji + ' ' + t.label + '</span>' + (k === cur ? '<span class="ck">ACTIVĂ</span>' : '');
+      b.onclick = function(){ pick(k); };
+      list.appendChild(b);
+    });
+  }
+  function hdrs(tok){ return { 'Authorization':'token ' + tok, 'Accept':'application/vnd.github+json' }; }
+  async function readRepo(tok){
+    var r = await fetch(THEME_API + '?ref=main&t=' + Date.now(), { headers:hdrs(tok), cache:'no-store' });
+    if(r.status === 404) return { sha:null, theme:null };
+    if(!r.ok) throw new Error('GitHub ' + r.status);
+    var j = await r.json(), th = null;
+    try{ th = JSON.parse(atob(j.content.replace(/\s/g, ''))).theme; }catch(e){}
+    return { sha:j.sha, theme:th };
+  }
+  async function save(name){
+    var tok = getToken(); if(!tok) throw new Error('Nu ești conectat.');
+    var updated = new Date().toISOString(), lastStatus = 0;
+    for(var attempt = 0; attempt < 3; attempt++){
+      var cur = await readRepo(tok);
+      var body = { message:'Temă: ' + name, branch:'main', content:btoa(JSON.stringify({ theme:name, updated:updated })) };
+      if(cur.sha) body.sha = cur.sha;
+      var p = await fetch(THEME_API, { method:'PUT', headers:Object.assign({ 'Content-Type':'application/json' }, hdrs(tok)), body:JSON.stringify(body) });
+      if(p.ok){
+        var chk = await readRepo(tok);                       // verificare: ce e salvat acum în repo
+        if(chk.theme !== name) throw new Error('Salvarea nu s-a confirmat (în repo e „' + chk.theme + '”).');
+        return updated;
+      }
+      lastStatus = p.status;
+      if(p.status !== 409 && p.status !== 422) break;        // sha vechi → reîncearcă cu sha proaspăt
+      await new Promise(function(r){ setTimeout(r, 700); });
+    }
+    throw new Error('Nu am putut salva (' + lastStatus + '). ' + (lastStatus === 403 || lastStatus === 401 ? 'Tokenul trebuie să aibă drept de scriere pe repo.' : 'Încearcă din nou.'));
+  }
+  async function pick(name){
+    if(busy) return;
+    var before = window.EMXTheme.current();
+    busy = true; msg.textContent = 'Se salvează...';
+    window.EMXTheme.preview(name); render();
+    try{
+      var u = await save(name);
+      window.EMXTheme.remember(name, u);
+      msg.textContent = '✓ Salvat în repo: ' + window.EMXTheme.list[name].label + '. Vizitatorii o văd în câteva minute.';
+    }catch(e){
+      window.EMXTheme.preview(before); render();
+      msg.textContent = '✗ ' + e.message;
+    }
+    busy = false;
+  }
+  async function showRepoState(){
+    try{
+      var tok = getToken(); if(!tok) return;
+      var r = await readRepo(tok);
+      msg.textContent = 'Salvat acum în repo: ' + (r.theme && window.EMXTheme.list[r.theme] ? window.EMXTheme.list[r.theme].label : 'nimic (Clasic)') + '.';
+    }catch(e){}
+  }
+
+  btn.onclick = function(){ render(); ov.classList.add('open'); showRepoState(); };
+  document.getElementById('themeClose').onclick = function(){ ov.classList.remove('open'); };
+  ov.addEventListener('click', function(e){ if(e.target === ov) ov.classList.remove('open'); });
+
+  var base = refreshAdminUI;
+  refreshAdminUI = function(){ base(); btn.style.display = hasToken() ? 'block' : 'none'; };
+  refreshAdminUI();
 })();
 </script>
 

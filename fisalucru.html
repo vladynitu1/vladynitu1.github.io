@@ -182,6 +182,7 @@
   .page-nav-btn.auth{border-color:rgba(255,107,61,.4);}
   .page-nav-btn.auth.connected{color:var(--grn); border-color:rgba(255,107,61,.6);}
 </style>
+<script src="theme.js?v=3"></script>
 </head>
 <body>
 
@@ -275,7 +276,9 @@ async function ghFetchRaw(path){
 }
 
 async function ghGetSha(path, token){
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH, {
+  // fără cache: altfel, la a doua scriere primim sha-ul vechi și GitHub respinge cererea (409/422)
+  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH + '&t=' + Date.now(), {
+    cache: 'no-store',
     headers: token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : { Accept: 'application/vnd.github+json' }
   });
   if(res.status === 404) return null;
@@ -284,40 +287,53 @@ async function ghGetSha(path, token){
   return data.sha;
 }
 
+function ghWait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
 // Write: requires a token with write access to the repo.
+// Reîncearcă automat (cu sha proaspăt) dacă GitHub răspunde 409/422 — apare când scrii de mai multe ori la rând.
 async function ghPutFile(path, obj, message){
   const token = getToken();
   if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
-  const sha = await ghGetSha(path, token).catch(()=>null);
-  const body = { message, content: b64EncodeUnicode(JSON.stringify(obj, null, 2)), branch: GH_BRANCH };
-  if(sha) body.sha = sha;
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
-    method: 'PUT',
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if(!res.ok){
+  const content = b64EncodeUnicode(JSON.stringify(obj, null, 2));
+  let lastErr = '';
+  for(let attempt = 0; attempt < 4; attempt++){
+    const sha = await ghGetSha(path, token);
+    const body = { message, content, branch: GH_BRANCH };
+    if(sha) body.sha = sha;
+    const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if(res.ok) return await res.json();
     const errText = await res.text().catch(()=>'');
-    throw new Error('Eroare la salvarea pe GitHub (' + res.status + '): ' + errText);
+    lastErr = 'Eroare la salvarea pe GitHub (' + res.status + '): ' + errText;
+    if(res.status !== 409 && res.status !== 422) break;
+    await ghWait(500 + attempt * 500);
   }
-  return await res.json();
+  throw new Error(lastErr);
 }
 
 async function ghDeleteFile(path, message){
   const token = getToken();
   if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
-  const sha = await ghGetSha(path, token);
-  if(!sha) return null;
-  const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
-    method: 'DELETE',
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, sha, branch: GH_BRANCH })
-  });
-  if(!res.ok){
+  let lastErr = '';
+  for(let attempt = 0; attempt < 4; attempt++){
+    const sha = await ghGetSha(path, token);
+    if(!sha) return null;                         // deja șters
+    const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path), {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, sha, branch: GH_BRANCH })
+    });
+    if(res.ok) return await res.json();
+    if(res.status === 404) return null;
     const errText = await res.text().catch(()=>'');
-    throw new Error('Eroare la ștergerea de pe GitHub (' + res.status + '): ' + errText);
+    lastErr = 'Eroare la ștergerea de pe GitHub (' + res.status + '): ' + errText;
+    if(res.status !== 409 && res.status !== 422) break;
+    await ghWait(500 + attempt * 500);
   }
-  return await res.json();
+  throw new Error(lastErr);
 }
 
 
