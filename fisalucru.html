@@ -181,8 +181,18 @@
   .page-nav-btn.active{background:var(--acc); color:#050505; border-color:var(--acc); cursor:default;}
   .page-nav-btn.auth{border-color:rgba(255,107,61,.4);}
   .page-nav-btn.auth.connected{color:var(--grn); border-color:rgba(255,107,61,.6);}
+
+  .month-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; padding:9px 12px;
+    background:var(--surf); border:1px solid var(--bord2); border-radius:8px;}
+  .month-bar label{margin:0;}
+  .month-bar select{background:var(--surf2); border:1px solid var(--bord2); color:var(--txt); padding:7px 10px; border-radius:6px;
+    font-family:'Share Tech Mono',monospace; font-size:13px;}
+  .month-bar select:focus{outline:none; border-color:var(--acc);}
+  .month-note{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd);}
+  .month-note.warn{color:var(--org);}
 </style>
 <script src="theme.js?v=3"></script>
+<script src="luni.js?v=1"></script>
 </head>
 <body>
 
@@ -195,9 +205,7 @@
     <div class="board-sub">PROGRAM DE LUCRU</div>
   </div>
   <div class="tabs" id="tabs">
-    <div class="tab active" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>
-    <div class="tab" data-cat="mecanici">Mecanici</div>
-    <div class="tab cross" data-cat="cross">Cine e la trenul X?</div>
+    <div class="tab cross active" data-cat="cross">Cine e la trenul X?</div>
     <div class="tab team" data-cat="team">Programul unei persoane</div>
   </div>
 </div>
@@ -228,7 +236,8 @@ let state = {
   crossDay: '',
   crossCode: '',
   teamName: '',
-  teamDay: ''
+  teamDay: '',
+  monthSel: null            // null = luna curentă (urmărește calendarul); altfel cheia lunii alese
 };
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -353,12 +362,7 @@ async function loadAllMeta(){
 
 function renderTabs(){
   const tabsEl = document.getElementById('tabs');
-  const authed = hasToken();
   let html = '';
-  if(authed){
-    html += '<div class="tab' + (state.category==='conductori' && state.view==='list' || (state.view==='detail'&&state.category==='conductori') ? ' active':'') + '" data-cat="conductori">Șefi Tren / Vânzători Bilete</div>';
-    html += '<div class="tab' + (state.category==='mecanici' && (state.view==='list'||state.view==='detail') ? ' active':'') + '" data-cat="mecanici">Mecanici</div>';
-  }
   html += '<div class="tab cross' + (state.view==='cross' ? ' active':'') + '" data-cat="cross">Cine e la trenul X?</div>';
   html += '<div class="tab team' + (state.view==='team' ? ' active':'') + '" data-cat="team">Programul unei persoane</div>';
   tabsEl.innerHTML = html;
@@ -590,7 +594,7 @@ async function handleUpload(cat, file, month){
     const meta = { id, filename: file.name, month: month || '', uploadedAt: new Date().toISOString() };
     state.docsMeta[cat].unshift(meta);
     await saveMeta(cat);
-    statusEl.textContent = 'Salvat pe GitHub: ' + file.name;
+    statusEl.textContent = 'Salvat pe GitHub: ' + file.name + ' — luna detectată: ' + EMXLuni.info(meta).label + (EMXLuni.info(meta).src === 'nume' ? '' : ' (⚠ luna nu e la începutul numelui fișierului)');
     render();
   }catch(e){
     console.error(e);
@@ -666,7 +670,7 @@ async function getBlocksForDoc(cat, id){
 
 async function renderDetail(cat, doc){
   const container = document.getElementById('app');
-  container.innerHTML = '<span class="back-link" id="back-btn">&larr; înapoi la listă</span>' +
+  container.innerHTML = '<span class="back-link" id="back-btn">&larr; înapoi</span>' +
     '<h2 style="margin:4px 0 2px;">' + escapeHtml(doc.filename) + '</h2>' +
     '<div class="doc-meta" style="margin-bottom:16px;">' + CATS[cat] + (doc.month ? ' · ' + escapeHtml(doc.month) : '') + ' · încărcat ' + new Date(doc.uploadedAt).toLocaleDateString('ro-RO') + '</div>' +
     '<div class="card">' +
@@ -681,7 +685,7 @@ async function renderDetail(cat, doc){
     '</div>' +
     '<div id="blocks-container"><div class="empty">Se procesează...</div></div>';
 
-  document.getElementById('back-btn').onclick = ()=>{ state.view='list'; state.openDocId=null; render(); };
+  document.getElementById('back-btn').onclick = ()=>{ if(document.referrer && history.length > 1) history.back(); else location.href = 'index.html'; };
 
   const blocks = await getBlocksForDoc(cat, doc.id);
 
@@ -750,7 +754,7 @@ function renderBlocks(blocks){
 function renderList(){
   const container = document.getElementById('app');
   const cat = state.category;
-  const docs = state.docsMeta[cat] || [];
+  const docs = (state.docsMeta[cat] || []).slice().sort((a,b)=>EMXLuni.info(b).key - EMXLuni.info(a).key || String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
 
   container.innerHTML =
     '<h2 style="margin:0 0 4px;">' + CATS[cat] + '</h2>' +
@@ -760,7 +764,7 @@ function renderList(){
         '<div><label>Lună / an (etichetă)</label><input type="text" id="month-input" placeholder="ex. Iulie 2026"></div>' +
         '<button class="btn" id="upload-btn">Încarcă</button>' +
       '</div>' +
-      '<div class="hint">Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile, apoi se urcă pe GitHub (repo public) — nu se mai salvează local.</div>' +
+      '<div class="hint">📅 <b>Luna se ia din primul cuvânt al numelui fișierului</b> (ex. <i>Noiembrie 2026 sefi tren.pdf</i>). Poți încărca 2-3 luni; se folosește automat fișa lunii curente, iar după 23:59:59 din ultima zi a lunii se trece singur pe luna următoare.<br>Textul se extrage din PDF direct în browser, păstrând poziția coloanelor pe zile, apoi se urcă pe GitHub (repo public) — nu se mai salvează local.</div>' +
       '<div class="status" id="upload-status"></div>' +
     '</div>' +
     '<div class="section-title">Programe salvate</div>' +
@@ -769,7 +773,7 @@ function renderList(){
         docs.map(d =>
           '<div class="doc-item" data-id="' + d.id + '">' +
             '<div><div class="doc-name">' + escapeHtml(d.filename) + '</div>' +
-            '<div class="doc-meta">' + (d.month ? escapeHtml(d.month) + ' · ' : '') + 'încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</div></div>' +
+            '<div class="doc-meta">📅 ' + escapeHtml(EMXLuni.info(d).label) + (EMXLuni.info(d).src === 'nume' ? '' : ' <span style="color:var(--org)">(luna nu e la începutul numelui — folosită ' + (EMXLuni.info(d).src === 'eticheta' ? 'eticheta' : 'data încărcării') + ')</span>') + ' · încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</div></div>' +
             '<div class="doc-actions"><button class="btn ghost" data-del="' + d.id + '">Șterge</button></div>' +
           '</div>'
         ).join('')
@@ -798,11 +802,53 @@ function renderList(){
   });
 }
 
+// ---- Luna afișată: se ia din primul cuvânt al numelui fișei (ex. „Noiembrie 2026 sefi tren.pdf”) ----
+function activeMonthKey(){ return state.monthSel != null ? state.monthSel : EMXLuni.currentKey(); }
+function allDocsFlat(){ return (state.docsMeta.conductori || []).concat(state.docsMeta.mecanici || []); }
+function docsForMonth(cat){ return EMXLuni.filter(state.docsMeta[cat] || [], activeMonthKey()); }
+function monthBarHtml(){
+  const act = activeMonthKey();
+  const ms = EMXLuni.months(allDocsFlat());
+  if(!ms.some(m => m.key === act)){ ms.push({ key: act, label: EMXLuni.labelOf(act), has: false }); ms.sort((a,b)=>b.key-a.key); }
+  const n = docsForMonth('conductori').length + docsForMonth('mecanici').length;
+  const opts = ms.map(m => '<option value="' + m.key + '"' + (m.key === act ? ' selected' : '') + '>' + escapeHtml(m.label) + (m.has ? '' : ' (fără fișă)') + '</option>').join('');
+  const note = n
+    ? '<span class="month-note">' + n + (n === 1 ? ' fișă' : ' fișe') + (state.monthSel == null ? ' · luna curentă, se schimbă singură la miezul nopții' : '') + '</span>'
+    : '<span class="month-note warn">⚠ Nu există fișă pentru ' + escapeHtml(EMXLuni.labelOf(act)) + '. Încarc-o (numele fișierului începe cu luna) sau alege altă lună.</span>';
+  return '<div class="month-bar"><label for="month-sel">📅 Luna</label><select id="month-sel">' + opts + '</select>' + note + '</div>';
+}
+function bindMonthBar(){
+  const el = document.getElementById('month-sel'); if(!el) return;
+  el.onchange = async ()=>{
+    const k = parseInt(el.value, 10);
+    state.monthSel = (k === EMXLuni.currentKey()) ? null : k;
+    await onMonthChange();
+  };
+}
+async function onMonthChange(){
+  await render();
+  if(state.view === 'cross' && state.crossDay && state.crossCode) await runCrossSearch();
+  else if(state.view === 'team' && state.teamName) await runTeamSearch();
+}
+// Trecerea automată pe luna următoare: după 23:59:59 din ultima zi a lunii (pagina poate rămâne deschisă)
+let _rollKey = EMXLuni.currentKey(), _rollTimer = null;
+async function checkRollover(){
+  const k = EMXLuni.currentKey();
+  if(k === _rollKey) return;
+  _rollKey = k;
+  if(state.monthSel === null && (state.view === 'cross' || state.view === 'team')) await onMonthChange();
+}
+function scheduleRollover(){
+  clearTimeout(_rollTimer);
+  _rollTimer = setTimeout(async ()=>{ await checkRollover(); scheduleRollover(); }, Math.min(EMXLuni.msToNextMonth() + 250, 6 * 3600 * 1000));
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') checkRollover(); });
+
 async function renderCross(){
   const container = document.getElementById('app');
   container.innerHTML =
     '<h2 style="margin:0 0 4px;">Cine e la trenul X?</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">Caută o zi și un cod de tren — primești toți oamenii (mecanic, șef tren, vânzător bilete) găsiți în ziua respectivă cu codul respectiv, din toate fișierele salvate.</div>' +
+    monthBarHtml() +
     '<div class="card">' +
       '<div class="search-bar">' +
         '<div><label>Zi (1-31)</label><input type="text" id="cross-day" placeholder="ex. 15" value="' + escapeHtml(state.crossDay) + '" style="min-width:80px;"></div>' +
@@ -810,10 +856,10 @@ async function renderCross(){
         '<div><label>Cod tren</label><input type="text" id="cross-code" placeholder="ex. 16565" value="' + escapeHtml(state.crossCode) + '"></div>' +
         '<button class="btn solid-green" id="cross-btn">Caută trenul</button>' +
       '</div>' +
-      '<div class="search-note">Se caută în toate fișierele din ambele categorii, folosind poziția reconstruită a coloanelor de zile din fiecare PDF.</div>' +
     '</div>' +
-    '<div id="cross-results"><div class="empty">Introdu ziua și codul, apoi apasă Caută trenul.</div></div>';
+    '<div id="cross-results"></div>';
 
+  bindMonthBar();
   document.getElementById('cross-btn').onclick = async ()=>{
     state.crossDay = document.getElementById('cross-day').value.trim();
     state.crossCode = document.getElementById('cross-code').value.trim();
@@ -842,11 +888,15 @@ async function runCrossSearch(){
     holder.innerHTML = '<div class="empty">Completează ziua (1-31) și codul.</div>';
     return;
   }
-  holder.innerHTML = '<div class="empty">Se caută în toate fișierele...</div>';
+  if(!docsForMonth('conductori').length && !docsForMonth('mecanici').length){
+    holder.innerHTML = '<div class="empty">Nu există fișă încărcată pentru ' + escapeHtml(EMXLuni.labelOf(activeMonthKey())) + '.</div>';
+    return;
+  }
+  holder.innerHTML = '<div class="empty">Se caută în fișele din ' + escapeHtml(EMXLuni.labelOf(activeMonthKey())) + '...</div>';
 
   const results = [];
   for(const cat of Object.keys(CATS)){
-    const docs = state.docsMeta[cat] || [];
+    const docs = docsForMonth(cat);
     for(const d of docs){
       const blocks = await getBlocksForDoc(cat, d.id);
       const sets = await loadTurnusSets(docYear(d));
@@ -889,7 +939,7 @@ async function runCrossSearch(){
     return;
   }
 
-  holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + '</div>' +
+  holder.innerHTML = '<div class="section-title">' + results.length + ' găsit(e) — ziua ' + day + ', cod ' + escapeHtml(state.crossCode) + ' · ' + escapeHtml(EMXLuni.labelOf(activeMonthKey())) + '</div>' +
     results.map(r => {
       const span = r.dayLabel && r.dayLabel.indexOf('/') !== -1
         ? ' <span style="color:var(--grn); font-weight:600;">(ziua ' + escapeHtml(r.dayLabel) + ')</span>'
@@ -905,7 +955,7 @@ async function runCrossSearch(){
 async function getAllTaggedBlocks(){
   const out = [];
   for(const cat of Object.keys(CATS)){
-    const docs = state.docsMeta[cat] || [];
+    const docs = docsForMonth(cat);
     for(const d of docs){
       const blocks = await getBlocksForDoc(cat, d.id);
       blocks.forEach(b => out.push({ block: b, cat, doc: d }));
@@ -1045,7 +1095,7 @@ async function loadTurnusSets(year){
   }
   return (_turnusSetsCache[year] = out);
 }
-function docYear(doc){ const y = new Date(doc && doc.uploadedAt).getFullYear(); return isNaN(y) ? new Date().getFullYear() : y; }
+function docYear(doc){ return EMXLuni.info(doc).y; }
 function trainEntriesForDay(block, day, A){
   const out = [];
   (block.dayCodes[day] || []).forEach((tok, oi) => { if(/\d/.test(tok)) out.push({ code: tok, oi }); });
@@ -1080,7 +1130,7 @@ async function renderTeam(){
   const container = document.getElementById('app');
   container.innerHTML =
     '<h2 style="margin:0 0 4px;">Programul unei persoane</h2>' +
-    '<div class="doc-meta" style="margin-bottom:16px;">Pui numele (mecanic, șef tren sau vânzător bilete) — cu zi vezi doar acea zi, fără zi vezi tot programul pe lună.</div>' +
+    monthBarHtml() +
     '<div class="card">' +
       '<div class="search-bar">' +
         '<div><label>Nume</label><input type="text" id="team-name" placeholder="ex. Nitu Ionut" value="' + escapeHtml(state.teamName) + '"></div>' +
@@ -1088,10 +1138,10 @@ async function renderTeam(){
         '<div class="day-quick"><button class="btn ghost btn-sm" id="team-day-today" type="button">Azi</button><button class="btn ghost btn-sm" id="team-day-tomorrow" type="button">Mâine</button></div>' +
         '<button class="btn" style="background:var(--org);" id="team-btn">Arată programul</button>' +
       '</div>' +
-      '<div class="search-note">Căutarea ignoră diacriticele (Nitu găsește și Nițu). Lasă ziua goală ca să vezi programul pe toată luna.</div>' +
     '</div>' +
     '<div id="team-results"><div class="empty">Introdu numele, apoi apasă Arată programul.</div></div>';
 
+  bindMonthBar();
   document.getElementById('team-btn').onclick = async ()=>{
     state.teamName = document.getElementById('team-name').value.trim();
     state.teamDay = document.getElementById('team-day').value.trim();
@@ -1122,13 +1172,17 @@ async function runTeamSearch(){
     holder.innerHTML = '<div class="empty">Completează numele (ziua e opțională, 1-31).</div>';
     return;
   }
-  holder.innerHTML = '<div class="empty">Se caută...</div>';
+  if(!docsForMonth('conductori').length && !docsForMonth('mecanici').length){
+    holder.innerHTML = '<div class="empty">Nu există fișă încărcată pentru ' + escapeHtml(EMXLuni.labelOf(activeMonthKey())) + '.</div>';
+    return;
+  }
+  holder.innerHTML = '<div class="empty">Se caută în ' + escapeHtml(EMXLuni.labelOf(activeMonthKey())) + '...</div>';
 
   const all = await getAllTaggedBlocks();
   const matches = all.filter(t => normalize(t.block.name).includes(nameQ));
 
   if(matches.length === 0){
-    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu numele „' + escapeHtml(state.teamName) + '”.</div>';
+    holder.innerHTML = '<div class="empty">Niciun angajat găsit cu numele „' + escapeHtml(state.teamName) + '” în ' + escapeHtml(EMXLuni.labelOf(activeMonthKey())) + '.</div>';
     return;
   }
 
@@ -1218,9 +1272,10 @@ async function render(){
   if(state.view==='detail' && state.openDocId){
     const doc = (state.docsMeta[state.category]||[]).find(d=>d.id===state.openDocId);
     if(doc){ await renderDetail(state.category, doc); return; }
-    state.view='list';
   }
-  renderList();
+  state.view = 'cross'; state.openDocId = null;
+  renderTabs();
+  await renderCross();
 }
 
 function updateGhAccountBtn(){
@@ -1237,10 +1292,13 @@ window.addEventListener('storage', function(e){
 });
 
 (async function init(){
-  state.view = hasToken() ? 'list' : 'cross';
+  state.view = 'cross';
+  const qs = new URLSearchParams(location.search), qc = qs.get('cat'), qd = qs.get('doc');
+  if(hasToken() && CATS[qc] && qd){ state.category = qc; state.view = 'detail'; state.openDocId = qd; }
   renderTabs();
   await loadAllMeta();
   render();
+  scheduleRollover();
 })();
 </script>
 <script src="status.js" defer></script>

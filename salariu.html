@@ -129,6 +129,7 @@ input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2
 .extract-status.busy{border-left-color:var(--acc)}
 </style>
 <script src="theme.js?v=3"></script>
+<script src="luni.js?v=1"></script>
 </head>
 <body>
 <div class="app">
@@ -173,6 +174,11 @@ input[type="text"]:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2
       <div class="field">
         <label>Nume angajat (nume + prenume, ca în grafic)</label>
         <input type="text" id="numeAngajat" placeholder="ex: Nițu Ionuț">
+      </div>
+      <div class="field">
+        <label>Luna fișei (din care preiau orele)</label>
+        <select id="lunaFisa" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:7px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:.9rem;padding:9px 11px;width:100%;outline:none"></select>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--txtd)">Luna se ia din primul cuvânt al numelui fișei. Implicit: luna curentă (trece singură pe următoarea după 23:59:59).</span>
       </div>
       <button class="btn-extract" id="btnExtract" onclick="extrageDinFisa()">⚡ Preia orele automat</button>
       <div class="extract-status" id="extractStatus"></div>
@@ -695,11 +701,21 @@ async function extrageDinFisa(){
 
   try {
     const metaByCat = await loadAllDocsMeta();
-    const allDocs = [];
-    CATS_LIST.forEach(cat => (metaByCat[cat]||[]).forEach(d => allDocs.push({cat, doc:d})));
+    const everyDoc = [];
+    CATS_LIST.forEach(cat => (metaByCat[cat]||[]).forEach(d => everyDoc.push({cat, doc:d})));
+    lunaDocs = everyDoc.map(x => x.doc); fillLuni();
 
-    if(allDocs.length === 0){
+    if(everyDoc.length === 0){
       setStatus('Nu există nicio fișă de lucru salvată încă. Încarc-o mai întâi din pagina „Fișă de lucru".', 'err');
+      btn.disabled = false;
+      return;
+    }
+    // doar fișele lunii alese (implicit luna curentă)
+    const lunaKey = lunaTouched ? parseInt(document.getElementById('lunaFisa').value, 10) : EMXLuni.currentKey();
+    const lunaEticheta = EMXLuni.labelOf(lunaKey);
+    const allDocs = everyDoc.filter(x => EMXLuni.info(x.doc).key === lunaKey);
+    if(allDocs.length === 0){
+      setStatus('Nu există nicio fișă pentru <span class="hl">' + lunaEticheta + '</span>. Încarc-o din „Fișă de lucru” (numele fișierului să înceapă cu luna) sau alege altă lună.', 'err');
       btn.disabled = false;
       return;
     }
@@ -727,7 +743,7 @@ async function extrageDinFisa(){
 
     const matches = dedupeCandidates(findMatches(allCandidates, nume));
     if(matches.length===0){
-      setStatus(`Nu am găsit "${nume}" în nicio fișă salvată. Verifică ortografia sau încarcă fișa lunii respective din pagina „Fișă de lucru".`, 'err');
+      setStatus(`Nu am găsit "${nume}" în fișele din ${lunaEticheta}. Verifică ortografia sau alege altă lună.`, 'err');
       btn.disabled = false;
       return;
     }
@@ -750,6 +766,20 @@ async function extrageDinFisa(){
 document.getElementById('numeAngajat').addEventListener('keydown', function(e){
   if(e.key === 'Enter') extrageDinFisa();
 });
+
+// ── Selector lună ──
+let lunaTouched = false, lunaDocs = null;
+function fillLuni(){
+  const sel = document.getElementById('lunaFisa'); if(!sel) return;
+  const cur = EMXLuni.currentKey();
+  const keep = lunaTouched ? sel.value : String(cur);
+  const ms = EMXLuni.months(lunaDocs || []);
+  sel.innerHTML = ms.map(m => '<option value="' + m.key + '">' + m.label + (m.has ? '' : ' (fără fișă)') + '</option>').join('');
+  sel.value = ms.some(m => String(m.key) === keep) ? keep : String(cur);
+}
+document.getElementById('lunaFisa').addEventListener('change', function(){ lunaTouched = true; });
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') fillLuni(); });
+(async function(){ try{ const meta = await loadAllDocsMeta(); lunaDocs = []; CATS_LIST.forEach(c => (meta[c]||[]).forEach(d => lunaDocs.push(d))); }catch(e){} fillLuni(); })();
 
 // Pornire
 incarca();

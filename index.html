@@ -122,7 +122,7 @@
   }
 
   .admin-btn{
-    position:fixed; top:18px; right:18px; z-index:50;
+    position:static;
     padding:7px 14px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:11px;
     letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf);
     color:var(--txtd); cursor:pointer; transition:border-color .15s, color .15s;
@@ -203,7 +203,7 @@
   }
 
   .theme-btn{
-    position:fixed; top:18px; right:100px; z-index:50; display:none;
+    position:static; display:none;
     padding:7px 14px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:11px;
     letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf);
     color:var(--txtm); cursor:pointer; transition:border-color .15s, color .15s;
@@ -222,8 +222,43 @@
   .theme-opt .nm{ flex:1; }
   .theme-opt .ck{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--acc); letter-spacing:.06em; }
   .theme-msg{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); min-height:16px; margin-top:8px; }
+
+  .fise-btn{
+    position:static; display:none;
+    padding:7px 14px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:11px;
+    letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--bord2); background:var(--surf);
+    color:var(--txtm); cursor:pointer; transition:border-color .15s, color .15s;
+  }
+  .fise-btn:hover{ border-color:var(--acc); color:var(--acc); }
+  .fise-modal{ max-width:580px !important; max-height:88vh; overflow-y:auto; }
+  .fise-tabs{ display:flex; gap:8px; margin:12px 0; }
+  .fise-tab{
+    flex:1; padding:9px 10px; border-radius:9px; border:1px solid var(--bord2); background:var(--surf2); color:var(--txtm);
+    font-family:'Exo 2',sans-serif; font-size:13px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .fise-tab.active{ border-color:var(--acc); background:var(--acc2); color:var(--txt); }
+  .fise-up{ display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid var(--bord2); border-radius:10px; background:var(--surf2); }
+  .fise-up input[type=file]{ color:var(--txtm); font-size:12px; width:100%; }
+  .fise-up input[type=text]{ background:var(--surf); border:1px solid var(--bord2); color:var(--txt); padding:8px 10px; border-radius:7px; font-family:'Share Tech Mono',monospace; font-size:12px; width:100%; box-sizing:border-box; }
+  .fise-up button, .fise-del{
+    padding:8px 14px; border-radius:8px; border:1px solid var(--acc); background:var(--acc2); color:var(--txt); cursor:pointer;
+    font-family:'Exo 2',sans-serif; font-size:13px; font-weight:600;
+  }
+  .fise-up button:disabled{ opacity:.5; cursor:wait; }
+  .fise-hint{ font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--txtd); line-height:1.45; }
+  .fise-status{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtm); min-height:16px; margin-top:8px; white-space:pre-wrap; }
+  .fise-list{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+  .fise-row{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--bord2); border-radius:10px; background:var(--surf2); }
+  .fise-row .nm{ flex:1; min-width:0; }
+  .fise-row .nm b{ display:block; font-size:13px; color:var(--txt); word-break:break-word; font-weight:600; }
+  .fise-row .nm span{ font-family:'Share Tech Mono',monospace; font-size:10.5px; color:var(--txtd); }
+  .fise-row a{ color:var(--acc); font-size:12px; text-decoration:none; font-family:'Share Tech Mono',monospace; }
+  .fise-del{ border-color:var(--bord2); background:transparent; color:var(--txtm); padding:6px 10px; font-size:12px; }
+  .fise-del:hover{ border-color:#ff4d6d; color:#ff4d6d; }
+  .admin-row{ display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap; margin:-8px 0 24px; }
 </style>
 <script src="theme.js?v=3"></script>
+<script src="luni.js?v=1"></script>
 </head>
 <body>
 
@@ -244,6 +279,12 @@
     <span class="e">E</span><span class="m">M</span><span class="x">X</span><span class="dot" id="statusDot">●</span>
   </div>
   <div class="tagline">alege instrumentul</div>
+
+  <div class="admin-row" id="adminRow">
+    <button class="fise-btn" id="fiseBtn">📤 Fișe</button>
+    <button class="theme-btn" id="themeBtn">🎨 Temă</button>
+    <button class="admin-btn" id="adminBtn">Admin</button>
+  </div>
 
   <div class="actions" id="actions">
     <a href="fisalucru.html" class="action-btn">
@@ -279,9 +320,27 @@
   </div>
 </div>
 
-<button class="admin-btn" id="adminBtn">Admin</button>
 
-<button class="theme-btn" id="themeBtn">🎨 Temă</button>
+
+<div class="overlay" id="fiseOverlay">
+  <div class="modal fise-modal">
+    <button class="modal-close" id="fiseClose">✕</button>
+    <div class="modal-title">📤 Fișe de lucru</div>
+    <div class="fise-tabs" id="fiseTabs">
+      <button class="fise-tab active" data-cat="conductori">Șefi Tren / Vânzători Bilete</button>
+      <button class="fise-tab" data-cat="mecanici">Mecanici</button>
+    </div>
+    <div class="fise-up">
+      <input type="file" id="fiseFile" accept="application/pdf">
+      <input type="text" id="fiseMonth" placeholder="Lună / an (opțional — doar dacă numele fișierului nu începe cu luna)">
+      <button id="fiseUpBtn">Încarcă</button>
+      <div class="fise-hint">📅 Luna se ia din primul cuvânt al numelui fișierului (ex. <i>Noiembrie 2026 sefi tren.pdf</i>). Poți încărca 2-3 luni; site-ul folosește automat fișa lunii curente.</div>
+    </div>
+    <div class="fise-status" id="fiseStatus"></div>
+    <div class="fise-list" id="fiseList"></div>
+  </div>
+</div>
+
 
 <div class="overlay" id="themeOverlay">
   <div class="modal">
@@ -701,6 +760,177 @@
   btn.onclick = function(){ render(); ov.classList.add('open'); showRepoState(); };
   document.getElementById('themeClose').onclick = function(){ ov.classList.remove('open'); };
   ov.addEventListener('click', function(e){ if(e.target === ov) ov.classList.remove('open'); });
+
+  var base = refreshAdminUI;
+  refreshAdminUI = function(){ base(); btn.style.display = hasToken() ? 'block' : 'none'; };
+  refreshAdminUI();
+})();
+</script>
+
+<script>
+// ── Încărcare fișe de lucru (doar admin cu token) ──
+(function(){
+  var OWNER = 'vladynitu1', REPO = 'vladynitu1.github.io', BRANCH = 'main', DIR = 'data';
+  var CATS = { conductori:'Șefi Tren / Vânzători Bilete', mecanici:'Mecanici' };
+  var cat = 'conductori', metas = { conductori:[], mecanici:[] }, busy = false;
+  var $ = function(id){ return document.getElementById(id); };
+  var btn = $('fiseBtn'), ov = $('fiseOverlay'), st = $('fiseStatus');
+
+  function enc(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+  function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function uid(){ return 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function url(p){ return 'https://api.github.com/repos/' + OWNER + '/' + REPO + '/contents/' + enc(p); }
+  function say(t){ st.textContent = t; }
+
+  async function readJson(path){
+    var tok = getToken(), h = { Accept:'application/vnd.github.raw' }; if(tok) h.Authorization = 'Bearer ' + tok;
+    try{
+      var r = await fetch(url(path) + '?ref=' + BRANCH + '&t=' + Date.now(), { cache:'no-store', headers:h });
+      if(r.status === 404) return null;
+      if(r.ok) return JSON.parse(await r.text());
+    }catch(e){}
+    try{
+      var r2 = await fetch('https://raw.githubusercontent.com/' + OWNER + '/' + REPO + '/' + BRANCH + '/' + path + '?t=' + Date.now(), { cache:'no-store' });
+      if(r2.ok) return await r2.json();
+    }catch(e){}
+    return null;
+  }
+  // sha proaspăt (fără cache) + reîncercare la 409/422 — ca să meargă mai multe operații la rând fără refresh
+  async function getSha(path, tok){
+    var r = await fetch(url(path) + '?ref=' + BRANCH + '&t=' + Date.now(), { cache:'no-store', headers:{ Authorization:'Bearer ' + tok, Accept:'application/vnd.github+json' } });
+    if(r.status === 404) return null;
+    if(!r.ok) throw new Error('GitHub ' + r.status);
+    return (await r.json()).sha;
+  }
+  async function putFile(path, obj, msg){
+    var tok = getToken(); if(!tok) throw new Error('Lipsește tokenul GitHub — conectează-te ca admin.');
+    var content = b64(JSON.stringify(obj, null, 2)), last = '';
+    for(var i = 0; i < 4; i++){
+      var sha = await getSha(path, tok), body = { message:msg, content:content, branch:BRANCH }; if(sha) body.sha = sha;
+      var r = await fetch(url(path), { method:'PUT', headers:{ Authorization:'Bearer ' + tok, Accept:'application/vnd.github+json', 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+      if(r.ok) return;
+      last = 'Eroare la salvarea pe GitHub (' + r.status + ')';
+      if(r.status !== 409 && r.status !== 422) break;
+      await wait(500 + i * 500);
+    }
+    throw new Error(last);
+  }
+  async function delFile(path, msg){
+    var tok = getToken(); if(!tok) throw new Error('Lipsește tokenul GitHub — conectează-te ca admin.');
+    var last = '';
+    for(var i = 0; i < 4; i++){
+      var sha = await getSha(path, tok); if(!sha) return;
+      var r = await fetch(url(path), { method:'DELETE', headers:{ Authorization:'Bearer ' + tok, Accept:'application/vnd.github+json', 'Content-Type':'application/json' }, body:JSON.stringify({ message:msg, sha:sha, branch:BRANCH }) });
+      if(r.ok || r.status === 404) return;
+      last = 'Eroare la ștergerea de pe GitHub (' + r.status + ')';
+      if(r.status !== 409 && r.status !== 422) break;
+      await wait(500 + i * 500);
+    }
+    throw new Error(last);
+  }
+
+  // ── PDF: text cu poziții (identic cu cel din Fișa de lucru) ──
+  function loadPdfJs(){
+    if(window.pdfjsLib) return Promise.resolve();
+    return new Promise(function(res, rej){
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = function(){ window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); };
+      s.onerror = function(){ rej(new Error('Nu am putut încărca biblioteca PDF (verifică conexiunea).')); };
+      document.head.appendChild(s);
+    });
+  }
+  async function extractPdfRows(file){
+    await loadPdfJs();
+    var buf = await file.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({ data:buf }).promise, allRows = [], TOL = 2;
+    for(var p = 1; p <= pdf.numPages; p++){
+      var page = await pdf.getPage(p), content = await page.getTextContent();
+      var items = content.items.map(function(it){ return { x:it.transform[4], y:it.transform[5], w:it.width || 0, str:it.str.trim() }; }).filter(function(i){ return i.str.length > 0; });
+      items.sort(function(a, b){ return b.y - a.y || a.x - b.x; });
+      var clusters = [], cur = null;
+      items.forEach(function(it){
+        if(cur && Math.abs(it.y - cur.refY) <= TOL) cur.items.push(it);
+        else { if(cur) clusters.push(cur); cur = { refY:it.y, items:[it] }; }
+      });
+      if(cur) clusters.push(cur);
+      clusters.forEach(function(c){
+        var sorted = c.items.slice().sort(function(a, b){ return a.x - b.x; });
+        allRows.push({ y:c.refY, items:sorted.map(function(i){ return { x:i.x, w:i.w, str:i.str }; }) });
+      });
+    }
+    return allRows;
+  }
+
+  // ── listă ──
+  function metaPath(c){ return DIR + '/' + c + '/index.json'; }
+  async function loadMetas(){
+    for(var c in CATS){ var d = await readJson(metaPath(c)); metas[c] = Array.isArray(d) ? d : []; }
+  }
+  function render(){
+    document.querySelectorAll('.fise-tab').forEach(function(t){ t.classList.toggle('active', t.dataset.cat === cat); });
+    var docs = (metas[cat] || []).slice().sort(function(a, b){ return EMXLuni.info(b).key - EMXLuni.info(a).key || String(b.uploadedAt).localeCompare(String(a.uploadedAt)); });
+    var L = $('fiseList');
+    if(!docs.length){ L.innerHTML = '<div class="fise-hint">Nicio fișă încărcată pentru ' + esc(CATS[cat]) + '.</div>'; return; }
+    L.innerHTML = docs.map(function(d){
+      var i = EMXLuni.info(d);
+      var warn = i.src === 'nume' ? '' : ' · ⚠ luna nu e la începutul numelui (folosită ' + (i.src === 'eticheta' ? 'eticheta' : 'data încărcării') + ')';
+      return '<div class="fise-row"><div class="nm"><b>' + esc(d.filename) + '</b><span>📅 ' + esc(i.label) + warn + ' · încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</span></div>' +
+        '<a href="fisalucru.html?cat=' + cat + '&doc=' + encodeURIComponent(d.id) + '">Vezi</a>' +
+        '<button class="fise-del" data-del="' + esc(d.id) + '">Șterge</button></div>';
+    }).join('');
+    L.querySelectorAll('[data-del]').forEach(function(b){ b.onclick = function(){ remove(b.dataset.del); }; });
+  }
+
+  async function upload(){
+    if(busy) return;
+    var file = $('fiseFile').files[0], month = $('fiseMonth').value.trim();
+    if(!getToken()){ say('Ai nevoie de token GitHub (conectează-te ca admin).'); return; }
+    if(!file){ say('Alege un fișier PDF.'); return; }
+    busy = true; $('fiseUpBtn').disabled = true; var c = cat;
+    try{
+      say('Se extrage textul din PDF...');
+      var rows = await extractPdfRows(file);
+      if(!rows.length) throw new Error('Nu am găsit text în PDF (poate e scanat/imagine).');
+      var id = uid();
+      say('Se urcă pe GitHub...');
+      await putFile(DIR + '/' + c + '/' + id + '.json', { rows:rows }, 'add doc ' + file.name);
+      var meta = { id:id, filename:file.name, month:month, uploadedAt:new Date().toISOString() };
+      var cur = await readJson(metaPath(c)); cur = Array.isArray(cur) ? cur : [];
+      cur.unshift(meta); metas[c] = cur;
+      await putFile(metaPath(c), cur, 'update index ' + c);
+      var i = EMXLuni.info(meta);
+      say('✓ Salvat: ' + file.name + '\nLuna detectată: ' + i.label + (i.src === 'nume' ? '' : '  (⚠ luna nu e la începutul numelui fișierului)'));
+      $('fiseFile').value = ''; $('fiseMonth').value = '';
+      render();
+    }catch(e){ console.error(e); say('✗ ' + e.message); }
+    busy = false; $('fiseUpBtn').disabled = false;
+  }
+  async function remove(id){
+    if(busy) return;
+    if(!confirm('Ștergi definitiv această fișă?')) return;
+    busy = true; var c = cat;
+    try{
+      say('Se șterge de pe GitHub...');
+      await delFile(DIR + '/' + c + '/' + id + '.json', 'delete doc ' + id);
+      var cur = await readJson(metaPath(c)); cur = (Array.isArray(cur) ? cur : []).filter(function(d){ return d.id !== id; });
+      metas[c] = cur;
+      await putFile(metaPath(c), cur, 'update index ' + c);
+      say('Șters.'); render();
+    }catch(e){ console.error(e); say('✗ ' + e.message); }
+    busy = false;
+  }
+
+  btn.onclick = async function(){
+    ov.classList.add('open'); say('Se încarcă lista...'); render();
+    await loadMetas(); say(''); render();
+  };
+  $('fiseClose').onclick = function(){ ov.classList.remove('open'); };
+  ov.addEventListener('click', function(e){ if(e.target === ov) ov.classList.remove('open'); });
+  $('fiseTabs').addEventListener('click', function(e){ var t = e.target.closest('.fise-tab'); if(t){ cat = t.dataset.cat; say(''); render(); } });
+  $('fiseUpBtn').onclick = upload;
 
   var base = refreshAdminUI;
   refreshAdminUI = function(){ base(); btn.style.display = hasToken() ? 'block' : 'none'; };

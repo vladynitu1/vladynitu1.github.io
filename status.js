@@ -11,6 +11,8 @@
   var ONLINE_MS = 50000;   // cine a dat semn în ultimele 50s e online
   var POLL_MS   = 15000;   // reîmprospătează cifrele la 15s
   var STALE_MS  = 300000;  // curăță intrările mai vechi de 5 minute
+  // erorile se văd doar cu ?statusdebug în adresă (sau localStorage st_debug); altfel indicatorul rămâne liniștit
+  var DEBUG = /[?&]statusdebug\b/.test(location.search) || (function(){ try { return !!localStorage.getItem('st_debug'); } catch(e){ return false; } })();
 
   var CONFIGURED = !!DB_URL && DB_URL.indexOf('PROIECTUL-TAU') === -1;
   DB_URL = DB_URL.replace(/\/+$/, '');
@@ -81,6 +83,7 @@
   }
 
   function showErr(msg){
+    if (!DEBUG) { console.warn('[status.js] ' + msg); return; }
     pill.classList.add('err','on');
     pill.innerHTML = '<span class="st-dot"></span><span class="st-lbl">status: ' + msg + '</span>';
     elOn = elTot = null; shown = {on:null, tot:null};
@@ -151,20 +154,26 @@
   }
 
   // ---------- mod fără cont: servicii publice (ntfy.sh pentru "online", counterapi pentru "total") ----------
+  // Cereri puține (serviciile gratuite limitează per adresă IP; într-o rețea de birou mai mulți colegi împart același IP).
   var NS = 'vladynitu1-github-io';          // nume unic pentru site-ul tău
   var TOPIC = NS + '-online-k7q2m9x4';      // canal public pentru "online"
-  function pubBeat(){
+  var PUB_BEAT = 60000, PUB_ONLINE = 150000, PUB_POLL = 60000, PUB_TOTAL_EVERY = 600000;
+  var pubLast = { on:null, tot:null }, pubFails = 0, lastTotAt = 0;
+
+  function pubBeat(force){
+    if (document.hidden && !force) return Promise.resolve();
     return fetch('https://ntfy.sh/' + TOPIC, { method:'POST', body:id, keepalive:true })
-      .then(function(r){ if(!r.ok) throw new Error('ntfy ' + r.status); });
+      .then(function(r){ if(!r.ok) throw new Error('ntfy ' + r.status); })
+      .catch(function(e){ console.warn('[status.js] ' + (e && e.message || e)); });
   }
   function pubOnline(){
-    return fetch('https://ntfy.sh/' + TOPIC + '/json?poll=1&since=2m')
+    return fetch('https://ntfy.sh/' + TOPIC + '/json?poll=1&since=4m')
       .then(function(r){ if(!r.ok) throw new Error('ntfy ' + r.status); return r.text(); })
       .then(function(txt){
         var now = Date.now()/1000, seen = {};
         txt.split('\n').forEach(function(l){
           if(!l.trim()) return;
-          try { var m = JSON.parse(l); if (m.event === 'message' && now - m.time <= ONLINE_MS/1000 + 5) seen[m.message] = 1; } catch(e){}
+          try { var m = JSON.parse(l); if (m.event === 'message' && now - m.time <= PUB_ONLINE/1000 + 5) seen[m.message] = 1; } catch(e){}
         });
         seen[id] = 1;
         return Object.keys(seen).length;
@@ -181,23 +190,35 @@
     return fetch(a).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); }).then(num).then(ok)
       .catch(function(){ return fetch(b).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); }).then(num).then(ok); });
   }
-  var cachedTot = null;
+  // Fiecare cifră se actualizează independent; la eroare rămâne ultima valoare cunoscută, fără mesaje roșii.
   function pubRefresh(){
-    Promise.all([ pubOnline(), cachedTot == null ? pubTotal() : Promise.resolve(cachedTot) ]).then(function(res){
-      cachedTot = res[1];
-      clearErr(); render(res[0], Math.max(res[0], res[1]));
-    }).catch(function(e){ showErr('conexiune eșuată (' + (e && e.message || e) + ')'); });
+    var gotAny = false;
+    var pOn = pubOnline().then(function(n){ pubLast.on = n; gotAny = true; }).catch(function(e){ console.warn('[status.js] ' + (e && e.message || e)); });
+    var needTot = pubLast.tot == null || Date.now() - lastTotAt > PUB_TOTAL_EVERY;
+    var pTot = needTot
+      ? pubTotal().then(function(n){ pubLast.tot = n; lastTotAt = Date.now(); gotAny = true; }).catch(function(e){ console.warn('[status.js] ' + (e && e.message || e)); })
+      : Promise.resolve();
+    return Promise.all([pOn, pTot]).then(function(){
+      pubFails = gotAny ? 0 : pubFails + 1;
+      if (pubLast.on == null && pubLast.tot == null) { if (DEBUG) showErr('conexiune eșuată (verifică rețeaua)'); return; }
+      clearErr();
+      var on = pubLast.on != null ? Math.max(1, pubLast.on) : null, tot = pubLast.tot;
+      if (on != null && tot != null) tot = Math.max(on, tot);
+      render(on, tot);
+    });
   }
 
   // ---------- pornire ----------
   if (!CONFIGURED) {
     var go = function(){
       mount();
-      pubBeat().catch(function(){}).then(function(){ setTimeout(pubRefresh, 800); });
-      setInterval(function(){ pubBeat().catch(function(){}); }, BEAT_MS);
-      setInterval(function(){ cachedTot = null; pubRefresh(); }, POLL_MS * 2);
-      setInterval(pubRefresh, POLL_MS);
-      document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') pubBeat().then(pubRefresh).catch(function(){}); });
+      pubBeat(true);
+      var loop = function(){
+        pubRefresh().then(function(){ setTimeout(loop, PUB_POLL * (1 + Math.min(pubFails, 4)) + Math.random() * 5000); });
+      };
+      setTimeout(loop, 1500);
+      setInterval(pubBeat, PUB_BEAT);
+      document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') pubBeat(true); });
     };
     if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
     return;

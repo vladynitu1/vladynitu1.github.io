@@ -96,6 +96,7 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
 .fld{background:var(--surf2);border:1px solid var(--bord2);border-radius:5px;color:var(--txt);font-size:.82rem;padding:6px 9px;width:100%}
 </style>
 <script src="theme.js?v=3"></script>
+<script src="luni.js?v=1"></script>
 </head>
 <body>
 <div class="app">
@@ -128,8 +129,9 @@ tr.totrow td:first-child{color:var(--acc);text-transform:uppercase}
   <h2 style="color:var(--grn)">📥 Preia din fișă</h2>
   <div class="roleBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
   <p style="font-size:.72rem;color:var(--txtm);margin-bottom:10px">Se folosesc turnusurile publicate de administrator. Cele adăugate de tine cu același cod (ex: T1) le înlocuiesc doar la tine.</p>
+  <div class="tn-field" style="margin-bottom:10px"><label>Luna fișei (din primul cuvânt al numelui fișei)</label><select class="fld" id="preiaLunaFisa" onchange="onPreiaLuna()"></select><div id="preiaHint" style="font-size:.68rem;color:var(--yel);margin-top:4px"></div></div>
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:10px">
-    <div class="tn-field"><label>Fișa (din Fișa de lucru)</label><select class="fld" id="preiaDoc"></select></div>
+    <div class="tn-field"><label>Fișe din luna aleasă (se caută în toate)</label><div id="preiaDocs" style="font-size:.72rem;line-height:1.4;max-height:64px;overflow-y:auto;padding:6px 2px;color:var(--txtd,#999)">–</div></div>
     <div class="tn-field"><label>Luna (1-12)</label><input class="fld" id="preiaLuna" type="number" min="1" max="12"></div>
   </div>
   <div class="tn-field" style="margin-bottom:10px"><label>Nume (cum apare în fișă)</label><input class="fld" id="preiaNume" placeholder="Ex: NITU IONUT"></div>
@@ -896,38 +898,64 @@ function preiaOre(){
   try{localStorage.setItem('pontaj_nume',v)}catch(e){}
   preiaNume(v);
 }
+let PREIA_DOCS=[];
 async function openPreia(){
   document.getElementById('preiaLuna').value=curM+1;
   let nm='';try{nm=localStorage.getItem('pontaj_nume')||(JSON.parse(localStorage.getItem('pontaj_names')||'[]')[0])||''}catch(e){}
   document.getElementById('preiaNume').value=nm;
   document.getElementById('preiaOverlay').classList.add('open');
-  const sel=document.getElementById('preiaDoc');sel.innerHTML='<option>Se încarcă...</option>';
-  const idx=await ghRaw('data/mecanici/index.json');
-  if(!Array.isArray(idx)||!idx.length){sel.innerHTML='<option value="">Nu am găsit fișe</option>';return}
-  idx.sort((a,b)=>String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
-  sel.innerHTML='';idx.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.filename+' ('+String(d.uploadedAt).slice(0,10)+')';o.dataset.fn=d.filename;sel.appendChild(o)});
-  const g=MO.findIndex(x=>normS(sel.options[0].dataset.fn).includes(normS(x)));if(g>=0)document.getElementById('preiaLuna').value=g+1;
+  document.getElementById('preiaDocs').textContent='Se încarcă...';
+  const [a,b]=await Promise.all([ghRaw('data/mecanici/index.json'),ghRaw('data/conductori/index.json')]);
+  PREIA_DOCS=[];
+  (Array.isArray(a)?a:[]).forEach(d=>PREIA_DOCS.push(Object.assign({},d,{_cat:'mecanici'})));
+  (Array.isArray(b)?b:[]).forEach(d=>PREIA_DOCS.push(Object.assign({},d,{_cat:'conductori'})));
+  fillPreiaLuni();
+}
+// luna implicită = luna curentă (se schimbă singură după 23:59:59 din ultima zi a lunii)
+function fillPreiaLuni(){
+  const ls=document.getElementById('preiaLunaFisa'),cur=EMXLuni.currentKey();
+  const ms=EMXLuni.months(PREIA_DOCS);
+  ls.innerHTML='';
+  ms.forEach(m=>{const o=document.createElement('option');o.value=m.key;o.textContent=m.label+(m.has?'':' (fără fișă)');ls.appendChild(o)});
+  ls.value=String(cur);
+  onPreiaLuna();
+}
+function onPreiaLuna(){
+  const ls=document.getElementById('preiaLunaFisa'),info=document.getElementById('preiaDocs'),hint=document.getElementById('preiaHint');
+  const key=parseInt(ls.value,10);
+  const docs=EMXLuni.filter(PREIA_DOCS,key);
+  info.textContent=docs.length?docs.length+(docs.length===1?' fișă: ':' fișe: ')+docs.map(d=>d.filename.replace(/\.pdf$/i,'')).join(' · '):'Nu există fișe pentru '+EMXLuni.labelOf(key);
+  document.getElementById('preiaLuna').value=(key%12)+1;
+  const y=Math.floor(key/12);
+  hint.textContent=y!==curYear?'⚠ Fișele sunt din '+y+', dar pontajul deschis e pe '+curYear+' — schimbă anul sus dacă e nevoie.':'';
 }
 function closePreia(){document.getElementById('preiaOverlay').classList.remove('open')}
 async function preiaNume(name){
-  const id=document.getElementById('preiaDoc').value,luna=parseInt(document.getElementById('preiaLuna').value);
-  if(!id){alert('Alege o fișă!');return}
+  const luna=parseInt(document.getElementById('preiaLuna').value);
+  const key=parseInt(document.getElementById('preiaLunaFisa').value,10);
+  const docs=EMXLuni.filter(PREIA_DOCS,key),lbl=EMXLuni.labelOf(key);
+  if(!docs.length){alert('Nu există fișe pentru '+lbl+'!');return}
   if(!luna||luna<1||luna>12){alert('Luna invalidă!');return}
-  setPreiaStatus('⏳ Citesc fișa...','var(--yel)');
-  const data=await ghRaw('data/mecanici/'+id+'.json');
-  if(!data||!data.rows){setPreiaStatus('❌ Nu am putut citi fișa.','var(--red)');return}
+  setPreiaStatus('⏳ Caut în '+docs.length+(docs.length===1?' fișă':' fișe')+' din '+lbl+'...','var(--yel)');
   const q=normS(name).split(' ');
-  const c=splitBlocksStructured(data.rows).filter(b=>{const w=normS(b.name).split(' ');return q.every(x=>w.includes(x))});
-  if(!c.length){setPreiaStatus('❌ Nu găsesc numele "'+name+'" în fișă.','var(--red)');return}
-  c.sort((a,b)=>Math.abs(normS(a.name).length-normS(name).length)-Math.abs(normS(b.name).length-normS(name).length));
+  const datas=await Promise.all(docs.map(d=>ghRaw('data/'+d._cat+'/'+d.id+'.json').then(x=>({d,x})).catch(()=>({d,x:null}))));
+  const found=[];let unread=0;
+  datas.forEach(({d,x})=>{
+    if(!x||!x.rows){unread++;return}
+    splitBlocksStructured(x.rows).filter(b=>{const w=normS(b.name).split(' ');return q.every(t=>w.includes(t))}).forEach(b=>found.push({b,doc:d}));
+  });
+  if(!found.length){setPreiaStatus('❌ Nu găsesc numele "'+name+'" în cele '+docs.length+(docs.length===1?' fișă':' fișe')+' din '+lbl+':\n'+docs.map(d=>'• '+d.filename).join('\n')+(unread?'\n⚠ '+unread+' fișe nu au putut fi citite.':''),'var(--red)');return}
+  found.sort((a,b)=>Math.abs(normS(a.b.name).length-normS(name).length)-Math.abs(normS(b.b.name).length-normS(name).length));
+  const c0=found[0].b;
   if(!ghToken&&!Object.keys(SHARED).length)await loadShared();
   const saved=TN;
   if(!ghToken)TN={...SHARED,...TN};
   const nUsed=Object.keys(TN).length;
   if(!nUsed){TN=saved;setPreiaStatus('❌ Nu există turnusuri pentru '+ROLES[ROLE]+'. Adaugă-le din ⚙ Turnus-uri sau alege alt rol de mai sus.','var(--red)');return}
-  let r;try{r=importBlock(c[0],luna,()=>{TN=saved})}finally{TN=saved}
-  let msg=`✅ ${c[0].name}: ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite — ${ROLES[ROLE]}: ${nUsed} (${ghToken?'ale tale':'publicate de administrator + ale tale; la același cod se folosește al tău'}).`;
-  if(c.length>1)msg+=`\nℹ Am mai găsit și: ${c.slice(1).map(x=>x.name).join(', ')}`;
+  let r;try{r=importBlock(c0,luna,()=>{TN=saved})}finally{TN=saved}
+  let msg=`✅ ${c0.name} (${found[0].doc.filename.replace(/\.pdf$/i,'')}): ${r.ok} turnusuri puse în ${MO[luna-1]} ${curYear}.\nℹ Turnusuri folosite — ${ROLES[ROLE]}: ${nUsed} (${ghToken?'ale tale':'publicate de administrator + ale tale; la același cod se folosește al tău'}).`;
+  if(found.length>1)msg+=`\nℹ Am mai găsit și: ${found.slice(1).map(x=>x.b.name+' ('+x.doc.filename.replace(/\.pdf$/i,'')+')').join(', ')}`;
+  if(unread)msg+=`\n⚠ ${unread} fișe din lună nu au putut fi citite.`;
   msg+='\n\nCitit din fișă:\n'+r.lines.join('\n');
   if(r.neid.length)msg+=`\n⚠ Zile fără turnus potrivit (verifică manual): ${r.neid.join(', ')}`;
   setPreiaStatus(msg);
