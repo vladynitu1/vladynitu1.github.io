@@ -813,7 +813,7 @@ function monthBarHtml(){
   const n = docsForMonth('conductori').length + docsForMonth('mecanici').length;
   const opts = ms.map(m => '<option value="' + m.key + '"' + (m.key === act ? ' selected' : '') + '>' + escapeHtml(m.label) + (m.has ? '' : ' (fără fișă)') + '</option>').join('');
   const note = n
-    ? '<span class="month-note">' + n + (n === 1 ? ' fișă' : ' fișe') + (state.monthSel == null ? ' · luna curentă, se schimbă singură la miezul nopții' : '') + '</span>'
+    ? ''
     : '<span class="month-note warn">⚠ Nu există fișă pentru ' + escapeHtml(EMXLuni.labelOf(act)) + '. Încarc-o (numele fișierului începe cu luna) sau alege altă lună.</span>';
   return '<div class="month-bar"><label for="month-sel">📅 Luna</label><select id="month-sel">' + opts + '</select>' + note + '</div>';
 }
@@ -1301,6 +1301,7 @@ window.addEventListener('storage', function(e){
   scheduleRollover();
 })();
 </script>
+<script src="sticky.js?v=1" defer></script>
 <script src="status.js?v=5" defer></script>
 </body>
 </html>
