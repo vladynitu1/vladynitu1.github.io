@@ -190,6 +190,12 @@
   .month-bar select:focus{outline:none; border-color:var(--acc);}
   .month-note{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd);}
   .month-note.warn{color:var(--org);}
+  .dl-panel{flex-basis:100%; display:none; border-top:1px dashed var(--bord2); margin-top:4px; padding-top:10px;}
+  .dl-panel.open{display:block;}
+  .dl-group{margin:0 0 10px;}
+  .dl-group-title{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.04em; font-size:13px; color:var(--acc); margin:0 0 6px;}
+  .dl-files{display:flex; flex-wrap:wrap; gap:8px;}
+  .dl-status{font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); min-height:14px; margin-top:4px;}
 </style>
 <script src="theme.js?v=3"></script>
 <script src="luni.js?v=1"></script>
@@ -237,7 +243,8 @@ let state = {
   crossCode: '',
   teamName: '',
   teamDay: '',
-  monthSel: null            // null = luna curentă (urmărește calendarul); altfel cheia lunii alese
+  monthSel: null,           // null = luna curentă (urmărește calendarul); altfel cheia lunii alese
+  dlOpen: false             // panoul „Descarcă Fișa” deschis/închis
 };
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -301,9 +308,12 @@ function ghWait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
 // Write: requires a token with write access to the repo.
 // Reîncearcă automat (cu sha proaspăt) dacă GitHub răspunde 409/422 — apare când scrii de mai multe ori la rând.
 async function ghPutFile(path, obj, message){
+  return ghPutB64(path, b64EncodeUnicode(JSON.stringify(obj, null, 2)), message);
+}
+// Fișier binar (ex. PDF-ul original): primește conținutul deja codat base64
+async function ghPutB64(path, content, message){
   const token = getToken();
   if(!token) throw new Error('Lipsește tokenul GitHub — conectează-te din pagina principală.');
-  const content = b64EncodeUnicode(JSON.stringify(obj, null, 2));
   let lastErr = '';
   for(let attempt = 0; attempt < 4; attempt++){
     const sha = await ghGetSha(path, token);
@@ -345,6 +355,133 @@ async function ghDeleteFile(path, message){
   throw new Error(lastErr);
 }
 
+
+function fileToB64(file){
+  return new Promise((res, rej)=>{
+    const r = new FileReader();
+    r.onload = ()=> res(String(r.result).split(',')[1] || '');
+    r.onerror = ()=> rej(new Error('Nu am putut citi fișierul.'));
+    r.readAsDataURL(file);
+  });
+}
+
+// Citire publică a unui fișier binar (PDF) — fără token; API întâi, CDN ca rezervă
+let _blobErr = '';
+async function ghFetchBlob(path){
+  _blobErr = '';
+  const token = getToken();
+  try{
+    const headers = { Accept: 'application/vnd.github.raw' };
+    if(token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodePath(path) + '?ref=' + GH_BRANCH, { cache: 'no-store', headers });
+    if(res.ok) return await res.blob();
+    _blobErr = 'API ' + res.status;
+  }catch(e){ _blobErr = 'API: ' + e.message; }
+  // rezervă 1: chiar site-ul (GitHub Pages), fără limită de cereri; apare după publicare (1-2 min)
+  try{
+    const r1 = await fetch(encodePath(path) + '?t=' + Date.now(), { cache: 'no-store' });
+    if(r1.ok && /pdf|octet/i.test(r1.headers.get('content-type') || 'pdf')) return await r1.blob();
+    _blobErr += ', site ' + r1.status;
+  }catch(e1){ _blobErr += ', site: ' + e1.message; }
+  // rezervă 2: CDN-ul GitHub (poate întârzia câteva minute după încărcare)
+  try{
+    const r2 = await fetch('https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/' + GH_BRANCH + '/' + encodePath(path) + '?t=' + Date.now(), { cache: 'no-store' });
+    if(r2.ok) return await r2.blob();
+    _blobErr += ', CDN ' + r2.status;
+  }catch(e2){ _blobErr += ', CDN: ' + e2.message; }
+  return null;
+}
+
+// ---- Descarcă fișa (public, pe categorii) ----
+function loadJsPdf(){
+  if(window.jspdf) return Promise.resolve();
+  return new Promise((res, rej)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = res;
+    s.onerror = ()=> rej(new Error('Nu am putut încărca generatorul PDF.'));
+    document.head.appendChild(s);
+  });
+}
+function pdfSafe(t){
+  return String(t).replace(/[ăĂ]/g, m => m === 'ă' ? 'a' : 'A')
+    .replace(/[șş]/g, 's').replace(/[ȘŞ]/g, 'S')
+    .replace(/[țţ]/g, 't').replace(/[ȚŢ]/g, 'T');
+}
+// Pentru fișele încărcate înainte să se păstreze PDF-ul original: refacem un PDF din textul salvat (poziții x/y)
+async function buildFallbackPdf(rows){
+  await loadJsPdf();
+  let maxX = 0;
+  rows.forEach(r => r.items.forEach(i => { maxX = Math.max(maxX, i.x + (i.w || 0)); }));
+  const landscape = maxX > 600;
+  const W = landscape ? 842 : 595, H = landscape ? 595 : 842;
+  const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: [W, H], orientation: landscape ? 'l' : 'p' });
+  pdf.setFont('helvetica', 'normal');
+  let prevY = null;
+  rows.forEach(r => {
+    if(prevY !== null && r.y > prevY + 5) pdf.addPage([W, H], landscape ? 'l' : 'p');
+    prevY = r.y;
+    r.items.forEach(it => {
+      const t = pdfSafe(it.str);
+      if(!t) return;
+      let size = 7;
+      if(it.w > 0){
+        const w10 = pdf.setFontSize(10).getTextWidth(t);
+        if(w10 > 0) size = Math.max(4, Math.min(9, 10 * it.w / w10));
+      }
+      pdf.setFontSize(size);
+      pdf.text(t, it.x, H - r.y);
+    });
+  });
+  return pdf.output('blob');
+}
+function saveBlob(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
+}
+async function downloadDoc(cat, id){
+  const d = (state.docsMeta[cat] || []).find(x => x.id === id);
+  const st = document.getElementById('dl-status');
+  const say = t => { if(st) st.textContent = t; };
+  if(!d) return;
+  let name = d.filename || 'fisa.pdf';
+  if(!/\.pdf$/i.test(name)) name += '.pdf';
+  say('Se pregătește „' + name + '”...');
+  try{
+    let blob = null, rebuilt = false, why = '';
+    if(d.pdf){
+      blob = await ghFetchBlob(DATA_DIR + '/' + cat + '/' + id + '.pdf');
+      if(!blob) why = 'PDF-ul original e marcat ca salvat, dar nu l-am putut citi (' + _blobErr + '). ';
+    }else{
+      why = 'Pentru această fișă nu e salvat PDF-ul original (în index lipsește „pdf”). ';
+    }
+    if(!blob){
+      const data = await ghFetchRaw(DATA_DIR + '/' + cat + '/' + id + '.json');
+      const rows = data && Array.isArray(data.rows) ? data.rows : [];
+      if(!rows.length) throw new Error('Fișa nu a putut fi citită.');
+      blob = await buildFallbackPdf(rows);
+      rebuilt = true;
+    }
+    saveBlob(blob, name);
+    say(rebuilt ? 'Descărcat varianta refăcută din text (fără culori/linii). ' + why : 'Descărcat: ' + name);
+  }catch(e){
+    console.error(e);
+    say('Eroare la descărcare: ' + e.message);
+  }
+}
+function dlPanelHtml(){
+  const groups = [['mecanici', '🚂 Mecanici'], ['conductori', '🎫 Șef tren / Vânzători bilete']];
+  return groups.map(([cat, title]) => {
+    const docs = docsForMonth(cat);
+    const files = docs.length
+      ? docs.map(d => '<button class="btn solid-green btn-sm" type="button" data-dl-cat="' + cat + '" data-dl-id="' + d.id + '">⬇ ' + escapeHtml(d.filename) + '</button>').join('')
+      : '<span class="month-note">Nicio fișă încărcată pentru ' + escapeHtml(EMXLuni.labelOf(activeMonthKey())) + '.</span>';
+    return '<div class="dl-group"><div class="dl-group-title">' + title + '</div><div class="dl-files">' + files + '</div></div>';
+  }).join('') + '<div class="dl-status" id="dl-status"></div>';
+}
 
 function uid(){ return 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
 
@@ -589,16 +726,45 @@ async function handleUpload(cat, file, month){
   try{
     const rows = await extractPdfRows(file);
     const id = uid();
+    statusEl.textContent = 'Se urcă PDF-ul original pe GitHub...';
+    let pdfSaved = false, pdfErr = '';
+    try{
+      await ghPutB64(DATA_DIR + '/' + cat + '/' + id + '.pdf', await fileToB64(file), 'add pdf ' + file.name);
+      pdfSaved = true;
+    }catch(pe){ console.error(pe); pdfErr = String(pe.message || pe).slice(0, 160); }
     statusEl.textContent = 'Se urcă pe GitHub...';
     await ghPutFile(DATA_DIR + '/' + cat + '/' + id + '.json', { rows }, 'add doc ' + file.name);
     const meta = { id, filename: file.name, month: month || '', uploadedAt: new Date().toISOString() };
+    if(pdfSaved) meta.pdf = true;
     state.docsMeta[cat].unshift(meta);
     await saveMeta(cat);
-    statusEl.textContent = 'Salvat pe GitHub: ' + file.name + ' — luna detectată: ' + EMXLuni.info(meta).label + (EMXLuni.info(meta).src === 'nume' ? '' : ' (⚠ luna nu e la începutul numelui fișierului)');
-    render();
+    statusEl.textContent = 'Salvat pe GitHub: ' + file.name + ' — luna detectată: ' + EMXLuni.info(meta).label + (EMXLuni.info(meta).src === 'nume' ? '' : ' (⚠ luna nu e la începutul numelui fișierului)') + (pdfSaved ? ' — ✔ PDF original salvat' : ' — ⚠ PDF-ul original NU s-a putut salva: ' + pdfErr);
+    const _msg = statusEl.textContent;
+    await render();
+    const _se = document.getElementById('upload-status'); if(_se) _se.textContent = _msg;
   }catch(e){
     console.error(e);
     statusEl.textContent = 'Eroare: ' + e.message;
+  }
+}
+
+async function attachPdf(cat, id, file){
+  const statusEl = document.getElementById('upload-status');
+  if(!hasToken()){ alert('Ai nevoie de un token GitHub.'); return; }
+  const d = (state.docsMeta[cat] || []).find(x => x.id === id);
+  if(!d) return;
+  if(!confirm('Atașezi „' + file.name + '” ca PDF original pentru „' + d.filename + '”? Asigură-te că e aceeași fișă.')) return;
+  try{
+    if(statusEl) statusEl.textContent = 'Se urcă PDF-ul original...';
+    await ghPutB64(DATA_DIR + '/' + cat + '/' + id + '.pdf', await fileToB64(file), 'attach pdf ' + file.name);
+    d.pdf = true;
+    await saveMeta(cat);
+    const _m2 = 'PDF original atașat: ' + d.filename;
+    await render();
+    const _se2 = document.getElementById('upload-status'); if(_se2) _se2.textContent = _m2;
+  }catch(e){
+    console.error(e);
+    if(statusEl) statusEl.textContent = 'Eroare: ' + e.message;
   }
 }
 
@@ -608,7 +774,9 @@ async function deleteDoc(cat, id){
   const statusEl = document.getElementById('upload-status');
   if(statusEl) statusEl.textContent = 'Se șterge de pe GitHub...';
   try{
+    const _m = (state.docsMeta[cat] || []).find(d => d.id === id);
     await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.json', 'delete doc ' + id);
+    if(_m && _m.pdf) await ghDeleteFile(DATA_DIR + '/' + cat + '/' + id + '.pdf', 'delete pdf ' + id);
     state.docsMeta[cat] = state.docsMeta[cat].filter(d=>d.id!==id);
     await saveMeta(cat);
     delete _blocksCache[cat + ':' + id];
@@ -768,13 +936,14 @@ function renderList(){
       '<div class="status" id="upload-status"></div>' +
     '</div>' +
     '<div class="section-title">Programe salvate</div>' +
+    '<input type="file" id="att-input" accept="application/pdf" style="display:none">' +
     '<div class="doc-list" id="doc-list">' +
       (docs.length === 0 ? '<div class="empty">Niciun program încărcat încă pentru această categorie.</div>' :
         docs.map(d =>
           '<div class="doc-item" data-id="' + d.id + '">' +
             '<div><div class="doc-name">' + escapeHtml(d.filename) + '</div>' +
             '<div class="doc-meta">📅 ' + escapeHtml(EMXLuni.info(d).label) + (EMXLuni.info(d).src === 'nume' ? '' : ' <span style="color:var(--org)">(luna nu e la începutul numelui — folosită ' + (EMXLuni.info(d).src === 'eticheta' ? 'eticheta' : 'data încărcării') + ')</span>') + ' · încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</div></div>' +
-            '<div class="doc-actions"><button class="btn ghost" data-del="' + d.id + '">Șterge</button></div>' +
+            '<div class="doc-actions">' + (d.pdf ? '<span class="month-note">✔ PDF original salvat</span> ' : '<button class="btn ghost" data-att="' + d.id + '">📎 Atașează PDF original</button> ') + '<button class="btn ghost" data-del="' + d.id + '">Șterge</button></div>' +
           '</div>'
         ).join('')
       ) +
@@ -787,13 +956,19 @@ function renderList(){
   };
   document.querySelectorAll('.doc-item').forEach(el=>{
     el.addEventListener('click', (e)=>{
-      if(e.target.closest('[data-del]')) return;
+      if(e.target.closest('[data-del]') || e.target.closest('[data-att]')) return;
       state.view='detail';
       state.openDocId = el.dataset.id;
       state.query=''; state.dayQuery='';
       render();
     });
   });
+  let _attId = null;
+  const attInput = document.getElementById('att-input');
+  document.querySelectorAll('[data-att]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); _attId = btn.dataset.att; attInput.value = ''; attInput.click(); });
+  });
+  attInput.onchange = ()=>{ if(attInput.files[0] && _attId) attachPdf(cat, _attId, attInput.files[0]); };
   document.querySelectorAll('[data-del]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.stopPropagation();
@@ -815,9 +990,19 @@ function monthBarHtml(){
   const note = n
     ? ''
     : '<span class="month-note warn">⚠ Nu există fișă pentru ' + escapeHtml(EMXLuni.labelOf(act)) + '. Încarc-o (numele fișierului începe cu luna) sau alege altă lună.</span>';
-  return '<div class="month-bar"><label for="month-sel">📅 Luna</label><select id="month-sel">' + opts + '</select>' + note + '</div>';
+  return '<div class="month-bar"><label for="month-sel">📅 Luna</label><select id="month-sel">' + opts + '</select>' +
+    '<button class="btn solid-green btn-sm" type="button" id="dl-toggle">⬇ Descarcă Fișa</button>' + note +
+    '<div class="dl-panel' + (state.dlOpen ? ' open' : '') + '" id="dl-panel">' + dlPanelHtml() + '</div></div>';
 }
 function bindMonthBar(){
+  const tg = document.getElementById('dl-toggle'), pn = document.getElementById('dl-panel');
+  if(tg && pn){
+    tg.onclick = ()=>{ state.dlOpen = !state.dlOpen; pn.classList.toggle('open', state.dlOpen); };
+    pn.onclick = e => {
+      const b = e.target.closest('[data-dl-id]');
+      if(b) downloadDoc(b.dataset.dlCat, b.dataset.dlId);
+    };
+  }
   const el = document.getElementById('month-sel'); if(!el) return;
   el.onchange = async ()=>{
     const k = parseInt(el.value, 10);

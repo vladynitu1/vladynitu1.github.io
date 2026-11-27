@@ -337,6 +337,7 @@
       <div class="fise-hint">📅 Luna se ia din primul cuvânt al numelui fișierului (ex. <i>Noiembrie 2026 sefi tren.pdf</i>). Poți încărca 2-3 luni; site-ul folosește automat fișa lunii curente.</div>
     </div>
     <div class="fise-status" id="fiseStatus"></div>
+    <input type="file" id="fiseAtt" accept="application/pdf" style="display:none">
     <div class="fise-list" id="fiseList"></div>
   </div>
 </div>
@@ -804,9 +805,18 @@
     if(!r.ok) throw new Error('GitHub ' + r.status);
     return (await r.json()).sha;
   }
-  async function putFile(path, obj, msg){
+  function putFile(path, obj, msg){ return putB64(path, b64(JSON.stringify(obj, null, 2)), msg); }
+  function fileToB64(file){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(String(r.result).split(',')[1] || ''); };
+      r.onerror = function(){ rej(new Error('Nu am putut citi fișierul.')); };
+      r.readAsDataURL(file);
+    });
+  }
+  async function putB64(path, content, msg){
     var tok = getToken(); if(!tok) throw new Error('Lipsește tokenul GitHub — conectează-te ca admin.');
-    var content = b64(JSON.stringify(obj, null, 2)), last = '';
+    var last = '';
     for(var i = 0; i < 4; i++){
       var sha = await getSha(path, tok), body = { message:msg, content:content, branch:BRANCH }; if(sha) body.sha = sha;
       var r = await fetch(url(path), { method:'PUT', headers:{ Authorization:'Bearer ' + tok, Accept:'application/vnd.github+json', 'Content-Type':'application/json' }, body:JSON.stringify(body) });
@@ -879,9 +889,11 @@
       var warn = i.src === 'nume' ? '' : ' · ⚠ luna nu e la începutul numelui (folosită ' + (i.src === 'eticheta' ? 'eticheta' : 'data încărcării') + ')';
       return '<div class="fise-row"><div class="nm"><b>' + esc(d.filename) + '</b><span>📅 ' + esc(i.label) + warn + ' · încărcat ' + new Date(d.uploadedAt).toLocaleDateString('ro-RO') + '</span></div>' +
         '<a href="fisalucru.html?cat=' + cat + '&doc=' + encodeURIComponent(d.id) + '">Vezi</a>' +
+        (d.pdf ? '<span class="fise-hint">✔ PDF</span>' : '<button class="fise-del" data-att="' + esc(d.id) + '" title="Atașează PDF-ul original ca să-l poată descărca ceilalți exact ca la încărcare">📎 Atașează PDF</button>') +
         '<button class="fise-del" data-del="' + esc(d.id) + '">Șterge</button></div>';
     }).join('');
     L.querySelectorAll('[data-del]').forEach(function(b){ b.onclick = function(){ remove(b.dataset.del); }; });
+    L.querySelectorAll('[data-att]').forEach(function(b){ b.onclick = function(){ attId = b.dataset.att; attCat = cat; var a = $('fiseAtt'); a.value = ''; a.click(); }; });
   }
 
   async function upload(){
@@ -895,14 +907,19 @@
       var rows = await extractPdfRows(file);
       if(!rows.length) throw new Error('Nu am găsit text în PDF (poate e scanat/imagine).');
       var id = uid();
+      say('Se urcă PDF-ul original pe GitHub...');
+      var pdfOk = false, pdfErr = '';
+      try{ await putB64(DIR + '/' + c + '/' + id + '.pdf', await fileToB64(file), 'add pdf ' + file.name); pdfOk = true; }
+      catch(pe){ console.error(pe); pdfErr = String(pe.message || pe).slice(0, 160); }
       say('Se urcă pe GitHub...');
       await putFile(DIR + '/' + c + '/' + id + '.json', { rows:rows }, 'add doc ' + file.name);
       var meta = { id:id, filename:file.name, month:month, uploadedAt:new Date().toISOString() };
+      if(pdfOk) meta.pdf = true;
       var cur = await readJson(metaPath(c)); cur = Array.isArray(cur) ? cur : [];
       cur.unshift(meta); metas[c] = cur;
       await putFile(metaPath(c), cur, 'update index ' + c);
       var i = EMXLuni.info(meta);
-      say('✓ Salvat: ' + file.name + '\nLuna detectată: ' + i.label + (i.src === 'nume' ? '' : '  (⚠ luna nu e la începutul numelui fișierului)'));
+      say('✓ Salvat: ' + file.name + '\nLuna detectată: ' + i.label + (i.src === 'nume' ? '' : '  (⚠ luna nu e la începutul numelui fișierului)') + (pdfOk ? '\n✔ PDF original salvat' : '\n⚠ PDF-ul original NU s-a putut salva: ' + pdfErr));
       $('fiseFile').value = ''; $('fiseMonth').value = '';
       render();
     }catch(e){ console.error(e); say('✗ ' + e.message); }
@@ -914,7 +931,9 @@
     busy = true; var c = cat;
     try{
       say('Se șterge de pe GitHub...');
+      var _old = (metas[c] || []).find(function(d){ return d.id === id; });
       await delFile(DIR + '/' + c + '/' + id + '.json', 'delete doc ' + id);
+      if(_old && _old.pdf) await delFile(DIR + '/' + c + '/' + id + '.pdf', 'delete pdf ' + id);
       var cur = await readJson(metaPath(c)); cur = (Array.isArray(cur) ? cur : []).filter(function(d){ return d.id !== id; });
       metas[c] = cur;
       await putFile(metaPath(c), cur, 'update index ' + c);
@@ -922,6 +941,26 @@
     }catch(e){ console.error(e); say('✗ ' + e.message); }
     busy = false;
   }
+
+  var attId = null, attCat = null;
+  async function attach(file){
+    if(busy || !file || !attId) return;
+    var c = attCat, id = attId, d0 = (metas[c] || []).find(function(d){ return d.id === id; });
+    if(!d0) return;
+    if(!confirm('Atașezi „' + file.name + '” ca PDF original pentru „' + d0.filename + '”? Asigură-te că e aceeași fișă.')) return;
+    busy = true;
+    try{
+      say('Se urcă PDF-ul original...');
+      await putB64(DIR + '/' + c + '/' + id + '.pdf', await fileToB64(file), 'attach pdf ' + file.name);
+      var cur = await readJson(metaPath(c)); cur = Array.isArray(cur) ? cur : [];
+      cur.forEach(function(d){ if(d.id === id) d.pdf = true; });
+      metas[c] = cur;
+      await putFile(metaPath(c), cur, 'update index ' + c);
+      say('✓ PDF original atașat: ' + d0.filename); render();
+    }catch(e){ console.error(e); say('✗ ' + e.message); }
+    busy = false;
+  }
+  $('fiseAtt').onchange = function(){ attach(this.files[0]); };
 
   btn.onclick = async function(){
     ov.classList.add('open'); say('Se încarcă lista...'); render();
