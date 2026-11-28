@@ -1,6 +1,10 @@
 /* ===== Teme site: Clasic / Crăciun / Paște / Anul Nou =====
-   Se încarcă în <head> pe fiecare pagină. Tema aleasă de admin e salvată în data/theme.json
-   și se aplică tuturor vizitatorilor. Culorile de stare (verde/roșu/galben) nu se schimbă. */
+   Se încarcă în <head> pe fiecare pagină. Setarea e salvată în data/theme.json și se aplică tuturor vizitatorilor.
+   Două moduri:  manual  → tema aleasă de admin;
+                 auto    → programare pe date: de la 00:00 (ora României) în ziua indicată se aplică tema respectivă,
+                           până la următoarea dată din listă. Înainte de prima dată rămâne tema de bază.
+   Format data/theme.json: {"theme":"clasic","mode":"auto","schedule":[{"date":"2026-12-01","theme":"craciun"},...],"updated":"..."}
+   Culorile de stare (verde/roșu/galben) nu se schimbă. */
 (function(){
   'use strict';
   var RAW  = 'https://raw.githubusercontent.com/vladynitu1/vladynitu1.github.io/main/data/theme.json';
@@ -165,27 +169,63 @@
     try { window.dispatchEvent(new CustomEvent('emx-theme', { detail:name })); } catch(e){}
   }
 
-  // cache local: tema în KEY (text simplu, compatibil cu versiunile vechi), data salvării în KEY_u
-  function cached(){
-    try {
-      var v = localStorage.getItem(KEY); if (!v) return null;
-      var u = localStorage.getItem(KEY + '_u') || '';
-      if (v.charAt(0) === '{') { var o = JSON.parse(v); return { t:o.t, u:o.u || u }; }   // format intermediar
-      return { t:v, u:u };
-    } catch(e){ return null; }
-  }
-  function remember(n, u){ try { localStorage.setItem(KEY, n); localStorage.setItem(KEY + '_u', u || new Date().toISOString()); } catch(e){} }
+  /* ---------- configurare (manual / programat) ---------- */
+  var CKEY = KEY + '_cfg', TZ = 'Europe/Bucharest';
   function ts(x){ var d = Date.parse(x || ''); return isNaN(d) ? 0 : d; }
+  function validDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s || ''); }
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  // data de azi în România, ca YYYY-MM-DD (schimbarea se face la 00:00 ora României, indiferent de fusul vizitatorului)
+  function todayRO(){
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone:TZ, year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date()); }
+    catch(e){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+  }
+  function normCfg(j){
+    if (!j || typeof j !== 'object') return null;
+    var sch = [];
+    (j.schedule || []).forEach(function(e){ if (e && validDate(e.date) && THEMES[e.theme]) sch.push({ date:e.date, theme:e.theme }); });
+    sch.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return { theme: THEMES[j.theme] ? j.theme : 'clasic', mode: j.mode === 'auto' ? 'auto' : 'manual', schedule: sch, updated: j.updated || '' };
+  }
+  function effective(cfg){
+    if (!cfg) return 'clasic';
+    var res = cfg.theme;
+    if (cfg.mode === 'auto'){
+      var d = todayRO();
+      cfg.schedule.forEach(function(e){ if (e.date <= d) res = e.theme; });   // lista e sortată: ultima dată trecută câștigă
+    }
+    return THEMES[res] ? res : 'clasic';
+  }
+  function cachedCfg(){
+    try {
+      var raw = localStorage.getItem(CKEY);
+      if (raw) { var c = normCfg(JSON.parse(raw)); if (c) return c; }
+      var v = localStorage.getItem(KEY);                       // format vechi: doar numele temei
+      if (v && THEMES[v]) return { theme:v, mode:'manual', schedule:[], updated:localStorage.getItem(KEY + '_u') || '' };
+    } catch(e){}
+    return null;
+  }
+  function storeCfg(c){
+    try { localStorage.setItem(CKEY, JSON.stringify(c)); localStorage.setItem(KEY, c.theme); localStorage.setItem(KEY + '_u', c.updated || ''); } catch(e){}
+  }
+
+  var curCfg = cachedCfg(), lastDay = todayRO();
+  function applyEff(){ lastDay = todayRO(); var n = effective(curCfg); if (n !== cur) apply(n); }
 
   window.EMXTheme = {
     list: THEMES,
     current: function(){ return cur; },
-    preview: apply,                              // aplică local, fără a salva
-    remember: remember
+    preview: apply,                                              // aplică local, fără a salva
+    config: function(){ return curCfg; },
+    effectiveOf: function(c){ return effective(normCfg(c)); },
+    today: todayRO,
+    setConfig: function(c){ var n = normCfg(c); if (!n) return; curCfg = n; storeCfg(n); applyEff(); },
+    remember: function(n, u){                                    // compatibilitate cu versiunea veche
+      if (!THEMES[n]) return;
+      window.EMXTheme.setConfig({ theme:n, mode:'manual', schedule: curCfg ? curCfg.schedule : [], updated:u || new Date().toISOString() });
+    }
   };
 
-  var c = cached();
-  if (c && THEMES[c.t]) apply(c.t);
+  if (curCfg) applyEff();
 
   // citește din două surse (raw GitHub + chiar site-ul) și o ia pe cea mai nouă
   function get(url){
@@ -195,16 +235,18 @@
   Promise.all([ get(RAW), get('data/theme.json') ]).then(function(res){
     var best = null;
     res.forEach(function(j){ if (j && THEMES[j.theme] && (!best || ts(j.updated) > ts(best.updated))) best = j; });
-    if (!best) return;                                   // nimic în repo → rămâne ce are
-    var loc = cached();
+    if (!best) return;                                           // nimic în repo → rămâne ce are
+    var rc = normCfg(best);
     // dacă ai salvat tu mai recent decât ce vede CDN-ul, păstrează varianta ta
-    if (loc && THEMES[loc.t] && ts(loc.u) > ts(best.updated)) { if (loc.t !== cur) apply(loc.t); return; }
-    remember(best.theme, best.updated);
-    if (best.theme !== cur) apply(best.theme);
+    if (curCfg && ts(curCfg.updated) > ts(rc.updated)) { applyEff(); return; }
+    curCfg = rc; storeCfg(rc); applyEff();
   });
 
-  function sync(){ var c2 = cached(); if (c2 && THEMES[c2.t] && c2.t !== cur) apply(c2.t); }
+  // trecerea la ora 00:00: verifică schimbarea datei (și când revii pe tab / pagină)
+  function tick(){ if (todayRO() !== lastDay && curCfg) applyEff(); }
+  setInterval(tick, 15000);
+  function sync(){ var c2 = cachedCfg(); if (c2) curCfg = c2; if (curCfg) applyEff(); }
   window.addEventListener('pageshow', function(e){ if (e.persisted) sync(); });
   document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') sync(); });
-  window.addEventListener('storage', function(e){ if (e.key === KEY) sync(); });
+  window.addEventListener('storage', function(e){ if (e.key === KEY || e.key === CKEY) sync(); });
 })();

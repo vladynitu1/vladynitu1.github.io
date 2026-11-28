@@ -222,6 +222,29 @@
   .theme-opt .nm{ flex:1; }
   .theme-opt .ck{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--acc); letter-spacing:.06em; }
   .theme-msg{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtd); min-height:16px; margin-top:8px; }
+  .theme-tabs{ display:flex; gap:8px; margin:14px 0 0; }
+  .theme-tab{
+    flex:1; padding:9px 10px; border-radius:10px; border:1px solid var(--bord2); background:var(--surf2); color:var(--txtm);
+    font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
+  }
+  .theme-tab.active{ border-color:var(--acc); background:var(--acc2); color:var(--acc); }
+  .theme-now{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--txtm); margin-top:10px; line-height:1.5; }
+  .sch-note{ font-size:12px; color:var(--txtd); line-height:1.5; margin:12px 0 8px; }
+  .sch-row{ display:flex; gap:6px; align-items:center; margin-bottom:8px; }
+  .sch-row input[type=date], .sch-row select{
+    flex:1; min-width:0; padding:9px 8px; border-radius:8px; border:1px solid var(--bord2); background:var(--surf2);
+    color:var(--txt); font-family:'Exo 2',sans-serif; font-size:13px; color-scheme:dark;
+  }
+  .sch-row .sch-del{ flex:none; width:34px; height:36px; border-radius:8px; border:1px solid var(--bord2); background:var(--surf2); color:var(--txtm); cursor:pointer; }
+  .sch-row .sch-del:hover{ border-color:var(--acc); color:var(--acc); }
+  .sch-row.past{ opacity:.55; }
+  .sch-btns{ display:flex; gap:8px; margin-top:6px; }
+  .sch-btns button{
+    flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--bord2); background:var(--surf2); color:var(--txt);
+    font-family:'Exo 2',sans-serif; font-size:13px; cursor:pointer;
+  }
+  .sch-btns button.primary{ border-color:var(--acc); background:var(--acc2); color:var(--acc); font-weight:600; }
+  .sch-btns button:hover{ border-color:var(--acc); }
 
   .fise-btn{
     position:static; display:none;
@@ -257,7 +280,7 @@
   .fise-del:hover{ border-color:#ff4d6d; color:#ff4d6d; }
   .admin-row{ display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap; margin:-8px 0 24px; }
 </style>
-<script src="theme.js?v=3"></script>
+<script src="theme.js?v=4"></script>
 <script src="luni.js?v=1"></script>
 </head>
 <body>
@@ -347,7 +370,22 @@
   <div class="modal">
     <button class="modal-close" id="themeClose">✕</button>
     <div class="modal-title">🎨 Temă site</div>
-    <div class="theme-list" id="themeList"></div>
+    <div class="theme-tabs">
+      <button class="theme-tab active" id="tabManual" type="button">✋ Manual</button>
+      <button class="theme-tab" id="tabAuto" type="button">🗓 Programat</button>
+    </div>
+    <div class="theme-now" id="themeNow"></div>
+    <div id="paneManual">
+      <div class="theme-list" id="themeList"></div>
+    </div>
+    <div id="paneAuto" style="display:none">
+      <div class="sch-note">De la <b>00:00</b> (ora României) în ziua aleasă se aplică automat tema respectivă, până la următoarea dată din listă. Înainte de prima dată rămâne tema de bază (cea aleasă manual). Ca să închei un sezon, adaugă o dată cu tema Clasic.</div>
+      <div id="schList"></div>
+      <div class="sch-btns">
+        <button type="button" id="schAdd">+ Adaugă dată</button>
+        <button type="button" id="schSave" class="primary">Salvează programarea</button>
+      </div>
+    </div>
     <div class="theme-msg" id="themeMsg">Se aplică pe toate paginile, pentru toți vizitatorii.</div>
   </div>
 </div>
@@ -687,18 +725,39 @@
 </script>
 
 <script>
-// ── Selector temă (doar pentru admin conectat cu token) ──
+// ── Selector temă: manual sau programat pe date (doar pentru admin conectat cu token) ──
 (function(){
   var THEME_API = 'https://api.github.com/repos/vladynitu1/vladynitu1.github.io/contents/data/theme.json';
   var btn = document.getElementById('themeBtn'), ov = document.getElementById('themeOverlay');
-  var list = document.getElementById('themeList'), msg = document.getElementById('themeMsg');
-  var saved = null, busy = false;
+  var list = document.getElementById('themeList'), msg = document.getElementById('themeMsg'), now = document.getElementById('themeNow');
+  var tabM = document.getElementById('tabManual'), tabA = document.getElementById('tabAuto');
+  var paneM = document.getElementById('paneManual'), paneA = document.getElementById('paneAuto'), schList = document.getElementById('schList');
+  var state = null, rows = [], busy = false;
+
+  function T(){ return window.EMXTheme; }
+  function cfgNow(){ return state || T().config() || { theme:'clasic', mode:'manual', schedule:[], updated:'' }; }
+  function fmt(d){ var p = d.split('-'); return p[2] + '.' + p[1] + '.' + p[0]; }
+  function nm(k){ var t = T().list[k]; return t ? t.emoji + ' ' + t.label : k; }
+
+  function renderNow(){
+    var c = cfgNow(), eff = T().effectiveOf(c);
+    if(c.mode === 'auto'){
+      var nxt = c.schedule.filter(function(e){ return e.date > T().today(); })[0];
+      now.textContent = 'Mod activ: PROGRAMAT · acum: ' + nm(eff) + (nxt ? ' · următoarea schimbare: ' + fmt(nxt.date) + ' → ' + nm(nxt.theme) : '');
+    } else {
+      now.textContent = 'Mod activ: MANUAL · acum: ' + nm(eff);
+    }
+  }
+  function setTab(t){
+    tabM.classList.toggle('active', t === 'manual'); tabA.classList.toggle('active', t === 'auto');
+    paneM.style.display = t === 'manual' ? '' : 'none'; paneA.style.display = t === 'auto' ? '' : 'none';
+  }
 
   function render(){
-    var cur = window.EMXTheme ? window.EMXTheme.current() : 'clasic';
+    var cur = T().current();
     list.innerHTML = '';
-    Object.keys(window.EMXTheme.list).forEach(function(k){
-      var t = window.EMXTheme.list[k];
+    Object.keys(T().list).forEach(function(k){
+      var t = T().list[k];
       var b = document.createElement('button');
       b.className = 'theme-opt' + (k === cur ? ' active' : '');
       b.innerHTML = '<span class="sw">' + t.sw.map(function(c){ return '<i style="background:' + c + '"></i>'; }).join('') + '</span>' +
@@ -706,28 +765,50 @@
       b.onclick = function(){ pick(k); };
       list.appendChild(b);
     });
+    renderNow();
   }
+
+  function renderRows(){
+    schList.innerHTML = '';
+    var today = T().today();
+    rows.forEach(function(r, i){
+      var row = document.createElement('div'); row.className = 'sch-row' + (r.date && r.date < today ? ' past' : '');
+      var d = document.createElement('input'); d.type = 'date'; d.value = r.date || '';
+      d.onchange = function(){ r.date = d.value; };
+      var s = document.createElement('select');
+      Object.keys(T().list).forEach(function(k){
+        var o = document.createElement('option'); o.value = k; o.textContent = nm(k); if(k === r.theme) o.selected = true; s.appendChild(o);
+      });
+      s.onchange = function(){ r.theme = s.value; };
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'sch-del'; x.textContent = '✕'; x.title = 'Șterge';
+      x.onclick = function(){ rows.splice(i, 1); renderRows(); };
+      row.appendChild(d); row.appendChild(s); row.appendChild(x); schList.appendChild(row);
+    });
+    if(!rows.length){ var e = document.createElement('div'); e.className = 'sch-note'; e.textContent = 'Nicio dată în program. Apasă „+ Adaugă dată”.'; schList.appendChild(e); }
+  }
+  function loadRows(){ rows = cfgNow().schedule.map(function(e){ return { date:e.date, theme:e.theme }; }); renderRows(); }
+
   function hdrs(tok){ return { 'Authorization':'token ' + tok, 'Accept':'application/vnd.github+json' }; }
   async function readRepo(tok){
     var r = await fetch(THEME_API + '?ref=main&t=' + Date.now(), { headers:hdrs(tok), cache:'no-store' });
-    if(r.status === 404) return { sha:null, theme:null };
+    if(r.status === 404) return { sha:null, cfg:null };
     if(!r.ok) throw new Error('GitHub ' + r.status);
-    var j = await r.json(), th = null;
-    try{ th = JSON.parse(atob(j.content.replace(/\s/g, ''))).theme; }catch(e){}
-    return { sha:j.sha, theme:th };
+    var j = await r.json(), c = null;
+    try{ c = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g, ''))))); }catch(e){ try{ c = JSON.parse(atob(j.content.replace(/\s/g, ''))); }catch(e2){} }
+    return { sha:j.sha, cfg:c };
   }
-  async function save(name){
+  async function save(cfg){
     var tok = getToken(); if(!tok) throw new Error('Nu ești conectat.');
-    var updated = new Date().toISOString(), lastStatus = 0;
+    var lastStatus = 0, payload = JSON.stringify(cfg);
     for(var attempt = 0; attempt < 3; attempt++){
       var cur = await readRepo(tok);
-      var body = { message:'Temă: ' + name, branch:'main', content:btoa(JSON.stringify({ theme:name, updated:updated })) };
+      var body = { message:'Temă: ' + (cfg.mode === 'auto' ? 'programare (' + cfg.schedule.length + ' date)' : cfg.theme), branch:'main', content:btoa(unescape(encodeURIComponent(payload))) };
       if(cur.sha) body.sha = cur.sha;
       var p = await fetch(THEME_API, { method:'PUT', headers:Object.assign({ 'Content-Type':'application/json' }, hdrs(tok)), body:JSON.stringify(body) });
       if(p.ok){
         var chk = await readRepo(tok);                       // verificare: ce e salvat acum în repo
-        if(chk.theme !== name) throw new Error('Salvarea nu s-a confirmat (în repo e „' + chk.theme + '”).');
-        return updated;
+        if(!chk.cfg || chk.cfg.updated !== cfg.updated) throw new Error('Salvarea nu s-a confirmat.');
+        return;
       }
       lastStatus = p.status;
       if(p.status !== 409 && p.status !== 422) break;        // sha vechi → reîncearcă cu sha proaspăt
@@ -735,30 +816,68 @@
     }
     throw new Error('Nu am putut salva (' + lastStatus + '). ' + (lastStatus === 403 || lastStatus === 401 ? 'Tokenul trebuie să aibă drept de scriere pe repo.' : 'Încearcă din nou.'));
   }
-  async function pick(name){
+
+  async function pick(name){                                  // alegere manuală → oprește programarea (lista rămâne salvată)
     if(busy) return;
-    var before = window.EMXTheme.current();
+    var before = T().current(), c0 = cfgNow();
+    var cfg = { theme:name, mode:'manual', schedule:c0.schedule, updated:new Date().toISOString() };
     busy = true; msg.textContent = 'Se salvează...';
-    window.EMXTheme.preview(name); render();
+    T().preview(name); render();
     try{
-      var u = await save(name);
-      window.EMXTheme.remember(name, u);
-      msg.textContent = '✓ Salvat în repo: ' + window.EMXTheme.list[name].label + '. Vizitatorii o văd în câteva minute.';
+      await save(cfg); state = cfg; T().setConfig(cfg); render();
+      msg.textContent = '✓ Salvat (manual): ' + T().list[name].label + '. Vizitatorii o văd în câteva minute.';
     }catch(e){
-      window.EMXTheme.preview(before); render();
+      T().preview(before); render();
       msg.textContent = '✗ ' + e.message;
     }
     busy = false;
   }
+
+  async function saveSchedule(){
+    if(busy) return;
+    var seen = {}, out = [];
+    for(var i = 0; i < rows.length; i++){
+      var r = rows[i];
+      if(!r.date){ msg.textContent = '✗ Completează data la fiecare rând (sau șterge rândul).'; return; }
+      seen[r.date] = r.theme;
+    }
+    Object.keys(seen).forEach(function(d){ out.push({ date:d, theme:seen[d] }); });
+    out.sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+    if(!out.length){ msg.textContent = '✗ Adaugă cel puțin o dată.'; return; }
+    var c0 = cfgNow();
+    var cfg = { theme:c0.theme, mode:'auto', schedule:out, updated:new Date().toISOString() };
+    busy = true; msg.textContent = 'Se salvează...';
+    try{
+      await save(cfg); state = cfg; T().setConfig(cfg); loadRows(); render();
+      msg.textContent = '✓ Programare salvată și activă (' + out.length + ' date). Schimbarea se face la 00:00, ora României.';
+    }catch(e){ msg.textContent = '✗ ' + e.message; }
+    busy = false;
+  }
+
   async function showRepoState(){
     try{
       var tok = getToken(); if(!tok) return;
       var r = await readRepo(tok);
-      msg.textContent = 'Salvat acum în repo: ' + (r.theme && window.EMXTheme.list[r.theme] ? window.EMXTheme.list[r.theme].label : 'nimic (Clasic)') + '.';
+      if(r.cfg && T().list[r.cfg.theme]){
+        // folosește varianta din repo (poate fi mai nouă decât cache-ul local)
+        var c = { theme:r.cfg.theme, mode:r.cfg.mode === 'auto' ? 'auto' : 'manual', schedule:(r.cfg.schedule || []).filter(function(e){ return e && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && T().list[e.theme]; }), updated:r.cfg.updated || '' };
+        c.schedule.sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+        state = c;
+        if(!busy){ loadRows(); render(); setTab(c.mode === 'auto' ? 'auto' : 'manual'); }
+      }
     }catch(e){}
   }
 
-  btn.onclick = function(){ render(); ov.classList.add('open'); showRepoState(); };
+  tabM.onclick = function(){ setTab('manual'); };
+  tabA.onclick = function(){ setTab('auto'); loadRows(); };
+  document.getElementById('schAdd').onclick = function(){ rows.push({ date:T().today(), theme:'craciun' }); renderRows(); };
+  document.getElementById('schSave').onclick = saveSchedule;
+
+  btn.onclick = function(){
+    state = null; render(); loadRows(); setTab(cfgNow().mode === 'auto' ? 'auto' : 'manual');
+    msg.textContent = 'Se aplică pe toate paginile, pentru toți vizitatorii.';
+    ov.classList.add('open'); showRepoState();
+  };
   document.getElementById('themeClose').onclick = function(){ ov.classList.remove('open'); };
   ov.addEventListener('click', function(e){ if(e.target === ov) ov.classList.remove('open'); });
 
